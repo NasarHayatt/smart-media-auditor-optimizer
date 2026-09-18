@@ -112,15 +112,24 @@ final class Screen_Cleanup {
 		global $wpdb;
 		$table = Database::table( 'vault' );
 		$page  = max( 1, absint( $_GET['vault_page'] ?? 1 ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only pagination.
+		/*
+		 * Only quarantine records belong here. The vault also holds optimization
+		 * backups, which are restore points for compression, not files anyone
+		 * removed. Listing those made this table claim files had been deleted
+		 * that never were, and offered a purge that could only ever fail.
+		 */
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fixed internal table name.
-		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table" );
+		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table WHERE operation='quarantine'" );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fixed internal table name.
 		$rows = $wpdb->get_results(
-			$wpdb->prepare( "SELECT attachment_id,operation,state,created FROM $table ORDER BY created DESC LIMIT 25 OFFSET %d", ( $page - 1 ) * 25 ),
+			$wpdb->prepare( "SELECT attachment_id,operation,state,created FROM $table WHERE operation='quarantine' ORDER BY created DESC LIMIT 25 OFFSET %d", ( $page - 1 ) * 25 ),
 			ARRAY_A
 		);
 		Database::check( $rows );
 		$retention = (int) Settings::get()['retention_days'];
+		$eligible  = static function ( array $row ) use ( $retention ): bool {
+			return time() - (int) $row['created'] >= $retention * DAY_IN_SECONDS;
+		};
 		?>
 		<section class="smao-panel smao-selectable" data-scope="recovery" id="smao-recovery">
 			<div class="smao-panel-head">
@@ -144,9 +153,9 @@ final class Screen_Cleanup {
 						<tr>
 							<td class="check-column"><input type="checkbox" class="smao-select-all" aria-label="<?php esc_attr_e( 'Select all recovery records on this page', 'smart-media-auditor-optimizer' ); ?>"></td>
 							<th scope="col"><?php esc_html_e( 'File', 'smart-media-auditor-optimizer' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Operation', 'smart-media-auditor-optimizer' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'State', 'smart-media-auditor-optimizer' ); ?></th>
 							<th scope="col"><?php esc_html_e( 'Removed', 'smart-media-auditor-optimizer' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Can be restored', 'smart-media-auditor-optimizer' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Can be deleted permanently', 'smart-media-auditor-optimizer' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -166,9 +175,23 @@ final class Screen_Cleanup {
 									">
 							</th>
 							<td><?php echo esc_html( get_the_title( $id ) ?: '#' . $id ); ?><small>#<?php echo esc_html( (string) $id ); ?></small></td>
-							<td><?php echo esc_html( $row['operation'] ); ?></td>
-							<td><span class="smao-badge"><?php echo esc_html( $row['state'] ); ?></span></td>
-							<td><?php echo esc_html( gmdate( 'Y-m-d H:i', (int) $row['created'] ) ); ?> <span class="smao-muted">UTC</span></td>
+							<td><?php echo esc_html( gmdate( 'j M Y', (int) $row['created'] ) ); ?></td>
+							<td><span class="smao-badge smao-status-used"><?php esc_html_e( 'Yes, any time', 'smart-media-auditor-optimizer' ); ?></span></td>
+							<td>
+								<?php if ( $eligible( $row ) ) : ?>
+									<span class="smao-badge smao-status-unused"><?php esc_html_e( 'Yes', 'smart-media-auditor-optimizer' ); ?></span>
+								<?php else : ?>
+									<span class="smao-badge">
+										<?php
+										printf(
+											/* translators: %s is a date. */
+											esc_html__( 'Not until %s', 'smart-media-auditor-optimizer' ),
+											esc_html( gmdate( 'j M Y', (int) $row['created'] + $retention * DAY_IN_SECONDS ) )
+										);
+										?>
+									</span>
+								<?php endif; ?>
+							</td>
 						</tr>
 					<?php endforeach; ?>
 					</tbody>

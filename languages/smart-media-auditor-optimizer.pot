@@ -67,9 +67,6 @@ msgstr ""
 msgid "A complete, unchanged scan from the last 24 hours and scope review are required."
 msgstr ""
 
-msgid "A current database reference may exist. Rescan and review; no files were moved."
-msgstr ""
-
 msgid "A live file exists at an original path; purge refused."
 msgstr ""
 
@@ -121,6 +118,9 @@ msgstr ""
 msgid "Administrator updated settings."
 msgstr ""
 
+msgid "Affected"
+msgstr ""
+
 msgid "All"
 msgstr ""
 
@@ -145,13 +145,10 @@ msgstr ""
 msgid "Another media operation is running. Retry shortly."
 msgstr ""
 
-msgid "Apply filters"
+msgid "Apply"
 msgstr ""
 
 msgid "Apply processing options"
-msgstr ""
-
-msgid "Ascending"
 msgstr ""
 
 msgid "Atomic restore failed; backup retained."
@@ -188,6 +185,12 @@ msgid "Before you remove anything"
 msgstr ""
 
 msgid "Broken"
+msgstr ""
+
+msgid "Can be deleted permanently"
+msgstr ""
+
+msgid "Can be restored"
 msgstr ""
 
 msgid "Cancel"
@@ -227,6 +230,9 @@ msgid "Classifying results"
 msgstr ""
 
 msgid "Clean up"
+msgstr ""
+
+msgid "Clear"
 msgstr ""
 
 msgid "Clear old records"
@@ -307,9 +313,6 @@ msgstr ""
 msgid "Database operation failed. Scan or action stopped safely."
 msgstr ""
 
-msgid "Descending"
-msgstr ""
-
 msgid "Detail"
 msgstr ""
 
@@ -364,13 +367,13 @@ msgstr ""
 msgid "File changed or could not be moved. Recovery journal retained; use Restore."
 msgstr ""
 
+msgid "File type"
+msgstr ""
+
 msgid "Filename"
 msgstr ""
 
 msgid "Filename may be shared with another attachment. Manual review required."
-msgstr ""
-
-msgid "Filename or ID"
 msgstr ""
 
 msgid "Files found"
@@ -469,6 +472,9 @@ msgstr ""
 msgid "Larger than %1$d × %2$d"
 msgstr ""
 
+msgid "Largest first"
+msgstr ""
+
 msgid "Latest checkpoint"
 msgstr ""
 
@@ -523,6 +529,9 @@ msgstr ""
 msgid "Missing or broken"
 msgstr ""
 
+msgid "More options"
+msgstr ""
+
 msgid "Multisite"
 msgstr ""
 
@@ -565,7 +574,13 @@ msgstr ""
 msgid "No source image exceeds your maximum dimensions. If you have not scanned yet, run a scan from the Audit screen first."
 msgstr ""
 
+msgid "None of the selected files were"
+msgstr ""
+
 msgid "Not optimized"
+msgstr ""
+
+msgid "Not until %s"
 msgstr ""
 
 msgid "Nothing has advanced for over 30 seconds. Try Retry processing, and restart the scan if the same checkpoint keeps returning."
@@ -590,9 +605,6 @@ msgid "Only retained quarantine groups can be permanently deleted after the rete
 msgstr ""
 
 msgid "Only reviewed unused candidates can be quarantined."
-msgstr ""
-
-msgid "Operation"
 msgstr ""
 
 msgid "Optimization"
@@ -706,6 +718,9 @@ msgstr ""
 msgid "Ready to scan"
 msgstr ""
 
+msgid "Reason:"
+msgstr ""
+
 msgid "Recovery"
 msgstr ""
 
@@ -749,9 +764,6 @@ msgid "Report pages"
 msgstr ""
 
 msgid "Requesting administrator no longer has permission."
-msgstr ""
-
-msgid "Reset"
 msgstr ""
 
 msgid "Resize oversized originals"
@@ -835,6 +847,12 @@ msgstr ""
 msgid "Scope confirmed. A fresh scan has started."
 msgstr ""
 
+msgid "Search"
+msgstr ""
+
+msgid "Search by file name"
+msgstr ""
+
 msgid "Select %s"
 msgstr ""
 
@@ -871,6 +889,9 @@ msgstr ""
 msgid "Settings sections"
 msgstr ""
 
+msgid "Show"
+msgstr ""
+
 msgid "Site content changed during this scan. Run a fresh scan before removing files."
 msgstr ""
 
@@ -878,6 +899,9 @@ msgid "Size"
 msgstr ""
 
 msgid "Smaller batches suit shared hosting. When this page is closed, WP-Cron continues the work."
+msgstr ""
+
+msgid "Smallest first"
 msgstr ""
 
 msgid "Smart Media Auditor"
@@ -907,9 +931,6 @@ msgstr ""
 msgid "Start scan"
 msgstr ""
 
-msgid "State"
-msgstr ""
-
 msgid "Stop generating these image sizes. Existing files are kept."
 msgstr ""
 
@@ -928,6 +949,9 @@ msgstr ""
 msgid "That does not match."
 msgstr ""
 
+msgid "That file could not be"
+msgstr ""
+
 msgid "That request failed. Please try again."
 msgstr ""
 
@@ -943,6 +967,9 @@ msgstr ""
 msgid "The master switch. Turning this off disables everything below immediately, without changing any file."
 msgstr ""
 
+msgid "There is too much matching content to verify safely, so nothing was moved. Run a fresh scan and try a smaller selection."
+msgstr ""
+
 msgid "These are source dimensions, not how large the image appears on screen. Resizing changes pixels, so it stays opt-in."
 msgstr ""
 
@@ -950,6 +977,9 @@ msgid "These cannot change how your pages look. They only tell the browser what 
 msgstr ""
 
 msgid "This cannot be undone."
+msgstr ""
+
+msgid "This file is referenced somewhere in your site now, so it was not moved. Run a fresh scan to see where."
 msgstr ""
 
 msgid "This mode requires ImageMagick. GD requires explicit lossy compression and metadata-removal consent."
@@ -1093,6 +1123,9 @@ msgstr ""
 msgid "Yes"
 msgstr ""
 
+msgid "Yes, any time"
+msgstr ""
+
 msgid "You do not have permission to change one of the selected files."
 msgstr ""
 
@@ -1126,6 +1159,9 @@ msgstr ""
 msgid "allowed"
 msgstr ""
 
+msgid "and"
+msgstr ""
+
 msgid "audit"
 msgstr ""
 
@@ -1136,6 +1172,9 @@ msgid "cleanup"
 msgstr ""
 
 msgid "control"
+msgstr ""
+
+msgid "could not be"
 msgstr ""
 
 msgid "digest?"
@@ -1151,9 +1190,6 @@ msgid "files"
 msgstr ""
 
 msgid "files checked"
-msgstr ""
-
-msgid "files processed successfully."
 msgstr ""
 
 msgid "files selected"
@@ -1174,13 +1210,28 @@ msgstr ""
 msgid "min"
 msgstr ""
 
+msgid "more"
+msgstr ""
+
 msgid "old records removed."
 msgstr ""
 
 msgid "optimize"
 msgstr ""
 
+msgid "permanently deleted"
+msgstr ""
+
 msgid "possible"
+msgstr ""
+
+msgid "processed"
+msgstr ""
+
+msgid "removed"
+msgstr ""
+
+msgid "restored"
 msgstr ""
 
 msgid "runtime"

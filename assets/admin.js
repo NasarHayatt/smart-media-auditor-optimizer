@@ -230,6 +230,52 @@
 		});
 	}
 
+	/**
+	 * Turn a list of per-file results into something a person can read.
+	 *
+	 * Printing one line per file produced a wall of identical sentences when a
+	 * whole selection failed for the same reason. Group by reason instead, and
+	 * lead with what actually happened.
+	 */
+	function summarize(results, action) {
+		var done = results.filter(function (row) { return row.ok; });
+		var failed = results.filter(function (row) { return !row.ok; });
+
+		var verb = action === 'quarantine' ? t('removed')
+			: action === 'restore' ? t('restored')
+				: action === 'purge' ? t('permanently deleted') : t('processed');
+
+		if (!failed.length) {
+			return { isError: false, text: done.length + ' ' + (done.length === 1 ? t('file') : t('files')) + ' ' + verb + '.' };
+		}
+
+		// Group failures by their reason so one cause reads as one sentence.
+		var reasons = [];
+		failed.forEach(function (row) {
+			var group = reasons.filter(function (item) { return item.message === row.message; })[0];
+			if (!group) { group = { message: row.message, ids: [] }; reasons.push(group); }
+			group.ids.push(row.id);
+		});
+
+		var lines = [];
+		lines.push(done.length
+			? done.length + ' ' + (done.length === 1 ? t('file') : t('files')) + ' ' + verb + '. '
+				+ failed.length + ' ' + (failed.length === 1 ? t('could not be') : t('could not be')) + ' ' + verb + ':'
+			: (failed.length === 1
+				? t('That file could not be') + ' ' + verb + ':'
+				: t('None of the selected files were') + ' ' + verb + '. ' + t('Reason:')));
+
+		reasons.forEach(function (group) {
+			var shown = group.ids.slice(0, 8).map(function (id) { return '#' + id; }).join(', ');
+			var extra = group.ids.length > 8 ? ' ' + t('and') + ' ' + (group.ids.length - 8) + ' ' + t('more') : '';
+			lines.push('');
+			lines.push(group.message);
+			lines.push(t('Affected') + ': ' + shown + extra);
+		});
+
+		return { isError: true, text: lines.join('\n') };
+	}
+
 	/* ------------------------------------------------------------ actions */
 
 	async function run(task, anchor) {
@@ -273,11 +319,8 @@
 				var result = await request('action', payload);
 
 				if (result.results) {
-					var failed = result.results.filter(function (row) { return !row.ok; });
-					var message = failed.length
-						? failed.map(function (row) { return '#' + row.id + ': ' + row.message; }).join('\n')
-						: ids.length + ' ' + t('files processed successfully.');
-					notice(message, failed.length > 0, button);
+					var summary = summarize(result.results, action);
+					notice(summary.text, summary.isError, button);
 				} else {
 					notice(result.message, false, button);
 				}

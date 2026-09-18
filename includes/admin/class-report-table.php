@@ -52,14 +52,23 @@ final class Report_Table {
 		?>
 		<form method="get" class="smao-filters">
 			<input type="hidden" name="page" value="<?php echo esc_attr( 'smao-' . $screen ); ?>">
-			<label><?php esc_html_e( 'Filename or ID', 'smart-media-auditor-optimizer' ); ?>
-				<input type="search" name="search" value="<?php echo esc_attr( $input['search'] ?? '' ); ?>"></label>
-			<label><?php esc_html_e( 'Usage', 'smart-media-auditor-optimizer' ); ?>
-				<select name="status">
-					<?php foreach ( $statuses as $value => $label ) : ?>
-						<option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $input['status'] ?? '' ), (string) $value ); ?>><?php echo esc_html( $label ); ?></option>
-					<?php endforeach; ?>
-				</select></label>
+			<div class="smao-filters-main">
+				<label><?php esc_html_e( 'Search by file name', 'smart-media-auditor-optimizer' ); ?>
+					<input type="search" name="search" value="<?php echo esc_attr( $input['search'] ?? '' ); ?>"></label>
+				<label><?php esc_html_e( 'Show', 'smart-media-auditor-optimizer' ); ?>
+					<select name="status">
+						<?php foreach ( $statuses as $value => $label ) : ?>
+							<option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $input['status'] ?? '' ), (string) $value ); ?>><?php echo esc_html( $label ); ?></option>
+						<?php endforeach; ?>
+					</select></label>
+				<button class="button"><?php esc_html_e( 'Search', 'smart-media-auditor-optimizer' ); ?></button>
+				<?php if ( self::filtered( $input ) ) : ?>
+					<a class="button-link" href="<?php echo esc_url( admin_url( 'admin.php?page=smao-' . $screen ) ); ?>"><?php esc_html_e( 'Clear', 'smart-media-auditor-optimizer' ); ?></a>
+				<?php endif; ?>
+			</div>
+			<details class="smao-filters-more"<?php echo self::advanced( $input ) ? ' open' : ''; ?>>
+				<summary><?php esc_html_e( 'More options', 'smart-media-auditor-optimizer' ); ?></summary>
+				<div class="smao-filters-grid">
 			<label><?php esc_html_e( 'Optimization', 'smart-media-auditor-optimizer' ); ?>
 				<select name="optimized">
 					<?php
@@ -72,7 +81,7 @@ final class Report_Table {
 						<option value="<?php echo esc_attr( $value ); ?>" <?php selected( (string) ( $input['optimized'] ?? '' ), (string) $value ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php endforeach; ?>
 				</select></label>
-			<label><?php esc_html_e( 'Type', 'smart-media-auditor-optimizer' ); ?>
+			<label><?php esc_html_e( 'File type', 'smart-media-auditor-optimizer' ); ?>
 				<input type="search" name="mime" placeholder="image/" value="<?php echo esc_attr( $input['mime'] ?? '' ); ?>"></label>
 			<label><?php esc_html_e( 'Sort by', 'smart-media-auditor-optimizer' ); ?>
 				<select name="sort">
@@ -91,15 +100,33 @@ final class Report_Table {
 				</select></label>
 			<label><?php esc_html_e( 'Direction', 'smart-media-auditor-optimizer' ); ?>
 				<select name="direction">
-					<option value="asc" <?php selected( (string) ( $input['direction'] ?? '' ), 'asc' ); ?>><?php esc_html_e( 'Ascending', 'smart-media-auditor-optimizer' ); ?></option>
-					<option value="desc" <?php selected( (string) ( $input['direction'] ?? '' ), 'desc' ); ?>><?php esc_html_e( 'Descending', 'smart-media-auditor-optimizer' ); ?></option>
+					<option value="asc" <?php selected( (string) ( $input['direction'] ?? '' ), 'asc' ); ?>><?php esc_html_e( 'Smallest first', 'smart-media-auditor-optimizer' ); ?></option>
+					<option value="desc" <?php selected( (string) ( $input['direction'] ?? '' ), 'desc' ); ?>><?php esc_html_e( 'Largest first', 'smart-media-auditor-optimizer' ); ?></option>
 				</select></label>
-			<button class="button"><?php esc_html_e( 'Apply filters', 'smart-media-auditor-optimizer' ); ?></button>
-			<?php if ( self::filtered( $input ) ) : ?>
-				<a class="button-link" href="<?php echo esc_url( admin_url( 'admin.php?page=smao-' . $screen ) ); ?>"><?php esc_html_e( 'Reset', 'smart-media-auditor-optimizer' ); ?></a>
-			<?php endif; ?>
+				</div>
+				<button class="button"><?php esc_html_e( 'Apply', 'smart-media-auditor-optimizer' ); ?></button>
+			</details>
 		</form>
 		<?php
+	}
+
+	/**
+	 * Whether any advanced option is in use, so the panel opens showing it.
+	 *
+	 * @param array $input Query input.
+	 * @return bool
+	 */
+	private static function advanced( array $input ): bool {
+		// "image/" is injected as a screen default, not something the user chose.
+		if ( '' !== (string) ( $input['mime'] ?? '' ) && 'image/' !== $input['mime'] ) {
+			return true;
+		}
+		foreach ( array( 'optimized', 'sort', 'direction', 'from', 'until', 'min_bytes', 'max_bytes' ) as $key ) {
+			if ( '' !== (string) ( $input[ $key ] ?? '' ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

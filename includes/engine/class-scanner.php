@@ -562,16 +562,62 @@ final class Scanner {
 	 */
 	public static function assert_no_references( int $id, array $group ): void {
 		global $wpdb;
+
+		$names = array();
+		foreach ( $group['files'] as $file ) {
+			$names[ strtolower( wp_basename( $file ) ) ] = true;
+		}
+
 		foreach ( self::sources() as $s ) {
 			$terms = array( '%' . $wpdb->esc_like( (string) $id ) . '%' );
-			foreach ( $group['files'] as $file ) {
-				$terms[] = '%' . $wpdb->esc_like( wp_basename( $file ) ) . '%'; }
-			$where = implode( ' OR ', array_fill( 0, count( $terms ), "{$s[3]} LIKE %s" ) );
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Identifiers/predicates come from fixed internal maps; all request values use prepared placeholders.
-			$hit = $wpdb->get_var( $wpdb->prepare( "SELECT {$s[1]} FROM {$s[0]} WHERE ({$s[4]}) AND ($where) LIMIT 1", $terms ) );
-			Database::check( $hit );
-			if ( $hit ) {
-				throw new \RuntimeException( __( 'A current database reference may exist. Rescan and review; no files were moved.', 'smart-media-auditor-optimizer' ) ); }
+			foreach ( array_keys( $names ) as $name ) {
+				$terms[] = '%' . $wpdb->esc_like( $name ) . '%';
+			}
+			$where  = implode( ' OR ', array_fill( 0, count( $terms ), "{$s[3]} LIKE %s" ) );
+			$field  = $s[6] ?? '';
+			$select = "{$s[1]} AS smao_key, {$s[3]} AS smao_value" . ( $field ? ", $field AS smao_field" : '' );
+			$cursor = 0;
+			$seen   = 0;
+
+			do {
+				$args = array_merge( $terms, array( $cursor ) );
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Identifiers/predicates come from fixed internal maps; all values use placeholders.
+				$rows = $wpdb->get_results(
+					$wpdb->prepare( "SELECT $select FROM {$s[0]} WHERE ({$s[4]}) AND ($where) AND {$s[1]}>%d ORDER BY {$s[1]} ASC LIMIT 200", $args ),
+					ARRAY_A
+				);
+				Database::check( $rows );
+
+				foreach ( $rows as $row ) {
+					$cursor = (int) $row['smao_key'];
+					++$seen;
+					/*
+					 * A bare "LIKE %id%" matches any row containing those digits:
+					 * a timestamp, a serialized length, or an unrelated ID such as
+					 * 127 when checking 27. That refused almost every removal.
+					 * Confirm with the same tokenizer the scan itself uses, so the
+					 * recheck can never be stricter than the classification that
+					 * produced the candidate.
+					 */
+					$tokens = Matcher::tokens( (string) $row['smao_value'], (string) ( $row['smao_field'] ?? '' ) );
+					foreach ( $tokens as $token ) {
+						if ( 'id' === $token['kind'] && (int) $token['token'] === $id ) {
+							throw new \RuntimeException( __( 'This file is referenced somewhere in your site now, so it was not moved. Run a fresh scan to see where.', 'smart-media-auditor-optimizer' ) );
+						}
+						if ( in_array( $token['kind'], array( 'name', 'path' ), true ) ) {
+							$base = strtolower( wp_basename( $token['token'] ) );
+							if ( isset( $names[ $base ] ) ) {
+								throw new \RuntimeException( __( 'This file is referenced somewhere in your site now, so it was not moved. Run a fresh scan to see where.', 'smart-media-auditor-optimizer' ) );
+							}
+						}
+					}
+				}
+
+				if ( $seen > 5000 ) {
+					// Too much to verify safely. Refuse rather than guess.
+					throw new \RuntimeException( __( 'There is too much matching content to verify safely, so nothing was moved. Run a fresh scan and try a smaller selection.', 'smart-media-auditor-optimizer' ) );
+				}
+			} while ( count( $rows ) === 200 );
 		}
 	}
 }
