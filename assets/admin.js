@@ -24,6 +24,7 @@
 	var scanId;
 	var digest = '';
 	var pendingRefresh = false;
+	var lastStage;
 
 	/* ------------------------------------------------------------ helpers */
 
@@ -102,9 +103,12 @@
 		var ids = selectedIn(scope);
 		var count = $('.smao-selection-count', scope);
 		if (count) {
+			var shown = $$('.smao-id', scope).length;
 			count.textContent = ids.length === 0
-				? t('No files selected')
-				: ids.length + ' ' + (ids.length === 1 ? t('file selected') : t('files selected'));
+				? t('Nothing selected')
+				: (count.dataset.total
+					? ids.length + ' ' + t('of') + ' ' + shown + ' ' + t('selected')
+					: ids.length + ' ' + t('selected'));
 		}
 		var boxes = $$('.smao-id', scope);
 		var all = $('.smao-select-all', scope);
@@ -116,14 +120,16 @@
 	}
 
 	function updateActions(scope) {
+		if (scope === document) { return; }
 		var ids = selectedIn(scope);
-		var bar = $('.smao-bulk-bar', scope);
-		if (!bar) { return; }
+		// Action buttons live in a bulk bar or a review bar; find them either way.
+		var buttons = $$('[data-action]', scope);
+		if (!buttons.length) { return; }
 		var reviewed = $('.smao-reviewed', scope);
 		var ready = !latest || !latest.live || !latest.live.cleanup || latest.live.cleanup.ready;
-		$$('[data-action]', bar).forEach(function (button) {
+		buttons.forEach(function (button) {
 			var action = button.dataset.action;
-			var needsAck = model.destructive(action);
+			var needsAck = model.requiresTyping(action);
 			var blocked = busy
 				|| ids.length === 0
 				|| ids.length > 50
@@ -164,14 +170,14 @@
 
 	/* ------------------------------------------------------------- dialog */
 
-	function confirmAction(action, ids) {
+	function confirmAction(action, ids, labels) {
 		return new Promise(function (resolve) {
 			var dialog = node('dialog', undefined, 'smao-dialog');
 			var form = document.createElement('form');
 			form.method = 'dialog';
 
 			var heading = action === 'quarantine'
-				? t('Remove these files, keeping a recovery copy?')
+				? t('Move these images to safe storage?')
 				: action === 'purge'
 					? t('Permanently delete these recovery copies?')
 					: t('Confirm this action');
@@ -180,15 +186,16 @@
 			var summary = ids.length + ' ' + (ids.length === 1 ? t('file') : t('files'));
 			form.append(node('p', summary));
 			if (ids.length) {
-				form.append(node('div', ids.join(', '), 'smao-dialog-list'));
+				var named = ids.map(function (id) {
+					return (labels && labels[id]) ? labels[id] : '#' + id;
+				});
+				form.append(node('div', named.join(', '), 'smao-dialog-list'));
 			}
 
 			var input = null;
-			if (model.destructive(action) || action === 'cleanup_records') {
+			if (model.requiresTyping(action) || action === 'cleanup_records') {
 				var word = action === 'cleanup_records' ? 'CLEAR' : action.toUpperCase();
-				form.append(node('p', action === 'purge'
-					? t('This cannot be undone.')
-					: t('The files leave your uploads folder. Their recovery copies can be restored later.')));
+				form.append(node('p', t('This cannot be undone.')));
 				var label = node('label', t('Type') + ' ' + word);
 				input = document.createElement('input');
 				input.type = 'text';
@@ -306,28 +313,43 @@
 				if (!ids.length || ids.length > 50) {
 					throw new Error(t('Select between 1 and 50 files.'));
 				}
-				if (model.destructive(action) && !acknowledged) {
-					throw new Error(t('Confirm you reviewed these files and have a backup.'));
+				if (model.requiresTyping(action) && !acknowledged) {
+					throw new Error(t('Tick the box to confirm you understand this cannot be undone.'));
 				}
 
-				var typed = await confirmAction(action, ids);
+				var labels = {};
+				$$('.smao-id', scope).forEach(function (box) {
+					var row = box.closest('.smao-tile') || box.closest('li') || box.parentElement;
+					var name = row && (row.querySelector('.smao-tile-name') || row.querySelector('.smao-removed-name') || row.querySelector('.smao-filename'));
+					if (name) { labels[Number(box.value)] = name.textContent.trim(); }
+				});
+				var typed = await confirmAction(action, ids, labels);
 				if (typed === null) { return; }
 				if (!model.confirmation(action, ids, acknowledged, typed)) { return; }
 
 				var payload = { action: action, ids: ids };
-				if (model.destructive(action)) { payload.confirmation = typed; }
+				if (model.requiresTyping(action)) { payload.confirmation = typed; }
 				var result = await request('action', payload);
 
+				var summaryText;
 				if (result.results) {
 					var summary = summarize(result.results, action);
+					summaryText = summary.text;
 					notice(summary.text, summary.isError, button);
 				} else {
+					summaryText = result.message;
 					notice(result.message, false, button);
 				}
 
 				if (result.status) { render(result.status); }
 				clearSelection(scope);
-				await refreshFragment(true);
+				if ($('#smao-report')) {
+					await refreshFragment(true);
+				} else {
+					// The review grid and recovery list are rendered server-side.
+					window.sessionStorage.setItem('smaoNotice', summaryText);
+					window.location.reload();
+				}
 			}, button);
 		});
 	});
@@ -471,7 +493,17 @@
 		digest = data.digest.signature;
 		host.innerHTML = data.html;
 		removeRefreshPrompt();
-		$$('[data-scope]').forEach(refreshSelection);
+		try {
+		var carried = window.sessionStorage.getItem('smaoNotice');
+		if (carried) {
+			window.sessionStorage.removeItem('smaoNotice');
+			notice(carried, false, null);
+		}
+	} catch (error) {
+		/* Storage can be unavailable; the notice is a convenience. */
+	}
+
+	$$('[data-scope]').forEach(refreshSelection);
 	}
 
 	function showRefreshPrompt() {
@@ -509,6 +541,11 @@
 			$$('[data-scope]').forEach(clearSelection);
 			digest = '';
 		}
+		if (lastStage !== undefined && lastStage !== stage(scan) && $('#smao-next')) {
+			window.location.reload();
+			return;
+		}
+		lastStage = stage(scan);
 		scanId = scan.id;
 
 		$$('[data-metric]').forEach(function (el) {
@@ -529,6 +566,8 @@
 		put('#smao-progress', model.progress(scan));
 
 		var percent = model.percent(scan);
+		var track = $('#smao-track-fill');
+		if (track) { track.style.width = (percent === null ? 6 : percent) + '%'; }
 		var bar = $('#smao-progress-bar');
 		if (bar) {
 			if (percent === null && scan.state === 'running') {
@@ -691,7 +730,58 @@
 		window.setTimeout(poll, model.pollDelay(latest, failures, document.hidden));
 	}
 
+	/* ---------------------------------------------------- review controls */
+
+	var keepAll = $('#smao-keep-all');
+	if (keepAll) {
+		keepAll.addEventListener('click', function () {
+			var scope = scopeOf(keepAll);
+			$$('.smao-id', scope).forEach(function (box) { box.checked = false; });
+			refreshSelection(scope);
+		});
+	}
+
+	$$('[data-where]').forEach(function (button) {
+		button.addEventListener('click', function () {
+			run(async function () {
+				if (button.dataset.loaded) { return; }
+				var rows = await request('evidence?id=' + button.dataset.where);
+				var box = node('div', undefined, 'smao-where');
+				if (!rows.length) {
+					box.append(node('p', t('We looked through your pages, posts, menus, widgets and theme settings. Nothing referred to this image.')));
+				} else {
+					box.append(node('p', t('We found it mentioned here:')));
+					var list = node('ul');
+					rows.slice(0, 8).forEach(function (row) {
+						list.append(node('li', row.source + ' #' + row.source_id + ' (' + row.field + ')'));
+					});
+					box.append(list);
+				}
+				button.insertAdjacentElement('afterend', box);
+				button.dataset.loaded = '1';
+				button.hidden = true;
+			}, button);
+		});
+	});
+
+	/** The next step is computed on the server, so reload when the stage changes. */
+	function stage(scan) {
+		var state = scan.state || 'idle';
+		if (state === 'running' || state === 'paused') { return 'busy'; }
+		return state;
+	}
+
 	/* --------------------------------------------------------------- init */
+
+	try {
+		var carried = window.sessionStorage.getItem('smaoNotice');
+		if (carried) {
+			window.sessionStorage.removeItem('smaoNotice');
+			notice(carried, false, null);
+		}
+	} catch (error) {
+		/* Storage can be unavailable; the notice is a convenience. */
+	}
 
 	$$('[data-scope]').forEach(refreshSelection);
 

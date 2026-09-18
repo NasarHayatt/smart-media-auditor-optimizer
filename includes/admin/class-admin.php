@@ -24,10 +24,10 @@ final class Admin {
 	 */
 	public static function screens(): array {
 		return array(
-			'audit'    => __( 'Audit', 'smart-media-auditor-optimizer' ),
+			'home'     => __( 'Overview', 'smart-media-auditor-optimizer' ),
 			'cleanup'  => __( 'Clean up', 'smart-media-auditor-optimizer' ),
-			'optimize' => __( 'Optimize', 'smart-media-auditor-optimizer' ),
-			'settings' => __( 'Settings', 'smart-media-auditor-optimizer' ),
+			'speed'    => __( 'Speed', 'smart-media-auditor-optimizer' ),
+			'advanced' => __( 'Advanced', 'smart-media-auditor-optimizer' ),
 		);
 	}
 
@@ -54,13 +54,13 @@ final class Admin {
 			__( 'Smart Media Auditor', 'smart-media-auditor-optimizer' ),
 			__( 'Media Auditor', 'smart-media-auditor-optimizer' ),
 			'manage_options',
-			'smao-audit',
+			'smao-home',
 			array( self::class, 'render' ),
 			'dashicons-format-gallery',
 			81
 		);
 		foreach ( self::screens() as $slug => $label ) {
-			add_submenu_page( 'smao-audit', $label, $label, 'manage_options', 'smao-' . $slug, array( self::class, 'render' ) );
+			add_submenu_page( 'smao-home', $label, $label, 'manage_options', 'smao-' . $slug, array( self::class, 'render' ) );
 		}
 	}
 
@@ -78,7 +78,7 @@ final class Admin {
 			array(
 				'id'    => 'smao-speed',
 				'title' => __( 'Speed: on', 'smart-media-auditor-optimizer' ),
-				'href'  => admin_url( 'admin.php?page=smao-settings&tab=speed' ),
+				'href'  => admin_url( 'admin.php?page=smao-speed' ),
 				'meta'  => array( 'title' => __( 'Media Auditor speed corrections are active', 'smart-media-auditor-optimizer' ) ),
 			)
 		);
@@ -175,7 +175,7 @@ final class Admin {
 			}
 			if ( 'fragment' === $route ) {
 				$params = (array) $request->get_query_params();
-				$screen = self::screen_of( (string) ( $params['screen'] ?? 'audit' ) );
+				$screen = self::screen_of( (string) ( $params['screen'] ?? 'advanced' ) );
 				return rest_ensure_response(
 					array(
 						'html'   => Report_Table::fragment( $screen, $params ),
@@ -228,7 +228,7 @@ final class Admin {
 	 */
 	private static function screen_of( string $screen ): string {
 		$screen = sanitize_key( $screen );
-		return isset( self::screens()[ $screen ] ) ? $screen : 'audit';
+		return isset( self::screens()[ $screen ] ) ? $screen : 'advanced';
 	}
 
 	/**
@@ -305,8 +305,9 @@ final class Admin {
 		}
 		$ids = array_values( array_unique( array_map( 'absint', $raw ) ) );
 
-		// Only irreversible actions demand a typed confirmation.
-		if ( in_array( $action, $destructive, true ) && strtoupper( $action ) !== $request->get_param( 'confirmation' ) ) {
+		// Only a genuinely irreversible action demands a typed confirmation.
+		// Quarantine moves files somewhere safe and can be undone, so it does not.
+		if ( 'purge' === $action && 'PURGE' !== $request->get_param( 'confirmation' ) ) {
 			throw new \RuntimeException( __( 'Type the confirmation word to continue.', 'smart-media-auditor-optimizer' ) );
 		}
 
@@ -456,10 +457,10 @@ final class Admin {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen routing and filters.
 		$input   = wp_unslash( $_GET );
 		$screens = self::screens();
-		$slug    = str_replace( 'smao-', '', sanitize_key( (string) ( $input['page'] ?? 'smao-audit' ) ) );
+		$slug    = str_replace( 'smao-', '', sanitize_key( (string) ( $input['page'] ?? 'smao-home' ) ) );
 
 		if ( ! isset( $screens[ $slug ] ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=smao-audit&unknown=1' ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=smao-home&unknown=1' ) );
 			exit;
 		}
 		$input['screen'] = $slug;
@@ -475,7 +476,7 @@ final class Admin {
 			<div id="smao-notice" role="status" aria-live="polite" tabindex="-1"></div>
 
 			<?php if ( ! empty( $input['unknown'] ) ) : ?>
-				<div class="notice notice-warning"><p><?php esc_html_e( 'That screen no longer exists. This is the Audit screen.', 'smart-media-auditor-optimizer' ); ?></p></div>
+				<div class="notice notice-warning"><p><?php esc_html_e( 'That page has moved. Here is the overview.', 'smart-media-auditor-optimizer' ); ?></p></div>
 			<?php endif; ?>
 
 			<?php
@@ -484,14 +485,14 @@ final class Admin {
 					case 'cleanup':
 						Screen_Cleanup::render( $input );
 						break;
-					case 'optimize':
-						Screen_Optimize::render( $input );
+					case 'speed':
+						Screen_Speed::render( $input );
 						break;
-					case 'settings':
-						Screen_Settings::render( $input );
+					case 'advanced':
+						Screen_Advanced::render( $input );
 						break;
 					default:
-						Screen_Audit::render( $input );
+						Screen_Home::render( $input );
 				}
 			} catch ( \Throwable $e ) {
 				echo '<div class="notice notice-error"><p>' . esc_html( $e->getMessage() ) . '</p></div>';
@@ -509,9 +510,9 @@ final class Admin {
 	 */
 	private static function steps( string $slug ): void {
 		$steps = array(
-			'audit'    => __( 'Scan', 'smart-media-auditor-optimizer' ),
-			'cleanup'  => __( 'Clean up', 'smart-media-auditor-optimizer' ),
-			'optimize' => __( 'Optimize', 'smart-media-auditor-optimizer' ),
+			'home'    => __( 'Overview', 'smart-media-auditor-optimizer' ),
+			'cleanup' => __( 'Clean up', 'smart-media-auditor-optimizer' ),
+			'speed'   => __( 'Speed', 'smart-media-auditor-optimizer' ),
 		);
 		$index = array_search( $slug, array_keys( $steps ), true );
 		?>

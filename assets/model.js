@@ -8,6 +8,7 @@
 	'use strict';
 
 	var DESTRUCTIVE = ['quarantine', 'purge'];
+	var TYPED = ['purge'];
 	var ALLOWED = ['quarantine', 'restore', 'purge', 'optimize', 'thumbnails'];
 
 	var api = {
@@ -28,6 +29,14 @@
 		},
 
 		/**
+		 * Only a genuinely irreversible action asks the user to type a word.
+		 * Moving a file to safe storage can be undone, so it does not.
+		 */
+		requiresTyping: function (action) {
+			return TYPED.includes(action);
+		},
+
+		/**
 		 * Gate an action. Only destructive actions require an acknowledgement
 		 * and a typed confirmation word.
 		 */
@@ -35,7 +44,7 @@
 			if (!ALLOWED.includes(action) || ids.length < 1 || ids.length > 50) {
 				return false;
 			}
-			if (!api.destructive(action)) {
+			if (!api.requiresTyping(action)) {
 				return true;
 			}
 			return reviewed === true && typed === action.toUpperCase();

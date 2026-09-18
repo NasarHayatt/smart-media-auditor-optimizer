@@ -32,7 +32,7 @@ final class Screen_Audit {
 				<h2><?php esc_html_e( 'Media inventory', 'smart-media-auditor-optimizer' ); ?></h2>
 				<?php Report_Table::export_link( $input ); ?>
 			</div>
-			<?php Report_Table::filters( 'audit', $input ); ?>
+			<?php Report_Table::filters( 'audit', $input, 'scan' ); ?>
 			<div id="smao-report" data-screen="audit">
 				<?php echo Report_Table::fragment( 'audit', $input ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fragment escapes every value at source. ?>
 			</div>

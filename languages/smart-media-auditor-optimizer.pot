@@ -43,6 +43,9 @@ msgstr ""
 msgid "#smao-worker-mode"
 msgstr ""
 
+msgid "%s image is not used anywhere"
+msgstr ""
+
 msgid "%s matching file"
 msgstr ""
 
@@ -53,6 +56,9 @@ msgid ","
 msgstr ""
 
 msgid ".smao-panel"
+msgstr ""
+
+msgid ".smao-tile"
 msgstr ""
 
 msgid "/[\\s,]+/"
@@ -88,6 +94,9 @@ msgstr ""
 msgid "Action"
 msgstr ""
 
+msgid "Action needed"
+msgstr ""
+
 msgid "Active"
 msgstr ""
 
@@ -95,9 +104,6 @@ msgid "Activity"
 msgstr ""
 
 msgid "Activity log"
-msgstr ""
-
-msgid "Add missing width and height to images"
 msgstr ""
 
 msgid "Adjusted"
@@ -118,10 +124,16 @@ msgstr ""
 msgid "Administrator updated settings."
 msgstr ""
 
+msgid "Advanced"
+msgstr ""
+
 msgid "Affected"
 msgstr ""
 
 msgid "All"
+msgstr ""
+
+msgid "All clear"
 msgstr ""
 
 msgid "All prerequisites are met. Review the evidence, select files, then remove them."
@@ -131,6 +143,9 @@ msgid "All statuses"
 msgstr ""
 
 msgid "Already optimized. Restore originals before re-optimizing."
+msgstr ""
+
+msgid "Already removed"
 msgstr ""
 
 msgid "Alternate filename already exists; refusing to overwrite."
@@ -143,6 +158,12 @@ msgid "Animated/multi-frame and CMYK images require specialist processing."
 msgstr ""
 
 msgid "Another media operation is running. Retry shortly."
+msgstr ""
+
+msgid "Answer and finish checking"
+msgstr ""
+
+msgid "Anything you remove can be restored later."
 msgstr ""
 
 msgid "Apply"
@@ -163,10 +184,13 @@ msgstr ""
 msgid "Attachment permission denied."
 msgstr ""
 
-msgid "Audit"
+msgid "Back"
 msgstr ""
 
 msgid "Back this folder up together with your database, so recovery records and their files stay in step."
+msgstr ""
+
+msgid "Back to the overview"
 msgstr ""
 
 msgid "Background processing"
@@ -187,12 +211,6 @@ msgstr ""
 msgid "Broken"
 msgstr ""
 
-msgid "Can be deleted permanently"
-msgstr ""
-
-msgid "Can be restored"
-msgstr ""
-
 msgid "Cancel"
 msgstr ""
 
@@ -211,16 +229,40 @@ msgstr ""
 msgid "Cannot hash original."
 msgstr ""
 
-msgid "Changes your markup"
+msgid "Carry on checking"
+msgstr ""
+
+msgid "Change what this does"
 msgstr ""
 
 msgid "Changing anything on this tab affects what a scan would find, so it invalidates your current scan results. You will be told when that happens."
 msgstr ""
 
+msgid "Check again"
+msgstr ""
+
 msgid "Check and save folder"
 msgstr ""
 
+msgid "Check my media"
+msgstr ""
+
+msgid "Checking"
+msgstr ""
+
+msgid "Checking is paused"
+msgstr ""
+
+msgid "Checking your images"
+msgstr ""
+
+msgid "Choose a folder"
+msgstr ""
+
 msgid "Choose a private recovery folder in Settings."
+msgstr ""
+
+msgid "Choose somewhere safe to keep removed files"
 msgstr ""
 
 msgid "Classify"
@@ -256,9 +298,6 @@ msgstr ""
 msgid "Confirm"
 msgstr ""
 
-msgid "Confirm scope and start a fresh scan"
-msgstr ""
-
 msgid "Confirm the scope review before starting."
 msgstr ""
 
@@ -266,9 +305,6 @@ msgid "Confirm the usage-scope review below, then run a fresh scan to identify u
 msgstr ""
 
 msgid "Confirm this action"
-msgstr ""
-
-msgid "Confirm you reviewed these files and have a backup."
 msgstr ""
 
 msgid "Confirmation word"
@@ -281,9 +317,6 @@ msgid "Connecting…"
 msgstr ""
 
 msgid "Connection lost. Retrying."
-msgstr ""
-
-msgid "Correct lazy loading"
 msgstr ""
 
 msgid "Could not atomically replace optimized image."
@@ -316,9 +349,6 @@ msgstr ""
 msgid "Detail"
 msgstr ""
 
-msgid "Detects the largest image automatically and asks the browser to fetch it first."
-msgstr ""
-
 msgid "Dimensions"
 msgstr ""
 
@@ -343,7 +373,16 @@ msgstr ""
 msgid "Encoder did not preserve decoded pixels; lossless output rejected."
 msgstr ""
 
+msgid "Even after this, nothing is removed until you pick the images yourself."
+msgstr ""
+
+msgid "Every image on your site is being used somewhere. There is nothing to clear out."
+msgstr ""
+
 msgid "Every minute (media jobs)"
+msgstr ""
+
+msgid "Everything you have removed can still be put back."
 msgstr ""
 
 msgid "Evidence"
@@ -382,13 +421,16 @@ msgstr ""
 msgid "Files per batch"
 msgstr ""
 
-msgid "Files you removed are kept here. Restore puts a file back where it came from. Purge permanently deletes the recovery copy and cannot be undone."
-msgstr ""
-
 msgid "Find files"
 msgstr ""
 
+msgid "Find out what your images are costing you"
+msgstr ""
+
 msgid "Finding your media files"
+msgstr ""
+
+msgid "Finish checking my media"
 msgstr ""
 
 msgid "Finish or cancel the existing scan first."
@@ -398,9 +440,6 @@ msgid "Finish the scan first. Unused results stay provisional until every source
 msgstr ""
 
 msgid "Forbidden."
-msgstr ""
-
-msgid "Front page image to preload (0 detects automatically)"
 msgstr ""
 
 msgid "GD"
@@ -418,10 +457,16 @@ msgstr ""
 msgid "Generating alternates does nothing on its own. Turn on WebP or AVIF delivery under Speed to actually serve them."
 msgstr ""
 
-msgid "I have checked custom code, private tables and any external use this scan cannot see."
+msgid "Getting started"
+msgstr ""
+
+msgid "Help my pages load faster"
 msgstr ""
 
 msgid "I reviewed these files and I have an independent backup."
+msgstr ""
+
+msgid "I understand, and I have thought about custom code and outside links."
 msgstr ""
 
 msgid "ID"
@@ -436,6 +481,9 @@ msgstr ""
 msgid "Image exceeds the conservative 40 MP / 64 MiB processing limit."
 msgstr ""
 
+msgid "Image files"
+msgstr ""
+
 msgid "Image settings"
 msgstr ""
 
@@ -443,6 +491,15 @@ msgid "ImageMagick"
 msgstr ""
 
 msgid "Images"
+msgstr ""
+
+msgid "Images further down the page wait until someone scrolls near them, and the main image never waits."
+msgstr ""
+
+msgid "Images in use"
+msgstr ""
+
+msgid "Images on your site"
 msgstr ""
 
 msgid "Incomplete backup and original changed. Manual recovery required."
@@ -463,6 +520,9 @@ msgstr ""
 msgid "JPEG support"
 msgstr ""
 
+msgid "Keep all of these"
+msgstr ""
+
 msgid "Keep recovery copies for at least (days)"
 msgstr ""
 
@@ -475,10 +535,22 @@ msgstr ""
 msgid "Largest first"
 msgstr ""
 
+msgid "Last checked"
+msgstr ""
+
 msgid "Latest checkpoint"
 msgstr ""
 
+msgid "Less to download before the page is usable"
+msgstr ""
+
 msgid "Live scan totals"
+msgstr ""
+
+msgid "Load lower images only when needed"
+msgstr ""
+
+msgid "Load the main image first"
 msgstr ""
 
 msgid "Log pages"
@@ -500,6 +572,12 @@ msgid "Lossy mode only. This changes the stored pixels."
 msgstr ""
 
 msgid "Lossy quality"
+msgstr ""
+
+msgid "Make images smaller"
+msgstr ""
+
+msgid "Make smaller copies"
 msgstr ""
 
 msgid "Maximum height"
@@ -529,7 +607,22 @@ msgstr ""
 msgid "Missing or broken"
 msgstr ""
 
+msgid "Modern browsers understand newer image formats that are often much smaller. Older ones still get the original, so nobody sees a broken image. This does change the code your pages send, so have a look at a few pages afterwards."
+msgstr ""
+
+msgid "More"
+msgstr ""
+
+msgid "More images"
+msgstr ""
+
 msgid "More options"
+msgstr ""
+
+msgid "Move selected to safe storage"
+msgstr ""
+
+msgid "Move these images to safe storage?"
 msgstr ""
 
 msgid "Multisite"
@@ -538,7 +631,10 @@ msgstr ""
 msgid "Multisite is report-only. Removal is unavailable on this network."
 msgstr ""
 
-msgid "Never lazy-loads the main image, and lazy-loads the ones further down that should be."
+msgid "Needs another look"
+msgstr ""
+
+msgid "Never"
 msgstr ""
 
 msgid "Never touch these files"
@@ -548,6 +644,9 @@ msgid "New scan results are available."
 msgstr ""
 
 msgid "Next"
+msgstr ""
+
+msgid "Next step"
 msgstr ""
 
 msgid "No"
@@ -560,6 +659,9 @@ msgid "No indexed reference. This scan cannot detect references from outside you
 msgstr ""
 
 msgid "No media matches these filters. Try resetting them, or run a fresh scan."
+msgstr ""
+
+msgid "No preview"
 msgstr ""
 
 msgid "No recent progress"
@@ -577,25 +679,73 @@ msgstr ""
 msgid "None of the selected files were"
 msgstr ""
 
+msgid "None of these change how your site looks. They tell the browser things it would otherwise have to work out for itself."
+msgstr ""
+
+msgid "Not checked yet"
+msgstr ""
+
 msgid "Not optimized"
 msgstr ""
 
-msgid "Not until %s"
+msgid "Not sure about"
+msgstr ""
+
+msgid "Not sure about means we found something that might be a reference, so we left those alone. They are never offered for removal."
+msgstr ""
+
+msgid "Not used anywhere"
 msgstr ""
 
 msgid "Nothing has advanced for over 30 seconds. Try Retry processing, and restart the scan if the same checkpoint keeps returning."
 msgstr ""
 
-msgid "Nothing has been removed. When you remove files, their recovery records appear here."
+msgid "Nothing has been changed. Pick up where you left off whenever you are ready."
 msgstr ""
 
 msgid "Nothing has happened yet. Scans and file actions are recorded here."
 msgstr ""
 
+msgid "Nothing is ever deleted without you saying so."
+msgstr ""
+
+msgid "Nothing is sitting unused. We will keep your pages loading their main image as early as possible."
+msgstr ""
+
+msgid "Nothing links to this"
+msgstr ""
+
+msgid "Nothing moves under the reader as they start reading"
+msgstr ""
+
+msgid "Nothing moves until you confirm"
+msgstr ""
+
+msgid "Nothing on your site links to these. You will see every one, and where we looked, before anything moves. You can put them back afterwards."
+msgstr ""
+
+msgid "Nothing selected"
+msgstr ""
+
+msgid "Nothing to review"
+msgstr ""
+
 msgid "Off"
 msgstr ""
 
+msgid "Often the single biggest saving, once smaller copies exist"
+msgstr ""
+
+msgid "On"
+msgstr ""
+
+msgid "One question first"
+msgstr ""
+
 msgid "One rule per line: id:123, name:logo.png, path:2026/protected/, type:application/pdf"
+msgstr ""
+
+msgid "One thing we cannot check for you"
 msgstr ""
 
 msgid "Only JPEG, PNG, WebP and AVIF images are eligible."
@@ -611,9 +761,6 @@ msgid "Optimization"
 msgstr ""
 
 msgid "Optimization queue"
-msgstr ""
-
-msgid "Optimize"
 msgstr ""
 
 msgid "Optimize new uploads automatically"
@@ -640,10 +787,16 @@ msgstr ""
 msgid "Originals are copied to recovery storage before anything is recompressed, so you can always restore them. Reported savings exclude those backups and any alternate formats."
 msgstr ""
 
+msgid "Out of date"
+msgstr ""
+
 msgid "Overall scan progress"
 msgstr ""
 
 msgid "Oversized images"
+msgstr ""
+
+msgid "Overview"
 msgstr ""
 
 msgid "PHP"
@@ -653,6 +806,9 @@ msgid "PNG support"
 msgstr ""
 
 msgid "Page %1$s of %2$s"
+msgstr ""
+
+msgid "Part of your site could not be read, so these results are not complete enough to act on. Running it again usually sorts it out."
 msgstr ""
 
 msgid "Pause"
@@ -670,16 +826,10 @@ msgstr ""
 msgid "Permanent purge has started; restore from your independent backup."
 msgstr ""
 
-msgid "Permanently delete recovery copies"
-msgstr ""
-
 msgid "Permanently delete these recovery copies?"
 msgstr ""
 
 msgid "Possibly used"
-msgstr ""
-
-msgid "Preload the main image on each page"
 msgstr ""
 
 msgid "Previous"
@@ -703,6 +853,9 @@ msgstr ""
 msgid "Protect uploads newer than (days)"
 msgstr ""
 
+msgid "Put selected back"
+msgstr ""
+
 msgid "Quarantined"
 msgstr ""
 
@@ -721,13 +874,10 @@ msgstr ""
 msgid "Reason:"
 msgstr ""
 
-msgid "Recovery"
+msgid "Recently removed"
 msgstr ""
 
 msgid "Recovery folder checked and saved."
-msgstr ""
-
-msgid "Recovery pages"
 msgstr ""
 
 msgid "Recovery storage"
@@ -742,22 +892,25 @@ msgstr ""
 msgid "Refresh the table"
 msgstr ""
 
+msgid "Remove %s"
+msgstr ""
+
 msgid "Remove EXIF metadata"
 msgstr ""
 
-msgid "Remove selected, keeping a recovery copy"
+msgid "Removed %s"
 msgstr ""
 
-msgid "Remove these files, keeping a recovery copy?"
-msgstr ""
-
-msgid "Removed"
+msgid "Removed images are moved somewhere private rather than deleted, so you can always put them back. Tell us which folder to use and you are ready to go."
 msgstr ""
 
 msgid "Removed originals are moved here instead of being deleted. It must be a folder that already exists, is writable, and sits outside everything your web server serves publicly."
 msgstr ""
 
-msgid "Removing a file moves it out of your uploads folder into private recovery storage. The attachment record stays, so the file can be restored. Nothing is ever deleted automatically."
+msgid "Removing all of them frees up %s. Keep any you recognise, then remove the rest."
+msgstr ""
+
+msgid "Report only"
 msgstr ""
 
 msgid "Report pages"
@@ -775,9 +928,6 @@ msgstr ""
 msgid "Restore originals"
 msgstr ""
 
-msgid "Restore selected"
-msgstr ""
-
 msgid "Restore the active recovery record before regenerating thumbnails."
 msgstr ""
 
@@ -787,13 +937,19 @@ msgstr ""
 msgid "Resume queue"
 msgstr ""
 
-msgid "Retained at least %s day"
-msgstr ""
-
 msgid "Retry processing"
 msgstr ""
 
-msgid "Safe by default"
+msgid "Review %s image"
+msgstr ""
+
+msgid "Right now, on every page:"
+msgstr ""
+
+msgid "Safe to leave on"
+msgstr ""
+
+msgid "Save"
 msgstr ""
 
 msgid "Save image settings"
@@ -802,16 +958,10 @@ msgstr ""
 msgid "Save scanning settings"
 msgstr ""
 
-msgid "Save speed settings"
-msgstr ""
-
 msgid "Saved so far"
 msgstr ""
 
 msgid "Savings"
-msgstr ""
-
-msgid "Scan"
 msgstr ""
 
 msgid "Scan activity appears here."
@@ -827,6 +977,9 @@ msgid "Scan coverage is incomplete, so unused conclusions are disabled."
 msgstr ""
 
 msgid "Scan coverage is incomplete. Resolve the reported error and run a fresh scan."
+msgstr ""
+
+msgid "Scan detail"
 msgstr ""
 
 msgid "Scan status"
@@ -853,10 +1006,10 @@ msgstr ""
 msgid "Search by file name"
 msgstr ""
 
-msgid "Select %s"
+msgid "See what was found"
 msgstr ""
 
-msgid "Select all recovery records on this page"
+msgid "Select %s"
 msgstr ""
 
 msgid "Select all rows on this page"
@@ -868,25 +1021,19 @@ msgstr ""
 msgid "Select images below and choose Optimize selected to add jobs."
 msgstr ""
 
-msgid "Select recovery record for attachment %d"
-msgstr ""
-
-msgid "Serve WebP or AVIF when available"
+msgid "Send smaller image files where possible"
 msgstr ""
 
 msgid "Set up private recovery storage before removal: %s"
-msgstr ""
-
-msgid "Set up recovery storage"
-msgstr ""
-
-msgid "Settings"
 msgstr ""
 
 msgid "Settings saved."
 msgstr ""
 
 msgid "Settings sections"
+msgstr ""
+
+msgid "Setup needed"
 msgstr ""
 
 msgid "Show"
@@ -907,16 +1054,22 @@ msgstr ""
 msgid "Smart Media Auditor"
 msgstr ""
 
+msgid "Something was added or edited while we were looking, so these results may be wrong. Check again before removing anything."
+msgstr ""
+
 msgid "Sort by"
 msgstr ""
 
 msgid "Source rows per batch"
 msgstr ""
 
+msgid "Space you can free up"
+msgstr ""
+
 msgid "Speed"
 msgstr ""
 
-msgid "Speed corrections"
+msgid "Speed help is switched off, so your pages load exactly as your theme sends them."
 msgstr ""
 
 msgid "Speed: on"
@@ -934,7 +1087,10 @@ msgstr ""
 msgid "Stop generating these image sizes. Existing files are kept."
 msgstr ""
 
-msgid "Stops the page jumping around as images load. Most useful on page-builder and hand-written content."
+msgid "Stop pages jumping about"
+msgstr ""
+
+msgid "Summary of your media"
 msgstr ""
 
 msgid "Symlinked media is protected."
@@ -952,34 +1108,43 @@ msgstr ""
 msgid "That file could not be"
 msgstr ""
 
-msgid "That request failed. Please try again."
+msgid "That page has moved. Here is the overview."
 msgstr ""
 
-msgid "That screen no longer exists. This is the Audit screen."
+msgid "That request failed. Please try again."
 msgstr ""
 
 msgid "That took too long. The server may still be working, so check the latest checkpoint before retrying."
 msgstr ""
 
-msgid "The files leave your uploads folder. Their recovery copies can be restored later."
-msgstr ""
-
-msgid "The master switch. Turning this off disables everything below immediately, without changing any file."
+msgid "The check could not finish properly"
 msgstr ""
 
 msgid "There is too much matching content to verify safely, so nothing was moved. Run a fresh scan and try a smaller selection."
 msgstr ""
 
-msgid "These are source dimensions, not how large the image appears on screen. Resizing changes pixels, so it stays opt-in."
+msgid "These are moved out of your uploads folder, not deleted. You can put any of them back from Recently removed below."
 msgstr ""
 
-msgid "These cannot change how your pages look. They only tell the browser what it already needs to know sooner."
+msgid "These are safe. Put any of them back whenever you like."
+msgstr ""
+
+msgid "These are source dimensions, not how large the image appears on screen. Resizing changes pixels, so it stays opt-in."
 msgstr ""
 
 msgid "This cannot be undone."
 msgstr ""
 
+msgid "This check is more than a day old"
+msgstr ""
+
 msgid "This file is referenced somewhere in your site now, so it was not moved. Run a fresh scan to see where."
+msgstr ""
+
+msgid "This is a multisite network, so removing files is switched off. You can still see everything that was found and export it."
+msgstr ""
+
+msgid "This looks at every image on your site and works out which ones nothing links to. It only reads. Nothing is changed or deleted."
 msgstr ""
 
 msgid "This mode requires ImageMagick. GD requires explicit lossy compression and metadata-removal consent."
@@ -997,13 +1162,13 @@ msgstr ""
 msgid "This scan transition is not available."
 msgstr ""
 
-msgid "This screen is read-only on multisite. You can review findings and export them, but removal is not available."
-msgstr ""
-
 msgid "This site sets the recovery folder with SMAO_VAULT_DIR in wp-config.php, so it cannot be changed here."
 msgstr ""
 
 msgid "Throughput and responsiveness. Changing these never affects what a scan finds."
+msgstr ""
+
+msgid "Tick the box to confirm you understand this cannot be undone."
 msgstr ""
 
 msgid "Time budget (seconds)"
@@ -1013,6 +1178,9 @@ msgid "Trace references"
 msgstr ""
 
 msgid "Tracing where each file is used"
+msgstr ""
+
+msgid "Turn this off at any time and your pages go back to exactly how your theme sends them. No file is changed either way."
 msgstr ""
 
 msgid "Type"
@@ -1072,10 +1240,16 @@ msgstr ""
 msgid "Used"
 msgstr ""
 
+msgid "Usually takes a minute or two"
+msgstr ""
+
 msgid "Vault must be an absolute private path outside uploads."
 msgstr ""
 
 msgid "Vault symlinks are not supported."
+msgstr ""
+
+msgid "Visitors see the page fill in sooner"
 msgstr ""
 
 msgid "WP-Cron disabled"
@@ -1085,6 +1259,21 @@ msgid "Waiting for the first batch"
 msgstr ""
 
 msgid "Waiting for worker"
+msgstr ""
+
+msgid "We can see everything stored in your site. We cannot see images used by custom code, or linked from somewhere else on the internet. Have a think about that, then confirm and we will finish the job."
+msgstr ""
+
+msgid "We can see everything stored inside your website: pages, posts, products, menus, widgets and theme settings. If an image is used in any of those, we will find it."
+msgstr ""
+
+msgid "We found it mentioned here:"
+msgstr ""
+
+msgid "We looked through your pages, posts, menus, widgets and theme settings. Nothing referred to this image."
+msgstr ""
+
+msgid "We work out which image is the big one at the top of each page and ask the browser to fetch it straight away, instead of getting to it last."
 msgstr ""
 
 msgid "WebP"
@@ -1099,7 +1288,16 @@ msgstr ""
 msgid "Weekly"
 msgstr ""
 
+msgid "What we cannot see is an image used by custom code somebody wrote for you, or one that another website links to directly. Those are rare, but only you would know."
+msgstr ""
+
 msgid "When (UTC)"
+msgstr ""
+
+msgid "When an image does not say how big it is, the browser guesses, then shoves everything down the page once the real image arrives. We fill in the missing sizes."
+msgstr ""
+
+msgid "Where did you look?"
 msgstr ""
 
 msgid "Where you are"
@@ -1117,13 +1315,16 @@ msgstr ""
 msgid "WordPress"
 msgstr ""
 
-msgid "Wraps images in a picture element, keeping the original as a fallback. Requires alternate formats to have been generated on the Optimize screen. Test your theme after enabling."
+msgid "Worth testing first"
 msgstr ""
 
 msgid "Yes"
 msgstr ""
 
-msgid "Yes, any time"
+msgid "You can leave this page. It carries on in the background, and you can come back whenever you like."
+msgstr ""
+
+msgid "You do not have any smaller copies yet, so this will not do anything on its own."
 msgstr ""
 
 msgid "You do not have permission to change one of the selected files."
@@ -1135,6 +1336,12 @@ msgstr ""
 msgid "You do not have permission to remove one of the selected files."
 msgstr ""
 
+msgid "Your media is tidy"
+msgstr ""
+
+msgid "Your results are ready to look at"
+msgstr ""
+
 msgid "Your scan results were invalidated because the scan scope changed. Run a fresh scan."
 msgstr ""
 
@@ -1142,6 +1349,12 @@ msgid "Your session expired. Reload this page to reconnect."
 msgstr ""
 
 msgid "Your site changed during this scan. Run a fresh scan before removing anything."
+msgstr ""
+
+msgid "Your site changed since the last check"
+msgstr ""
+
+msgid "Your site has probably changed since then. Run it again so you are working from something current."
 msgstr ""
 
 msgid "[data-phase-count=\""
@@ -1156,6 +1369,9 @@ msgstr ""
 msgid "afterbegin"
 msgstr ""
 
+msgid "afterend"
+msgstr ""
+
 msgid "allowed"
 msgstr ""
 
@@ -1168,9 +1384,6 @@ msgstr ""
 msgid "beforebegin"
 msgstr ""
 
-msgid "cleanup"
-msgstr ""
-
 msgid "control"
 msgstr ""
 
@@ -1180,10 +1393,10 @@ msgstr ""
 msgid "digest?"
 msgstr ""
 
-msgid "file"
+msgid "evidence?id="
 msgstr ""
 
-msgid "file selected"
+msgid "file"
 msgstr ""
 
 msgid "files"
@@ -1192,16 +1405,25 @@ msgstr ""
 msgid "files checked"
 msgstr ""
 
-msgid "files selected"
-msgstr ""
-
 msgid "form"
 msgstr ""
 
 msgid "fragment?"
 msgstr ""
 
+msgid "images below the fold wait their turn"
+msgstr ""
+
 msgid "input"
+msgstr ""
+
+msgid "kept until at least %s"
+msgstr ""
+
+msgid "li"
+msgstr ""
+
+msgid "main image loads first"
 msgstr ""
 
 msgid "memory_limit"
@@ -1213,10 +1435,16 @@ msgstr ""
 msgid "more"
 msgstr ""
 
+msgid "of"
+msgstr ""
+
 msgid "old records removed."
 msgstr ""
 
 msgid "optimize"
+msgstr ""
+
+msgid "pages stop jumping about"
 msgstr ""
 
 msgid "permanently deleted"
@@ -1240,7 +1468,13 @@ msgstr ""
 msgid "screen"
 msgstr ""
 
+msgid "selected"
+msgstr ""
+
 msgid "settings"
+msgstr ""
+
+msgid "smaller image formats where supported"
 msgstr ""
 
 msgid "smao-admin"
@@ -1265,6 +1499,9 @@ msgid "strong"
 msgstr ""
 
 msgid "token"
+msgstr ""
+
+msgid "tone"
 msgstr ""
 
 msgid "unused candidates"

@@ -1,8 +1,9 @@
 <?php
 /**
- * Clean up screen: review unused candidates, quarantine them, recover them.
+ * Clean up: a guided review of images nothing links to.
  *
- * Sole owner of the scope-review acknowledgement.
+ * No filters, no jargon, no typed confirmation. The user looks at what was
+ * found, keeps anything they recognise, and confirms once.
  *
  * @package SMAO
  */
@@ -12,9 +13,14 @@ namespace SMAO;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Review, removal and recovery in one place.
+ * Guided review and recovery.
  */
 final class Screen_Cleanup {
+
+	/**
+	 * Images shown per page of the review.
+	 */
+	private const PER_PAGE = 24;
 
 	/**
 	 * Render the screen.
@@ -23,205 +29,279 @@ final class Screen_Cleanup {
 	 * @return void
 	 */
 	public static function render( array $input ): void {
-		$cleanup = Live::cleanup();
-		self::prerequisites( $cleanup );
-		self::candidates( $input );
+		$step = Next_Step::get();
+
+		if ( ! Settings::get()['coverage_reviewed'] ) {
+			self::the_question();
+			return;
+		}
+		if ( in_array( $step['tone'], array( 'neutral', 'busy', 'warning' ), true ) && 'action' !== $step['tone'] ) {
+			self::not_ready( $step );
+			self::recovery();
+			return;
+		}
+		self::review( $input );
 		self::recovery();
 	}
 
 	/**
-	 * Explain what must be true before anything can be removed.
+	 * The one thing the plugin genuinely cannot determine on its own.
 	 *
-	 * @param array $cleanup Cleanup readiness.
 	 * @return void
 	 */
-	private static function prerequisites( array $cleanup ): void {
+	private static function the_question(): void {
 		?>
-		<section class="smao-panel smao-prereq<?php echo $cleanup['ready'] ? ' is-ready' : ''; ?>">
-			<h2 id="smao-cleanup-title">
-				<?php
-				echo $cleanup['ready']
-					? esc_html__( 'Ready to review unused images', 'smart-media-auditor-optimizer' )
-					: esc_html__( 'Before you remove anything', 'smart-media-auditor-optimizer' );
-				?>
-			</h2>
-			<p><?php esc_html_e( 'Removing a file moves it out of your uploads folder into private recovery storage. The attachment record stays, so the file can be restored. Nothing is ever deleted automatically.', 'smart-media-auditor-optimizer' ); ?></p>
-
-			<ul id="smao-cleanup-reasons" class="smao-blockers">
-				<?php if ( ! $cleanup['blockers'] ) : ?>
-					<li class="smao-ok"><?php esc_html_e( 'All prerequisites are met. Review the evidence, select files, then remove them.', 'smart-media-auditor-optimizer' ); ?></li>
-				<?php else : ?>
-					<?php foreach ( $cleanup['blockers'] as $reason ) : ?>
-						<li><?php echo esc_html( $reason ); ?></li>
-					<?php endforeach; ?>
-				<?php endif; ?>
-			</ul>
-
-			<?php if ( $cleanup['permanent'] ) : ?>
-				<p class="smao-inline-warning"><?php esc_html_e( 'This screen is read-only on multisite. You can review findings and export them, but removal is not available.', 'smart-media-auditor-optimizer' ); ?></p>
-			<?php else : ?>
-				<form id="smao-scope" <?php echo $cleanup['ready'] ? 'hidden' : ''; ?>>
-					<label class="smao-checkbox">
-						<input type="checkbox" name="scope_reviewed" required>
-						<?php esc_html_e( 'I have checked custom code, private tables and any external use this scan cannot see.', 'smart-media-auditor-optimizer' ); ?>
-					</label>
-					<p>
-						<button class="button button-primary"><?php esc_html_e( 'Confirm scope and start a fresh scan', 'smart-media-auditor-optimizer' ); ?></button>
-						<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=smao-settings&tab=recovery' ) ); ?>"><?php esc_html_e( 'Set up recovery storage', 'smart-media-auditor-optimizer' ); ?></a>
-					</p>
-				</form>
-			<?php endif; ?>
-			<p id="smao-review-progress" class="smao-muted" role="status"></p>
+		<section class="smao-ask">
+			<h2><?php esc_html_e( 'One thing we cannot check for you', 'smart-media-auditor-optimizer' ); ?></h2>
+			<p><?php esc_html_e( 'We can see everything stored inside your website: pages, posts, products, menus, widgets and theme settings. If an image is used in any of those, we will find it.', 'smart-media-auditor-optimizer' ); ?></p>
+			<p><?php esc_html_e( 'What we cannot see is an image used by custom code somebody wrote for you, or one that another website links to directly. Those are rare, but only you would know.', 'smart-media-auditor-optimizer' ); ?></p>
+			<form id="smao-scope" class="smao-ask-form">
+				<label class="smao-choice">
+					<input type="checkbox" name="scope_reviewed" required>
+					<span><?php esc_html_e( 'I understand, and I have thought about custom code and outside links.', 'smart-media-auditor-optimizer' ); ?></span>
+				</label>
+				<button class="smao-cta"><?php esc_html_e( 'Finish checking my media', 'smart-media-auditor-optimizer' ); ?></button>
+			</form>
+			<p class="smao-reassure"><?php esc_html_e( 'Even after this, nothing is removed until you pick the images yourself.', 'smart-media-auditor-optimizer' ); ?></p>
 		</section>
 		<?php
 	}
 
 	/**
-	 * Render the unused-candidate table and its removal action.
+	 * Explain why there is nothing to review yet, and point at the fix.
+	 *
+	 * @param array $step Current step.
+	 * @return void
+	 */
+	private static function not_ready( array $step ): void {
+		?>
+		<section class="smao-next smao-tone-<?php echo esc_attr( $step['tone'] ); ?>">
+			<h2><?php echo esc_html( $step['title'] ); ?></h2>
+			<p class="smao-next-detail"><?php echo esc_html( $step['detail'] ); ?></p>
+			<div class="smao-next-actions">
+				<?php if ( 'link' === $step['action'] ) : ?>
+					<a class="smao-cta" href="<?php echo esc_url( $step['href'] ); ?>"><?php echo esc_html( $step['label'] ); ?></a>
+				<?php else : ?>
+					<button type="button" class="smao-cta" data-command="<?php echo esc_attr( $step['command'] ); ?>"><?php echo esc_html( $step['label'] ); ?></button>
+				<?php endif; ?>
+			</div>
+		</section>
+		<?php
+	}
+
+	/**
+	 * The review grid.
 	 *
 	 * @param array $input Query input.
 	 * @return void
 	 */
-	private static function candidates( array $input ): void {
-		?>
-		<section class="smao-panel smao-selectable" data-scope="candidates">
-			<div class="smao-panel-head">
-				<h2><?php esc_html_e( 'Unused candidates', 'smart-media-auditor-optimizer' ); ?></h2>
-				<?php Report_Table::export_link( Live::defaults( $input + array( 'screen' => 'cleanup' ) ) ); ?>
-			</div>
-			<?php Report_Table::filters( 'cleanup', Live::defaults( $input + array( 'screen' => 'cleanup' ) ) ); ?>
-			<div id="smao-report" data-screen="cleanup">
-				<?php echo Report_Table::fragment( 'cleanup', $input + array( 'screen' => 'cleanup' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fragment escapes at source. ?>
-			</div>
-			<?php
-			Report_Table::bulk(
-				array( 'quarantine' => __( 'Remove selected, keeping a recovery copy', 'smart-media-auditor-optimizer' ) ),
-				true
-			);
-			?>
-		</section>
-		<?php
-	}
-
-	/**
-	 * Render the recovery journal with restore and purge actions.
-	 *
-	 * @return void
-	 */
-	private static function recovery(): void {
+	private static function review( array $input ): void {
 		global $wpdb;
-		$table = Database::table( 'vault' );
-		$page  = max( 1, absint( $_GET['vault_page'] ?? 1 ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only pagination.
-		/*
-		 * Only quarantine records belong here. The vault also holds optimization
-		 * backups, which are restore points for compression, not files anyone
-		 * removed. Listing those made this table claim files had been deleted
-		 * that never were, and offered a purge that could only ever fail.
-		 */
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fixed internal table name.
-		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table WHERE operation='quarantine'" );
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fixed internal table name.
-		$rows = $wpdb->get_results(
-			$wpdb->prepare( "SELECT attachment_id,operation,state,created FROM $table WHERE operation='quarantine' ORDER BY created DESC LIMIT 25 OFFSET %d", ( $page - 1 ) * 25 ),
+		$table = Database::table( 'media' );
+		$scan  = Database::state();
+		$page  = max( 1, absint( $input['paged'] ?? 1 ) );
+
+		$total = (int) $wpdb->get_var(
+			$wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE scan_id=%s AND status=%s', $table, (string) ( $scan['id'] ?? '' ), 'unused' )
+		);
+		Database::check( $total );
+
+		if ( ! $total ) {
+			?>
+			<section class="smao-panel smao-empty-state">
+				<h2><?php esc_html_e( 'Nothing to review', 'smart-media-auditor-optimizer' ); ?></h2>
+				<p><?php esc_html_e( 'Every image on your site is being used somewhere. There is nothing to clear out.', 'smart-media-auditor-optimizer' ); ?></p>
+				<a class="smao-link" href="<?php echo esc_url( admin_url( 'admin.php?page=smao-home' ) ); ?>"><?php esc_html_e( 'Back to the overview', 'smart-media-auditor-optimizer' ); ?></a>
+			</section>
+			<?php
+			return;
+		}
+
+		$pages = (int) ceil( $total / self::PER_PAGE );
+		$page  = min( $page, $pages );
+		$rows  = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT attachment_id,filename,bytes,width,height,uploaded FROM %i WHERE scan_id=%s AND status=%s ORDER BY bytes DESC LIMIT %d OFFSET %d',
+				$table,
+				(string) ( $scan['id'] ?? '' ),
+				'unused',
+				self::PER_PAGE,
+				( $page - 1 ) * self::PER_PAGE
+			),
 			ARRAY_A
 		);
 		Database::check( $rows );
-		$retention = (int) Settings::get()['retention_days'];
-		$eligible  = static function ( array $row ) use ( $retention ): bool {
-			return time() - (int) $row['created'] >= $retention * DAY_IN_SECONDS;
-		};
+
+		$bytes = (int) $wpdb->get_var(
+			$wpdb->prepare( 'SELECT SUM(bytes) FROM %i WHERE scan_id=%s AND status=%s', $table, (string) ( $scan['id'] ?? '' ), 'unused' )
+		);
 		?>
-		<section class="smao-panel smao-selectable" data-scope="recovery" id="smao-recovery">
-			<div class="smao-panel-head">
-				<h2><?php esc_html_e( 'Recovery', 'smart-media-auditor-optimizer' ); ?></h2>
-				<span class="smao-muted">
-					<?php
-					printf(
-						esc_html(
-							/* translators: %s is a number of days. */
-							_n( 'Retained at least %s day', 'Retained at least %s days', $retention, 'smart-media-auditor-optimizer' )
-						),
-						esc_html( number_format_i18n( $retention ) )
-					);
-					?>
-				</span>
-			</div>
-			<p><?php esc_html_e( 'Files you removed are kept here. Restore puts a file back where it came from. Purge permanently deletes the recovery copy and cannot be undone.', 'smart-media-auditor-optimizer' ); ?></p>
-			<div class="smao-table">
-				<table class="widefat striped">
-					<thead>
-						<tr>
-							<td class="check-column"><input type="checkbox" class="smao-select-all" aria-label="<?php esc_attr_e( 'Select all recovery records on this page', 'smart-media-auditor-optimizer' ); ?>"></td>
-							<th scope="col"><?php esc_html_e( 'File', 'smart-media-auditor-optimizer' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Removed', 'smart-media-auditor-optimizer' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Can be restored', 'smart-media-auditor-optimizer' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Can be deleted permanently', 'smart-media-auditor-optimizer' ); ?></th>
-						</tr>
-					</thead>
-					<tbody>
-					<?php if ( ! $rows ) : ?>
-						<tr><td colspan="5"><?php esc_html_e( 'Nothing has been removed. When you remove files, their recovery records appear here.', 'smart-media-auditor-optimizer' ); ?></td></tr>
-					<?php endif; ?>
-					<?php foreach ( $rows as $row ) : ?>
-						<?php $id = (int) $row['attachment_id']; ?>
-						<tr>
-							<th scope="row" class="check-column">
-								<input class="smao-id smao-vault-id" type="checkbox" value="<?php echo esc_attr( (string) $id ); ?>"
-									aria-label="
-									<?php
-									/* translators: %d is an attachment ID. */
-									echo esc_attr( sprintf( __( 'Select recovery record for attachment %d', 'smart-media-auditor-optimizer' ), $id ) );
-									?>
-									">
-							</th>
-							<td><?php echo esc_html( get_the_title( $id ) ?: '#' . $id ); ?><small>#<?php echo esc_html( (string) $id ); ?></small></td>
-							<td><?php echo esc_html( gmdate( 'j M Y', (int) $row['created'] ) ); ?></td>
-							<td><span class="smao-badge smao-status-used"><?php esc_html_e( 'Yes, any time', 'smart-media-auditor-optimizer' ); ?></span></td>
-							<td>
-								<?php if ( $eligible( $row ) ) : ?>
-									<span class="smao-badge smao-status-unused"><?php esc_html_e( 'Yes', 'smart-media-auditor-optimizer' ); ?></span>
-								<?php else : ?>
-									<span class="smao-badge">
-										<?php
-										printf(
-											/* translators: %s is a date. */
-											esc_html__( 'Not until %s', 'smart-media-auditor-optimizer' ),
-											esc_html( gmdate( 'j M Y', (int) $row['created'] + $retention * DAY_IN_SECONDS ) )
-										);
-										?>
-									</span>
-								<?php endif; ?>
-							</td>
-						</tr>
-					<?php endforeach; ?>
-					</tbody>
-				</table>
-			</div>
-			<?php if ( $total > 25 ) : ?>
-				<nav class="smao-pagination" aria-label="<?php esc_attr_e( 'Recovery pages', 'smart-media-auditor-optimizer' ); ?>">
+		<section class="smao-review" data-scope="review">
+			<header class="smao-review-head">
+				<div>
+					<h2>
+						<?php
+						printf(
+							/* translators: %s is a number of images. */
+							esc_html( _n( '%s image is not used anywhere', '%s images are not used anywhere', $total, 'smart-media-auditor-optimizer' ) ),
+							esc_html( number_format_i18n( $total ) )
+						);
+						?>
+					</h2>
+					<p>
+						<?php
+						printf(
+							/* translators: %s is an amount of disk space, for example 24 MB. */
+							esc_html__( 'Removing all of them frees up %s. Keep any you recognise, then remove the rest.', 'smart-media-auditor-optimizer' ),
+							esc_html( size_format( (int) $bytes ) )
+						);
+						?>
+					</p>
+				</div>
+				<button type="button" class="smao-link-button" id="smao-keep-all"><?php esc_html_e( 'Keep all of these', 'smart-media-auditor-optimizer' ); ?></button>
+			</header>
+
+			<ul class="smao-grid-media">
+				<?php foreach ( $rows as $row ) : ?>
+					<?php self::tile( $row ); ?>
+				<?php endforeach; ?>
+			</ul>
+
+			<?php if ( $pages > 1 ) : ?>
+				<nav class="smao-pagination" aria-label="<?php esc_attr_e( 'More images', 'smart-media-auditor-optimizer' ); ?>">
 					<?php
 					echo wp_kses_post(
 						(string) paginate_links(
 							array(
-								'base'    => add_query_arg( 'vault_page', '%#%' ),
-								'format'  => '',
-								'current' => $page,
-								'total'   => (int) ceil( $total / 25 ),
+								'base'      => add_query_arg( 'paged', '%#%' ),
+								'format'    => '',
+								'current'   => $page,
+								'total'     => $pages,
+								'prev_text' => __( 'Back', 'smart-media-auditor-optimizer' ),
+								'next_text' => __( 'More', 'smart-media-auditor-optimizer' ),
 							)
 						)
 					);
 					?>
 				</nav>
 			<?php endif; ?>
-			<?php
-			Report_Table::bulk(
-				array(
-					'restore' => __( 'Restore selected', 'smart-media-auditor-optimizer' ),
-					'purge'   => __( 'Permanently delete recovery copies', 'smart-media-auditor-optimizer' ),
-				),
-				true
-			);
-			?>
+
+			<footer class="smao-review-bar">
+				<p class="smao-selection-count" data-total="<?php echo esc_attr( (string) count( $rows ) ); ?>"></p>
+				<button type="button" class="smao-cta smao-cta-danger" data-action="quarantine"><?php esc_html_e( 'Move selected to safe storage', 'smart-media-auditor-optimizer' ); ?></button>
+			</footer>
+			<p class="smao-reassure"><?php esc_html_e( 'These are moved out of your uploads folder, not deleted. You can put any of them back from Recently removed below.', 'smart-media-auditor-optimizer' ); ?></p>
+		</section>
+		<?php
+	}
+
+	/**
+	 * One image in the review grid.
+	 *
+	 * @param array $row Media record.
+	 * @return void
+	 */
+	private static function tile( array $row ): void {
+		$id    = (int) $row['attachment_id'];
+		$thumb = wp_get_attachment_image_url( $id, 'medium' );
+		?>
+		<li class="smao-tile">
+			<label>
+				<input class="smao-id" type="checkbox" value="<?php echo esc_attr( (string) $id ); ?>" checked
+					aria-label="
+					<?php
+					/* translators: %s is an image file name. */
+					echo esc_attr( sprintf( __( 'Remove %s', 'smart-media-auditor-optimizer' ), $row['filename'] ) );
+					?>
+					">
+				<span class="smao-tile-image">
+					<?php if ( $thumb ) : ?>
+						<img src="<?php echo esc_url( $thumb ); ?>" alt="" loading="lazy">
+					<?php else : ?>
+						<span class="smao-tile-missing"><?php esc_html_e( 'No preview', 'smart-media-auditor-optimizer' ); ?></span>
+					<?php endif; ?>
+					<span class="smao-tile-mark" aria-hidden="true"></span>
+				</span>
+				<span class="smao-tile-name"><?php echo esc_html( $row['filename'] ); ?></span>
+				<span class="smao-tile-meta">
+					<?php echo esc_html( size_format( (int) $row['bytes'] ) ); ?>
+					<?php if ( (int) $row['width'] ) : ?>
+						&middot; <?php echo esc_html( $row['width'] . '×' . $row['height'] ); ?>
+					<?php endif; ?>
+				</span>
+				<span class="smao-tile-why"><?php esc_html_e( 'Nothing links to this', 'smart-media-auditor-optimizer' ); ?></span>
+			</label>
+			<button type="button" class="smao-tile-where" data-where="<?php echo esc_attr( (string) $id ); ?>">
+				<?php esc_html_e( 'Where did you look?', 'smart-media-auditor-optimizer' ); ?>
+			</button>
+		</li>
+		<?php
+	}
+
+	/**
+	 * Recently removed files, with restore.
+	 *
+	 * @return void
+	 */
+	private static function recovery(): void {
+		global $wpdb;
+		$table = Database::table( 'vault' );
+		$rows  = $wpdb->get_results(
+			$wpdb->prepare( "SELECT attachment_id,created FROM %i WHERE operation='quarantine' ORDER BY created DESC LIMIT %d", $table, 12 ),
+			ARRAY_A
+		);
+		Database::check( $rows );
+		if ( ! $rows ) {
+			return;
+		}
+		$retention = (int) Settings::get()['retention_days'];
+		?>
+		<section class="smao-panel" data-scope="recovery" id="smao-recovery">
+			<div class="smao-panel-head">
+				<h2><?php esc_html_e( 'Recently removed', 'smart-media-auditor-optimizer' ); ?></h2>
+			</div>
+			<p><?php esc_html_e( 'These are safe. Put any of them back whenever you like.', 'smart-media-auditor-optimizer' ); ?></p>
+			<ul class="smao-removed">
+				<?php foreach ( $rows as $row ) : ?>
+					<?php
+					$id       = (int) $row['attachment_id'];
+					$eligible = (int) $row['created'] + $retention * DAY_IN_SECONDS;
+					?>
+					<li>
+						<label>
+							<input class="smao-id" type="checkbox" value="<?php echo esc_attr( (string) $id ); ?>"
+								aria-label="
+								<?php
+								/* translators: %s is an image title. */
+								echo esc_attr( sprintf( __( 'Select %s', 'smart-media-auditor-optimizer' ), get_the_title( $id ) ?: '#' . $id ) );
+								?>
+								">
+							<span class="smao-removed-name"><?php echo esc_html( get_the_title( $id ) ?: '#' . $id ); ?></span>
+						</label>
+						<span class="smao-removed-meta">
+							<?php
+							printf(
+								/* translators: %s is a date. */
+								esc_html__( 'Removed %s', 'smart-media-auditor-optimizer' ),
+								esc_html( gmdate( 'j M', (int) $row['created'] ) )
+							);
+							?>
+							&middot;
+							<?php
+							printf(
+								/* translators: %s is a date. */
+								esc_html__( 'kept until at least %s', 'smart-media-auditor-optimizer' ),
+								esc_html( gmdate( 'j M', $eligible ) )
+							);
+							?>
+						</span>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+			<footer class="smao-review-bar">
+				<p class="smao-selection-count"></p>
+				<button type="button" class="smao-cta smao-cta-quiet" data-action="restore"><?php esc_html_e( 'Put selected back', 'smart-media-auditor-optimizer' ); ?></button>
+			</footer>
 		</section>
 		<?php
 	}

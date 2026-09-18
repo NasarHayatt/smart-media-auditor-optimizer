@@ -47,11 +47,12 @@ final class Report_Table {
 	 * @param array  $input  Current query input.
 	 * @return void
 	 */
-	public static function filters( string $screen, array $input ): void {
+	public static function filters( string $screen, array $input, string $tab = '' ): void {
 		$statuses = array( '' => __( 'All statuses', 'smart-media-auditor-optimizer' ) ) + self::statuses();
 		?>
 		<form method="get" class="smao-filters">
-			<input type="hidden" name="page" value="<?php echo esc_attr( 'smao-' . $screen ); ?>">
+			<input type="hidden" name="page" value="smao-advanced">
+			<input type="hidden" name="tab" value="<?php echo esc_attr( $tab ?: $screen ); ?>">
 			<div class="smao-filters-main">
 				<label><?php esc_html_e( 'Search by file name', 'smart-media-auditor-optimizer' ); ?>
 					<input type="search" name="search" value="<?php echo esc_attr( $input['search'] ?? '' ); ?>"></label>
@@ -63,7 +64,7 @@ final class Report_Table {
 					</select></label>
 				<button class="button"><?php esc_html_e( 'Search', 'smart-media-auditor-optimizer' ); ?></button>
 				<?php if ( self::filtered( $input ) ) : ?>
-					<a class="button-link" href="<?php echo esc_url( admin_url( 'admin.php?page=smao-' . $screen ) ); ?>"><?php esc_html_e( 'Clear', 'smart-media-auditor-optimizer' ); ?></a>
+					<a class="button-link" href="<?php echo esc_url( admin_url( 'admin.php?page=smao-advanced&tab=' . ( $tab ?: $screen ) ) ); ?>"><?php esc_html_e( 'Clear', 'smart-media-auditor-optimizer' ); ?></a>
 				<?php endif; ?>
 			</div>
 			<details class="smao-filters-more"<?php echo self::advanced( $input ) ? ' open' : ''; ?>>

@@ -23,13 +23,24 @@ test('destructive action requires selection, acknowledgement and exact confirmat
   assert.equal(model.confirmation('purge', Array(51).fill(1), true, 'PURGE'), false);
 });
 
-test('non-destructive actions do not demand a typed word or acknowledgement', () => {
-  // Optimising images is reversible and must not carry deletion-grade friction.
+test('only irreversible actions ask the user to type a word', () => {
+  // Permanent deletion cannot be undone, so it keeps the typed confirmation.
+  assert.equal(model.requiresTyping('purge'), true);
+  // Everything else is recoverable and must not carry deletion-grade friction.
+  assert.equal(model.requiresTyping('quarantine'), false);
+  assert.equal(model.requiresTyping('restore'), false);
+  assert.equal(model.requiresTyping('optimize'), false);
+  assert.equal(model.requiresTyping('thumbnails'), false);
+});
+
+test('recoverable actions pass without a typed word or acknowledgement', () => {
+  assert.equal(model.confirmation('quarantine', [2], false, true), true);
   assert.equal(model.confirmation('optimize', [2], false, true), true);
   assert.equal(model.confirmation('thumbnails', [2], false, true), true);
-  // Bounds still apply.
-  assert.equal(model.confirmation('optimize', [], false, true), false);
-  assert.equal(model.confirmation('optimize', Array(51).fill(1), false, true), false);
+  assert.equal(model.confirmation('restore', [2], false, true), true);
+  // Bounds still apply to every action.
+  assert.equal(model.confirmation('quarantine', [], false, true), false);
+  assert.equal(model.confirmation('quarantine', Array(51).fill(1), false, true), false);
 });
 
 test('percent uses real work counts and only finishes at scan completion', () => {

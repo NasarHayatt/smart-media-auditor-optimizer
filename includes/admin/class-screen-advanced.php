@@ -1,6 +1,6 @@
 <?php
 /**
- * Settings screen with tabs, including the activity log and system status.
+ * Advanced: everything technical, kept out of the way of normal use.
  *
  * Throughput lives on Audit and scope review lives on Clean up, so neither
  * appears here. Each tab posts only its own fields, and the save merges.
@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Configuration, diagnostics and history.
  */
-final class Screen_Settings {
+final class Screen_Advanced {
 
 	/**
 	 * Tab slugs and labels.
@@ -24,8 +24,9 @@ final class Screen_Settings {
 	 */
 	public static function tabs(): array {
 		return array(
-			'speed'    => __( 'Speed', 'smart-media-auditor-optimizer' ),
-			'images'   => __( 'Images', 'smart-media-auditor-optimizer' ),
+			'images'   => __( 'Image files', 'smart-media-auditor-optimizer' ),
+			'optimize' => __( 'Make images smaller', 'smart-media-auditor-optimizer' ),
+			'scan'     => __( 'Scan detail', 'smart-media-auditor-optimizer' ),
 			'scanning' => __( 'Scanning', 'smart-media-auditor-optimizer' ),
 			'recovery' => __( 'Recovery storage', 'smart-media-auditor-optimizer' ),
 			'log'      => __( 'Activity log', 'smart-media-auditor-optimizer' ),
@@ -41,18 +42,21 @@ final class Screen_Settings {
 	 */
 	public static function render( array $input ): void {
 		$tabs = self::tabs();
-		$tab  = isset( $input['tab'] ) && isset( $tabs[ $input['tab'] ] ) ? (string) $input['tab'] : 'speed';
+		$tab  = isset( $input['tab'] ) && isset( $tabs[ $input['tab'] ] ) ? (string) $input['tab'] : 'images';
 		?>
 		<nav class="smao-tabs" aria-label="<?php esc_attr_e( 'Settings sections', 'smart-media-auditor-optimizer' ); ?>">
 			<?php foreach ( $tabs as $slug => $label ) : ?>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=smao-settings&tab=' . $slug ) ); ?>"
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=smao-advanced&tab=' . $slug ) ); ?>"
 					<?php echo $slug === $tab ? 'aria-current="page"' : ''; ?>><?php echo esc_html( $label ); ?></a>
 			<?php endforeach; ?>
 		</nav>
 		<?php
 		switch ( $tab ) {
-			case 'images':
-				self::images();
+			case 'optimize':
+				Screen_Optimize::render( $input );
+				break;
+			case 'scan':
+				Screen_Audit::render( $input );
 				break;
 			case 'scanning':
 				self::scanning();
@@ -67,69 +71,8 @@ final class Screen_Settings {
 				self::system();
 				break;
 			default:
-				self::speed();
+				self::images();
 		}
-	}
-
-	/**
-	 * Render the speed tab.
-	 *
-	 * @return void
-	 */
-	private static function speed(): void {
-		$settings = Settings::get();
-		?>
-		<section class="smao-panel">
-			<h2><?php esc_html_e( 'Speed', 'smart-media-auditor-optimizer' ); ?></h2>
-			<form class="smao-settings" data-settings="speed">
-				<input type="hidden" name="_flags" value="speed_enabled,dimensions,lcp_preload,lazy_correct,delivery">
-
-				<label class="smao-checkbox smao-master">
-					<input type="checkbox" name="speed_enabled" <?php checked( $settings['speed_enabled'] ); ?>>
-					<span>
-						<strong><?php esc_html_e( 'Speed corrections', 'smart-media-auditor-optimizer' ); ?></strong>
-						<small><?php esc_html_e( 'The master switch. Turning this off disables everything below immediately, without changing any file.', 'smart-media-auditor-optimizer' ); ?></small>
-					</span>
-				</label>
-
-				<fieldset>
-					<legend><?php esc_html_e( 'Safe by default', 'smart-media-auditor-optimizer' ); ?></legend>
-					<p class="smao-muted"><?php esc_html_e( 'These cannot change how your pages look. They only tell the browser what it already needs to know sooner.', 'smart-media-auditor-optimizer' ); ?></p>
-					<label class="smao-checkbox">
-						<input type="checkbox" name="dimensions" <?php checked( $settings['dimensions'] ); ?>>
-						<span><?php esc_html_e( 'Add missing width and height to images', 'smart-media-auditor-optimizer' ); ?>
-						<small><?php esc_html_e( 'Stops the page jumping around as images load. Most useful on page-builder and hand-written content.', 'smart-media-auditor-optimizer' ); ?></small></span>
-					</label>
-					<label class="smao-checkbox">
-						<input type="checkbox" name="lcp_preload" <?php checked( $settings['lcp_preload'] ); ?>>
-						<span><?php esc_html_e( 'Preload the main image on each page', 'smart-media-auditor-optimizer' ); ?>
-						<small><?php esc_html_e( 'Detects the largest image automatically and asks the browser to fetch it first.', 'smart-media-auditor-optimizer' ); ?></small></span>
-					</label>
-					<label class="smao-checkbox">
-						<input type="checkbox" name="lazy_correct" <?php checked( $settings['lazy_correct'] ); ?>>
-						<span><?php esc_html_e( 'Correct lazy loading', 'smart-media-auditor-optimizer' ); ?>
-						<small><?php esc_html_e( 'Never lazy-loads the main image, and lazy-loads the ones further down that should be.', 'smart-media-auditor-optimizer' ); ?></small></span>
-					</label>
-				</fieldset>
-
-				<fieldset>
-					<legend><?php esc_html_e( 'Changes your markup', 'smart-media-auditor-optimizer' ); ?></legend>
-					<label class="smao-checkbox">
-						<input type="checkbox" name="delivery" <?php checked( $settings['delivery'] ); ?>>
-						<span><?php esc_html_e( 'Serve WebP or AVIF when available', 'smart-media-auditor-optimizer' ); ?>
-						<small><?php esc_html_e( 'Wraps images in a picture element, keeping the original as a fallback. Requires alternate formats to have been generated on the Optimize screen. Test your theme after enabling.', 'smart-media-auditor-optimizer' ); ?></small></span>
-					</label>
-				</fieldset>
-
-				<label>
-					<?php esc_html_e( 'Front page image to preload (0 detects automatically)', 'smart-media-auditor-optimizer' ); ?>
-					<input type="number" name="preload_id" min="0" step="1" value="<?php echo esc_attr( (string) $settings['preload_id'] ); ?>">
-				</label>
-
-				<button class="button button-primary"><?php esc_html_e( 'Save speed settings', 'smart-media-auditor-optimizer' ); ?></button>
-			</form>
-		</section>
-		<?php
 	}
 
 	/**

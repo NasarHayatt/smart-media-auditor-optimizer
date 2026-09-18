@@ -29,7 +29,7 @@ final class Screen_Optimize {
 				<h2><?php esc_html_e( 'Images', 'smart-media-auditor-optimizer' ); ?></h2>
 				<?php Report_Table::export_link( Live::defaults( $input + array( 'screen' => 'optimize' ) ) ); ?>
 			</div>
-			<?php Report_Table::filters( 'optimize', Live::defaults( $input + array( 'screen' => 'optimize' ) ) ); ?>
+			<?php Report_Table::filters( 'optimize', Live::defaults( $input + array( 'screen' => 'optimize' ) ), 'optimize' ); ?>
 			<div id="smao-report" data-screen="optimize">
 				<?php echo Report_Table::fragment( 'optimize', $input + array( 'screen' => 'optimize' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fragment escapes at source. ?>
 			</div>
@@ -59,7 +59,7 @@ final class Screen_Optimize {
 		<section class="smao-panel">
 			<div class="smao-panel-head">
 				<h2><?php esc_html_e( 'Optimization queue', 'smart-media-auditor-optimizer' ); ?></h2>
-				<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=smao-settings&tab=images' ) ); ?>"><?php esc_html_e( 'Image settings', 'smart-media-auditor-optimizer' ); ?></a>
+				<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=smao-advanced&tab=images' ) ); ?>"><?php esc_html_e( 'Image settings', 'smart-media-auditor-optimizer' ); ?></a>
 			</div>
 
 			<?php if ( 'lossless' === $settings['compression'] && empty( $capable['imagick'] ) ) : ?>
