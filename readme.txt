@@ -60,10 +60,10 @@ service. Everything runs on your own server and nothing leaves it.
 
 1. Back up your database and uploads folder. Test on a staging copy first.
 2. Install and activate the plugin. Speed corrections start working immediately.
-3. Open **Media Auditor → Audit** and run a scan. Scanning only reads; it never
-   changes a file.
-4. Review the results, then use **Clean up** when you are ready to remove
-   anything. Removal requires private recovery storage to be configured first.
+3. Open **Media Auditor → Overview**. It tells you the one thing to do next and
+   gives you a single button to do it.
+4. Follow it. Scanning only reads and never changes a file. When something is
+   found, Clean up shows you each image before anything moves.
 
 == Frequently Asked Questions ==
 
@@ -74,18 +74,19 @@ private recovery storage and keeps the attachment record so the file can be
 restored. Permanently deleting a recovery copy is a separate action that asks
 you to type a confirmation word.
 
-= Why does it say "possibly used" instead of "unused"? =
+= Why does it say "not sure about" instead of "unused"? =
 
-Because it cannot prove a negative. A file is only called an unused candidate
-when a complete, current scan found no reference and you have confirmed you
-reviewed the things a database scan cannot see, such as custom code, hard-coded
-theme paths and external sites linking to your files.
+Because it cannot prove a negative. An image is only listed as unused when a
+complete, current scan found nothing referring to it and you have confirmed you
+thought about what a database scan cannot see: custom code and other websites
+linking straight to your files. Anything ambiguous is left alone and is never
+offered for removal.
 
 = Does it speed up my site straight away? =
 
 The layout-stability, preload and lazy-loading corrections apply as soon as you
-activate it. The larger win, serving WebP or AVIF, needs you to generate those
-formats on the Optimize screen and then switch delivery on.
+activate it. The larger win, serving WebP or AVIF, needs you to make the smaller
+copies first under Advanced, then switch delivery on under Speed.
 
 = Do I need ImageMagick? =
 
@@ -100,11 +101,10 @@ builders reference are reported conservatively rather than as unused.
 
 == Screenshots ==
 
-1. The Audit screen: scan progress and a full media inventory with evidence.
-2. Clean up: prerequisites, unused candidates and recovery in one place.
-3. Optimize: the compression queue and oversized image report.
-4. Settings: speed corrections, with safe defaults separated from anything that
-   changes your markup.
+1. Overview: the one thing to do next, and what it is worth in megabytes.
+2. Clean up: every unused image shown as a picture, with what was searched.
+3. Speed: plain-language switches, each explained by what a visitor gets.
+4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
 
@@ -146,6 +146,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.0.1 =
+Fixes a fatal error some sites hit when updating from 1.x. Update straight away
+if you are on 2.0.0.
 
 = 2.0.0 =
 A substantial rebuild. Menu locations have changed and scan results should be
