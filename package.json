@@ -1,0 +1,5 @@
+{
+  "name": "smart-media-auditor-optimizer-tests",
+  "private": true,
+  "scripts": { "test": "node --test tests/js/*.test.cjs" }
+}

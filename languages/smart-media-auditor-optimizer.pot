@@ -1,0 +1,1368 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Smart Media Auditor & Optimizer 1.2.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "#smao-cleanup-title"
+msgstr ""
+
+msgid "#smao-connection"
+msgstr ""
+
+msgid "#smao-current-file"
+msgstr ""
+
+msgid "#smao-elapsed"
+msgstr ""
+
+msgid "#smao-freshness"
+msgstr ""
+
+msgid "#smao-percent"
+msgstr ""
+
+msgid "#smao-phase-label"
+msgstr ""
+
+msgid "#smao-progress"
+msgstr ""
+
+msgid "#smao-queue-counts"
+msgstr ""
+
+msgid "#smao-result-count"
+msgstr ""
+
+msgid "#smao-review-progress"
+msgstr ""
+
+msgid "#smao-selection-count"
+msgstr ""
+
+msgid "#smao-state"
+msgstr ""
+
+msgid "#smao-work-count"
+msgstr ""
+
+msgid "#smao-worker-mode"
+msgstr ""
+
+msgid "%d matching records"
+msgstr ""
+
+msgid "/[\\s,]+/"
+msgstr ""
+
+msgid "/\\R/"
+msgstr ""
+
+msgid "?"
+msgstr ""
+
+msgid "A complete, unchanged scan from the last 24 hours and scope review are required."
+msgstr ""
+
+msgid "A current database reference may exist. Rescan and review; no files were moved."
+msgstr ""
+
+msgid "A live file exists at an original path; purge refused."
+msgstr ""
+
+msgid "A media group file is missing or unreadable."
+msgstr ""
+
+msgid "A recovery record already exists. Restore it before another operation."
+msgstr ""
+
+msgid "ABSPATH"
+msgstr ""
+
+msgid "ASC"
+msgstr ""
+
+msgid "AVIF (server dependent)"
+msgstr ""
+
+msgid "Action"
+msgstr ""
+
+msgid "Active"
+msgstr ""
+
+msgid "Activity Log"
+msgstr ""
+
+msgid "Actual displayed dimensions require a browser inspection at representative viewport sizes. This report identifies source dimensions only; it does not pretend to measure CSS layout."
+msgstr ""
+
+msgid "Administrator access required."
+msgstr ""
+
+msgid "Administrator capability and a valid REST nonce are required."
+msgstr ""
+
+msgid "Administrator exclusion rule."
+msgstr ""
+
+msgid "Administrator permanently purged quarantine backups. Attachment record retained for audit."
+msgstr ""
+
+msgid "Administrator updated settings; prior scans invalidated."
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "All statuses"
+msgstr ""
+
+msgid "Already optimized. Restore originals before re-optimizing."
+msgstr ""
+
+msgid "Alternate filename already exists; refusing to overwrite."
+msgstr ""
+
+msgid "An original path has newer content; refusing to overwrite it."
+msgstr ""
+
+msgid "Animated/multi-frame and CMYK images require specialist processing."
+msgstr ""
+
+msgid "Another media operation is running. Retry shortly."
+msgstr ""
+
+msgid "Apply processing options"
+msgstr ""
+
+msgid "Ascending"
+msgstr ""
+
+msgid "Atomic restore failed; backup retained."
+msgstr ""
+
+msgid "Attachment"
+msgstr ""
+
+msgid "Attachment IDs must be positive integers."
+msgstr ""
+
+msgid "Attachment does not exist."
+msgstr ""
+
+msgid "Attachment is now protected."
+msgstr ""
+
+msgid "Attachment permission denied."
+msgstr ""
+
+msgid "Attachments per batch"
+msgstr ""
+
+msgid "Automatic processing enabled"
+msgstr ""
+
+msgid "Back up the database and uploads independently before file actions. Scans are read-only. “Unused” means a candidate within reviewed scope, never proof of no external use. Recently uploaded, protected and offloaded files cannot be quarantined."
+msgstr ""
+
+msgid "Backup is missing or damaged. Restore stopped."
+msgstr ""
+
+msgid "Backup symlink rejected."
+msgstr ""
+
+msgid "Backup verification failed; originals retained."
+msgstr ""
+
+msgid "Batch size (1–200)"
+msgstr ""
+
+msgid "Before removing unused images"
+msgstr ""
+
+msgid "Broken"
+msgstr ""
+
+msgid "Bytes"
+msgstr ""
+
+msgid "CDN, filtered URL or external storage: filesystem operations are unsupported."
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Cancel queued image jobs"
+msgstr ""
+
+msgid "Cancel scan"
+msgstr ""
+
+msgid "Cannot create backup directory."
+msgstr ""
+
+msgid "Cannot create private site vault."
+msgstr ""
+
+msgid "Cannot hash original."
+msgstr ""
+
+msgid "Choose a private recovery folder in Settings."
+msgstr ""
+
+msgid "Classify & review"
+msgstr ""
+
+msgid "Classifying your media"
+msgstr ""
+
+msgid "Clean old plugin records"
+msgstr ""
+
+msgid "Close report"
+msgstr ""
+
+msgid "Color-profiled or animated media requires ImageMagick."
+msgstr ""
+
+msgid "Completed."
+msgstr ""
+
+msgid "Compression"
+msgstr ""
+
+msgid "Compression settings"
+msgstr ""
+
+msgid "Configured"
+msgstr ""
+
+msgid "Confirm"
+msgstr ""
+
+msgid "Confirm action"
+msgstr ""
+
+msgid "Confirm scope & start fresh scan"
+msgstr ""
+
+msgid "Confirm the scope review before starting."
+msgstr ""
+
+msgid "Confirm the usage-scope review below, then run a fresh scan to identify unused candidates."
+msgstr ""
+
+msgid "Confirmation does not match."
+msgstr ""
+
+msgid "Connecting to live updates…"
+msgstr ""
+
+msgid "Content-Disposition: attachment; filename=\"smart-media-audit.csv\""
+msgstr ""
+
+msgid "Content-Type: text/csv; charset=utf-8"
+msgstr ""
+
+msgid "Could not atomically replace optimized image."
+msgstr ""
+
+msgid "Could not install plugin tables."
+msgstr ""
+
+msgid "Could not publish alternate image."
+msgstr ""
+
+msgid "Could not remove a generated derivative."
+msgstr ""
+
+msgid "Could not remove backup; recovery record retained."
+msgstr ""
+
+msgid "Could not save scan checkpoint."
+msgstr ""
+
+msgid "Could not verify updated image metadata; restoring originals."
+msgstr ""
+
+msgid "Counts describe the last inventory and may be partial during a scan. Quarantine storage, recovery backups, shared-file deduplication and alternate derivatives are not net savings. Offloaded object sizes are unknown."
+msgstr ""
+
+msgid "Create an empty writable folder outside your website and public web root, then enter its absolute path below. Example for XAMPP: D:/xampp/smao-recovery (outside htdocs). Keep recovery copies until you are ready to permanently delete them."
+msgstr ""
+
+msgid "Created (UTC)"
+msgstr ""
+
+msgid "Current scan"
+msgstr ""
+
+msgid "DESC"
+msgstr ""
+
+msgid "DISABLE_WP_CRON"
+msgstr ""
+
+msgid "DOCUMENT_ROOT"
+msgstr ""
+
+msgid "Daily"
+msgstr ""
+
+msgid "Dashboard"
+msgstr ""
+
+msgid "Database operation failed. Scan or action stopped safely."
+msgstr ""
+
+msgid "Define SMAO_VAULT_DIR as an existing private directory outside all web roots."
+msgstr ""
+
+msgid "Deliver alternate formats using picture sources and the original img fallback"
+msgstr ""
+
+msgid "Descending"
+msgstr ""
+
+msgid "Direction"
+msgstr ""
+
+msgid "Disable future generation of selected image sizes. Existing sizes are retained."
+msgstr ""
+
+msgid "Discover files"
+msgstr ""
+
+msgid "Discovering media files"
+msgstr ""
+
+msgid "Displayed CSS dimensions"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "EXIF inspection is unavailable."
+msgstr ""
+
+msgid "Enable alternate format delivery only after testing theme output. It applies to wp_get_attachment_image; stored HTML and CSS are unchanged."
+msgstr ""
+
+msgid "Encoded image failed format validation."
+msgstr ""
+
+msgid "Encoder did not preserve decoded pixels; lossless output rejected."
+msgstr ""
+
+msgid "Every minute (media jobs)"
+msgstr ""
+
+msgid "Evidence and reason"
+msgstr ""
+
+msgid "Exclusions: one rule per line: id:123, type:application/pdf, path:2026/protected/, name:logo.png"
+msgstr ""
+
+msgid "Executable, theme, vector or system asset is protected."
+msgstr ""
+
+msgid "Existing private folder"
+msgstr ""
+
+msgid "Existing recovery journals depend on the current folder. Keep that folder configured."
+msgstr ""
+
+msgid "Expert scan controls"
+msgstr ""
+
+msgid "Explicit action confirmation is required."
+msgstr ""
+
+msgid "Export matching rows as CSV"
+msgstr ""
+
+msgid "External / offloaded"
+msgstr ""
+
+msgid "File changed or could not be moved. Recovery journal retained; use Restore."
+msgstr ""
+
+msgid "Filename"
+msgstr ""
+
+msgid "Filename may be shared with another attachment. Manual review required."
+msgstr ""
+
+msgid "Filename or ID"
+msgstr ""
+
+msgid "Files discovered"
+msgstr ""
+
+msgid "Filter"
+msgstr ""
+
+msgid "Filtered/CDN or offloaded media. Local absence is not evidence of breakage."
+msgstr ""
+
+msgid "Fine-tune image quality, delivery and protection. Processing controls are available directly on the scan dashboard."
+msgstr ""
+
+msgid "Finish or cancel the existing scan first."
+msgstr ""
+
+msgid "Finish the scan first. Unused results are pending until every source has been checked."
+msgstr ""
+
+msgid "Forbidden."
+msgstr ""
+
+msgid "Front-page primary image ID to preload (0 disables)"
+msgstr ""
+
+msgid "GET"
+msgstr ""
+
+msgid "Generate alternate format"
+msgstr ""
+
+msgid "Generate missing thumbnails"
+msgstr ""
+
+msgid "Generated file has changed; manual review required."
+msgstr ""
+
+msgid "I checked custom code, private tables and external uses that this scan cannot detect."
+msgstr ""
+
+msgid "I reviewed custom code, private tables and external consumers; allow unmatched files to become unused candidates."
+msgstr ""
+
+msgid "I reviewed these IDs, their usage and recovery requirements and have an independent backup."
+msgstr ""
+
+msgid "ICC_PROFILE"
+msgstr ""
+
+msgid "ID"
+msgstr ""
+
+msgid "IMAGE PROCESSING"
+msgstr ""
+
+msgid "Image Optimizer"
+msgstr ""
+
+msgid "Image URL"
+msgstr ""
+
+msgid "Image editor returned an unexpected output path."
+msgstr ""
+
+msgid "Image encoder failed."
+msgstr ""
+
+msgid "Image exceeds the conservative 40 MP / 64 MiB processing limit."
+msgstr ""
+
+msgid "Image, exclusion & retention settings"
+msgstr ""
+
+msgid "Images larger than their displayed dimensions"
+msgstr ""
+
+msgid "Incomplete backup and original changed. Manual recovery required."
+msgstr ""
+
+msgid "Incomplete coverage: unused conclusions are disabled."
+msgstr ""
+
+msgid "Indexed reference locations are available in Details. Ambiguous IDs/filenames are treated as possible use."
+msgstr ""
+
+msgid "Inspect image sizing"
+msgstr ""
+
+msgid "Intrinsic dimensions"
+msgstr ""
+
+msgid "Invalid backup manifest."
+msgstr ""
+
+msgid "Invalid image in attachment group."
+msgstr ""
+
+msgid "Inventoried attachments"
+msgstr ""
+
+msgid "Inventoried storage"
+msgstr ""
+
+msgid "Inventory your files, trace their references, then review the results. Scanning never changes your media."
+msgstr ""
+
+msgid "Jobs queued. Progress appears on the optimizer screen."
+msgstr ""
+
+msgid "Keep work moving while this dashboard is open (including background tabs)"
+msgstr ""
+
+msgid "Know what your media is doing."
+msgstr ""
+
+msgid "LATEST CHECKPOINT"
+msgstr ""
+
+msgid "LIVE"
+msgstr ""
+
+msgid "LIVE SCAN"
+msgstr ""
+
+msgid "Largest oversized sources (up to 50)"
+msgstr ""
+
+msgid "Live group storage"
+msgstr ""
+
+msgid "Live image bytes before: %1$d; after: %2$d. Recovery copies and alternates consume additional disk space."
+msgstr ""
+
+msgid "Live image bytes saved"
+msgstr ""
+
+msgid "Live image savings"
+msgstr ""
+
+msgid "Live media totals"
+msgstr ""
+
+msgid "Live totals describe this scan. Reference counts include ambiguous matches. Unused candidates are final only after all scan phases complete. Savings exclude recovery copies and alternate files."
+msgstr ""
+
+msgid "Local browser snapshot: intrinsic dimensions exceed the rendered box by more than 1.5× in either direction. Inspect srcset, device pixel ratio and visual quality before changing a file. Hidden/unloaded images, CSS backgrounds and frames are excluded. Nothing is transmitted or saved."
+msgstr ""
+
+msgid "Lossless (pixel verified; no JPEG)"
+msgstr ""
+
+msgid "Lossless JPEG recompression and lossless resizing are unsupported. Choose lossy explicitly, or keep the original."
+msgstr ""
+
+msgid "Lossy (manual visual review required)"
+msgstr ""
+
+msgid "Lossy quality (50–100)"
+msgstr ""
+
+msgid "MEDIA INTELLIGENCE"
+msgstr ""
+
+msgid "MIME type prefix"
+msgstr ""
+
+msgid "Maximum bytes"
+msgstr ""
+
+msgid "Maximum image height"
+msgstr ""
+
+msgid "Maximum image width"
+msgstr ""
+
+msgid "Media"
+msgstr ""
+
+msgid "Media Usage Scanner"
+msgstr ""
+
+msgid "Media cleanup steps"
+msgstr ""
+
+msgid "Media explorer"
+msgstr ""
+
+msgid "Media group moved to private recovery storage."
+msgstr ""
+
+msgid "Media path escapes uploads or has a missing parent."
+msgstr ""
+
+msgid "Media workspace"
+msgstr ""
+
+msgid "Memory limit"
+msgstr ""
+
+msgid "Message"
+msgstr ""
+
+msgid "Minimum bytes"
+msgstr ""
+
+msgid "Minimum quarantine retention in days (minimum 7)"
+msgstr ""
+
+msgid "Missing / broken"
+msgstr ""
+
+msgid "Multisite"
+msgstr ""
+
+msgid "Multisite is report-only; removal is unavailable."
+msgstr ""
+
+msgid "Multisite media may be shared across blogs; destructive local operations are disabled."
+msgstr ""
+
+msgid "Next"
+msgstr ""
+
+msgid "No"
+msgstr ""
+
+msgid "No files discovered yet."
+msgstr ""
+
+msgid "No files selected"
+msgstr ""
+
+msgid "No indexed reference locations. External inbound references cannot be established by this scan."
+msgstr ""
+
+msgid "No indexed references. External use cannot be ruled out."
+msgstr ""
+
+msgid "No matching inventory. Run a scan or adjust filters."
+msgstr ""
+
+msgid "No matching media. Run a scan or adjust the filters."
+msgstr ""
+
+msgid "No oversized loaded images found at this viewport."
+msgstr ""
+
+msgid "No recent progress — retry or restart the scan"
+msgstr ""
+
+msgid "No recovery record exists."
+msgstr ""
+
+msgid "No reference found in reviewed scope. Unused candidate; manual review is required."
+msgstr ""
+
+msgid "No reference found. Custom code, remote consumers and private tables require review."
+msgstr ""
+
+msgid "No telemetry, remote scans or external optimization services are used. Offloaded media is report-only. Configure a real server cron if site traffic is too low for WP-Cron."
+msgstr ""
+
+msgid "Not optimized"
+msgstr ""
+
+msgid "Off"
+msgstr ""
+
+msgid "One or more files in the media group are missing or unreadable."
+msgstr ""
+
+msgid "Only JPEG, PNG, WebP and AVIF images are eligible."
+msgstr ""
+
+msgid "Only retained quarantine groups can be permanently deleted after the retention period."
+msgstr ""
+
+msgid "Only reviewed unused candidates can be quarantined."
+msgstr ""
+
+msgid "Operation"
+msgstr ""
+
+msgid "Optimization"
+msgstr ""
+
+msgid "Optimization queue"
+msgstr ""
+
+msgid "Optimize selected"
+msgstr ""
+
+msgid "Optimized"
+msgstr ""
+
+msgid "Optimized attachments"
+msgstr ""
+
+msgid "Orientation"
+msgstr ""
+
+msgid "Orientation metadata is required; normalize orientation before stripping EXIF."
+msgstr ""
+
+msgid "Orientation requires normalization before GD optimization."
+msgstr ""
+
+msgid "Original changed during optimization."
+msgstr ""
+
+msgid "Original files restored, but metadata could not be verified. Recovery record retained."
+msgstr ""
+
+msgid "Original media group and metadata restored."
+msgstr ""
+
+msgid "Originals are backed up before compression. Lossless mode requires ImageMagick and rejects changed pixels; lossless JPEG recompression is unavailable. Alternate formats keep the existing URL as a fallback. Savings exclude backups and derivatives."
+msgstr ""
+
+msgid "Overall scan progress"
+msgstr ""
+
+msgid "PHP"
+msgstr ""
+
+msgid "POST"
+msgstr ""
+
+msgid "Parent relationship or enabled attachment pages may use this file."
+msgstr ""
+
+msgid "Pause"
+msgstr ""
+
+msgid "Pause image queue"
+msgstr ""
+
+msgid "Pause scan"
+msgstr ""
+
+msgid "Paused"
+msgstr ""
+
+msgid "Pending"
+msgstr ""
+
+msgid "Pending or interrupted actions retain recovery journals. Restore originals before retrying optimization. Permanent purge removes only private quarantine backups after retention; it keeps the attachment database record for audit. Nothing is purged automatically."
+msgstr ""
+
+msgid "Performance Recommendations"
+msgstr ""
+
+msgid "Permanent purge cannot be undone."
+msgstr ""
+
+msgid "Permanent purge has started; restore from your independent backup."
+msgstr ""
+
+msgid "Permanently purge retained backups"
+msgstr ""
+
+msgid "Plugin record maintenance"
+msgstr ""
+
+msgid "Possibly used"
+msgstr ""
+
+msgid "Potential recovery after manual purge"
+msgstr ""
+
+msgid "Previous"
+msgstr ""
+
+msgid "Private recovery storage"
+msgstr ""
+
+msgid "Private vault"
+msgstr ""
+
+msgid "Private vault is unavailable or inside a public web root."
+msgstr ""
+
+msgid "Process next job now"
+msgstr ""
+
+msgid "Processing has not advanced for over 30 seconds. Use Retry processing. If the same checkpoint keeps returning, restart the scan."
+msgstr ""
+
+msgid "Processing options applied to the next batch."
+msgstr ""
+
+msgid "Protect uploads younger than days (minimum 7)"
+msgstr ""
+
+msgid "Quarantine and Restore"
+msgstr ""
+
+msgid "Quarantine selected after review"
+msgstr ""
+
+msgid "Quarantined"
+msgstr ""
+
+msgid "Queue optimization for new images uploaded by administrators"
+msgstr ""
+
+msgid "Read-only scan completed."
+msgstr ""
+
+msgid "Read-only scan started."
+msgstr ""
+
+msgid "Read-only scans · Recovery-first actions"
+msgstr ""
+
+msgid "Ready"
+msgstr ""
+
+msgid "Ready to review unused images"
+msgstr ""
+
+msgid "Ready to scan"
+msgstr ""
+
+msgid "Recently discovered"
+msgstr ""
+
+msgid "Recently uploaded media is protected from quarantine."
+msgstr ""
+
+msgid "Recoverable quarantine."
+msgstr ""
+
+msgid "Recoverable quarantine; see Quarantine and Restore."
+msgstr ""
+
+msgid "Recovery folder validated and saved. Return to Remove unused images."
+msgstr ""
+
+msgid "Recovery storage is managed by SMAO_VAULT_DIR in wp-config.php."
+msgstr ""
+
+msgid "Refresh interval (seconds)"
+msgstr ""
+
+msgid "Remove EXIF metadata (ICC color profile retained where supported)"
+msgstr ""
+
+msgid "Remove selected files with a recovery copy"
+msgstr ""
+
+msgid "Remove unused images"
+msgstr ""
+
+msgid "Remove up to 500 old logs and 500 finished jobs older than 90 days per click. Media, core metadata and recovery records are preserved."
+msgstr ""
+
+msgid "Report pages"
+msgstr ""
+
+msgid "Report refresh failed — processing continues"
+msgstr ""
+
+msgid "Request failed. Please retry."
+msgstr ""
+
+msgid "Request timed out. The server may still be working. Check the latest checkpoint before retrying a file action."
+msgstr ""
+
+msgid "Requesting administrator no longer has permission."
+msgstr ""
+
+msgid "Resize oversized full-size images (lossy mode only; may affect cropping/layout)"
+msgstr ""
+
+msgid "Restart fresh scan"
+msgstr ""
+
+msgid "Restart this scan from the beginning? No media files will be changed."
+msgstr ""
+
+msgid "Restore copy failed; backup retained."
+msgstr ""
+
+msgid "Restore originals"
+msgstr ""
+
+msgid "Restore selected"
+msgstr ""
+
+msgid "Restore the active recovery record before regenerating thumbnails."
+msgstr ""
+
+msgid "Resume image queue"
+msgstr ""
+
+msgid "Resume scan"
+msgstr ""
+
+msgid "Retry processing"
+msgstr ""
+
+msgid "Review evidence"
+msgstr ""
+
+msgid "Review the evidence, select files below, then remove them with a recovery copy."
+msgstr ""
+
+msgid "Run next batch now"
+msgstr ""
+
+msgid "Run one batch"
+msgstr ""
+
+msgid "SMAO_FILE"
+msgstr ""
+
+msgid "SMAO_REMOVE_DATA"
+msgstr ""
+
+msgid "SMAO_VAULT_DIR"
+msgstr ""
+
+msgid "SMAO_VERSION"
+msgstr ""
+
+msgid "Save settings"
+msgstr ""
+
+msgid "Savings"
+msgstr ""
+
+msgid "Scan activity"
+msgstr ""
+
+msgid "Scan complete"
+msgstr ""
+
+msgid "Scan complete — ready for review"
+msgstr ""
+
+msgid "Scan coverage is incomplete. Resolve the reported error and restart."
+msgstr ""
+
+msgid "Scan in progress."
+msgstr ""
+
+msgid "Scan progress"
+msgstr ""
+
+msgid "Scan status"
+msgstr ""
+
+msgid "Scans do not change files. Unused means a candidate within reviewed scope. Back up the database and uploads before file actions. Protected and offloaded files cannot be quarantined."
+msgstr ""
+
+msgid "Scheduled read-only scans"
+msgstr ""
+
+msgid "Scope confirmed. Scan results update automatically below."
+msgstr ""
+
+msgid "Select"
+msgstr ""
+
+msgid "Select "
+msgstr ""
+
+msgid "Select 1–50 files and acknowledge review and backup first."
+msgstr ""
+
+msgid "Select all on this page"
+msgstr ""
+
+msgid "Select attachment %d"
+msgstr ""
+
+msgid "Select between 1 and 50 attachments."
+msgstr ""
+
+msgid "Select images below to add optimization jobs."
+msgstr ""
+
+msgid "Select reviewed unused images in the table, then choose Remove selected. Files leave your uploads folder and a private recovery copy is kept. Restore or permanently delete recovery copies from Recovery after the retention period."
+msgstr ""
+
+msgid "Session expired. Reload this page to reconnect."
+msgstr ""
+
+msgid "Set up private recovery storage in Settings before removal: "
+msgstr ""
+
+msgid "Set up recovery storage"
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "Settings saved. Run a new scan before quarantine actions."
+msgstr ""
+
+msgid "Short batches suit shared hosting. The browser assists WP-Cron while this tab is open; browser throttling may slow background tabs. Closing it leaves work to WP-Cron. Changes apply at the next batch. Scan coverage and deletion protections are unchanged."
+msgstr ""
+
+msgid "Site changed during scan. Rescan during a quiet period."
+msgstr ""
+
+msgid "Site changed: rescan before file actions."
+msgstr ""
+
+msgid "Site content changed during this scan. Restart the scan before removing files."
+msgstr ""
+
+msgid "Site identity or theme asset is protected."
+msgstr ""
+
+msgid "Size / dimensions"
+msgstr ""
+
+msgid "Smart Media Auditor"
+msgstr ""
+
+msgid "Smart Media Auditor & Optimizer"
+msgstr ""
+
+msgid "Sort by"
+msgstr ""
+
+msgid "Source rows per batch"
+msgstr ""
+
+msgid "Start a scan to discover images and other media."
+msgstr ""
+
+msgid "Start dry-run scan"
+msgstr ""
+
+msgid "Start media scan"
+msgstr ""
+
+msgid "State"
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+msgid "Status connected"
+msgstr ""
+
+msgid "Status unavailable — retrying"
+msgstr ""
+
+msgid "Symlinked media is protected."
+msgstr ""
+
+msgid "System Status"
+msgstr ""
+
+msgid "The latest files and source checkpoints."
+msgstr ""
+
+msgid "This action applies only to the selected files."
+msgstr ""
+
+msgid "This mode requires ImageMagick. GD requires explicit lossy compression and metadata-removal consent."
+msgstr ""
+
+msgid "This scan is older than 24 hours. Run a fresh scan."
+msgstr ""
+
+msgid "This scan transition is not available."
+msgstr ""
+
+msgid "This site manages recovery storage with SMAO_VAULT_DIR in wp-config.php."
+msgstr ""
+
+msgid "Time budget (seconds)"
+msgstr ""
+
+msgid "Trace references"
+msgstr ""
+
+msgid "Tracing reference sources"
+msgstr ""
+
+msgid "Tune throughput, responsiveness and background processing"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "Type CLEANUP to confirm removal of old plugin records."
+msgstr ""
+
+msgid "Type the confirmation word"
+msgstr ""
+
+msgid "UTC date"
+msgstr ""
+
+msgid "UTF-8"
+msgstr ""
+
+msgid "Unexpected files in backup folder; record retained."
+msgstr ""
+
+msgid "Unknown table."
+msgstr ""
+
+msgid "Unoptimized"
+msgstr ""
+
+msgid "Unoptimized attachments"
+msgstr ""
+
+msgid "Unparseable or overly complex source text; scan requires review."
+msgstr ""
+
+msgid "Unsafe media path."
+msgstr ""
+
+msgid "Unsupported action."
+msgstr ""
+
+msgid "Unsupported background action."
+msgstr ""
+
+msgid "Unsupported image format."
+msgstr ""
+
+msgid "Unused Media Review"
+msgstr ""
+
+msgid "Unused candidate"
+msgstr ""
+
+msgid "Unused candidates"
+msgstr ""
+
+msgid "Unusually large media group requires manual review."
+msgstr ""
+
+msgid "Updates after every batch"
+msgstr ""
+
+msgid "Upload date"
+msgstr ""
+
+msgid "Uploaded"
+msgstr ""
+
+msgid "Uploaded from"
+msgstr ""
+
+msgid "Uploaded until"
+msgstr ""
+
+msgid "Uploads directory is unavailable or linked."
+msgstr ""
+
+msgid "Uploads location changed since backup. Restore requires administrator recovery of the original location."
+msgstr ""
+
+msgid "Usage"
+msgstr ""
+
+msgid "Usage status"
+msgstr ""
+
+msgid "Use the optimizer to generate missing thumbnails without deleting existing sizes. Disable only sizes that your theme and plugins do not need."
+msgstr ""
+
+msgid "Used"
+msgstr ""
+
+msgid "User ID"
+msgstr ""
+
+msgid "Validate & save recovery folder"
+msgstr ""
+
+msgid "Vault must be an absolute private path outside uploads."
+msgstr ""
+
+msgid "Vault symlinks are not supported."
+msgstr ""
+
+msgid "Verified private backup created before file action."
+msgstr ""
+
+msgid "View scan progress and recovery controls"
+msgstr ""
+
+msgid "WP-Cron continues work when the site receives requests. Refresh the page to update report rows."
+msgstr ""
+
+msgid "WP-Cron disabled"
+msgstr ""
+
+msgid "WP-Cron processing"
+msgstr ""
+
+msgid "WP_UNINSTALL_PLUGIN"
+msgstr ""
+
+msgid "Waiting for the first batch"
+msgstr ""
+
+msgid "Waiting for worker"
+msgstr ""
+
+msgid "WebP"
+msgstr ""
+
+msgid "WebP/AVIF input requires ImageMagick for frame inspection."
+msgstr ""
+
+msgid "Weekly"
+msgstr ""
+
+msgid "With reference evidence"
+msgstr ""
+
+msgid "WordPress"
+msgstr ""
+
+msgid "WordPress generated missing registered image sizes; existing files retained."
+msgstr ""
+
+msgid "WordPress native lazy loading, dimensions, srcset and sizes are preserved. The plugin does not force lazy loading on the likely primary image."
+msgstr ""
+
+msgid "Worker interrupted. Inspect recovery records before retrying."
+msgstr ""
+
+msgid "YOUR MEDIA WORKSPACE"
+msgstr ""
+
+msgid "Yes"
+msgstr ""
+
+msgid "Your originals stay protected. Review before making changes."
+msgstr ""
+
+msgid "Your scan activity will appear here."
+msgstr ""
+
+msgid "action"
+msgstr ""
+
+msgid "alternate"
+msgstr ""
+
+msgid "button"
+msgstr ""
+
+msgid "classified"
+msgstr ""
+
+msgid "compression"
+msgstr ""
+
+msgid "control"
+msgstr ""
+
+msgid "dialog"
+msgstr ""
+
+msgid "direction"
+msgstr ""
+
+msgid "evidence?id="
+msgstr ""
+
+msgid "files"
+msgstr ""
+
+msgid "files checked"
+msgstr ""
+
+msgid "files selected"
+msgstr ""
+
+msgid "h2"
+msgstr ""
+
+msgid "matching files"
+msgstr ""
+
+msgid "memory_limit"
+msgstr ""
+
+msgid "min since start"
+msgstr ""
+
+msgid "old records removed"
+msgstr ""
+
+msgid "optimized"
+msgstr ""
+
+msgid "p"
+msgstr ""
+
+msgid "paged"
+msgstr ""
+
+msgid "possible"
+msgstr ""
+
+msgid "report?"
+msgstr ""
+
+msgid "retained jobs"
+msgstr ""
+
+msgid "saved"
+msgstr ""
+
+msgid "schedule"
+msgstr ""
+
+msgid "selected files"
+msgstr ""
+
+msgid "smao-admin"
+msgstr ""
+
+msgid "smao-inspector"
+msgstr ""
+
+msgid "smao-model"
+msgstr ""
+
+msgid "sort"
+msgstr ""
+
+msgid "source records"
+msgstr ""
+
+msgid "source records checked"
+msgstr ""
+
+msgid "status"
+msgstr ""
+
+msgid "storage"
+msgstr ""
+
+msgid "strong"
+msgstr ""
+
+msgid "table"
+msgstr ""
+
+msgid "td"
+msgstr ""
+
+msgid "th"
+msgstr ""
+
+msgid "token"
+msgstr ""
+
+msgid "tr"
+msgstr ""
+
+msgid "unused candidates"
+msgstr ""
+

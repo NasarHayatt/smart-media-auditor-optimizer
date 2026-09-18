@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<ruleset name="SMAO">
+  <description>WordPress security and style audit; dynamic SQL identifiers are fixed internal maps.</description>
+  <file>smart-media-auditor-optimizer.php</file><file>includes</file><file>uninstall.php</file>
+  <arg name="extensions" value="php"/>
+  <config name="minimum_supported_wp_version" value="6.5"/>
+  <rule ref="WordPress"/>
+  <!-- Reports and recovery state require fresh reads; this plugin owns its tables. -->
+  <rule ref="WordPress.DB.DirectDatabaseQuery"><severity>0</severity></rule>
+  <!-- Native operations are intentional: check return values, hashes and same-filesystem atomic rename. -->
+  <rule ref="WordPress.WP.AlternativeFunctions"><severity>0</severity></rule>
+  <!-- Exceptions are caught and escaped at the HTML boundary or serialized by WP REST; escaping here corrupts raw messages. -->
+  <rule ref="WordPress.Security.EscapeOutput.ExceptionNotEscaped"><severity>0</severity></rule>
+  <!-- GET filters only read data; all mutations and CSV exports separately verify nonces. -->
+  <rule ref="WordPress.Security.NonceVerification.Recommended"><severity>0</severity></rule>
+  <!-- One-minute worker cadence is an explicit bounded background-job requirement. -->
+  <rule ref="WordPress.WP.CronInterval.CronSchedulesInterval"><severity>0</severity></rule>
+</ruleset>
