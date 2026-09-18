@@ -23,7 +23,7 @@ final class Media {
 	public static function relative( string $path ): string {
 		$path = wp_normalize_path( $path );
 		if ( '' === $path || str_contains( $path, "\0" ) || str_contains( $path, ':' ) || str_starts_with( $path, '/' ) || preg_match( '~(?:^|/)\.\.?(/|$)~', $path ) ) {
-			throw new \RuntimeException( I18n::text( 'Unsafe media path.' ) );
+			throw new \RuntimeException( __( 'Unsafe media path.', 'smart-media-auditor-optimizer' ) );
 		}
 		return $path;
 	}
@@ -41,21 +41,21 @@ final class Media {
 		$uploads  = wp_upload_dir();
 		$root     = realpath( $uploads['basedir'] );
 		if ( ! $root || is_link( $uploads['basedir'] ) ) {
-			throw new \RuntimeException( I18n::text( 'Uploads directory is unavailable or linked.' ) );
+			throw new \RuntimeException( __( 'Uploads directory is unavailable or linked.', 'smart-media-auditor-optimizer' ) );
 		}
 		$path = $root;
 		foreach ( explode( '/', $relative ) as $part ) {
 			$path .= DIRECTORY_SEPARATOR . $part;
 			if ( is_link( $path ) ) {
-				throw new \RuntimeException( I18n::text( 'Symlinked media is protected.' ) );
+				throw new \RuntimeException( __( 'Symlinked media is protected.', 'smart-media-auditor-optimizer' ) );
 			}
 		}
 		if ( $exists && ( ! is_file( $path ) || ! is_readable( $path ) ) ) {
-			throw new \RuntimeException( I18n::text( 'A media group file is missing or unreadable.' ) );
+			throw new \RuntimeException( __( 'A media group file is missing or unreadable.', 'smart-media-auditor-optimizer' ) );
 		}
 		$parent = realpath( dirname( $path ) );
 		if ( ! $parent || ! self::within( $parent, $root ) ) {
-			throw new \RuntimeException( I18n::text( 'Media path escapes uploads or has a missing parent.' ) );
+			throw new \RuntimeException( __( 'Media path escapes uploads or has a missing parent.', 'smart-media-auditor-optimizer' ) );
 		}
 		return $path;
 	}
@@ -114,7 +114,7 @@ final class Media {
 		}
 		$files = array_values( array_unique( $files ) );
 		if ( count( $files ) > 250 ) {
-			throw new \RuntimeException( I18n::text( 'Unusually large media group requires manual review.' ) );
+			throw new \RuntimeException( __( 'Unusually large media group requires manual review.', 'smart-media-auditor-optimizer' ) );
 		}
 		return array(
 			'main'     => $main,
@@ -195,7 +195,7 @@ final class Media {
 	public static function assert_local( int $id ): array {
 		global $wpdb;
 		if ( 'attachment' !== get_post_type( $id ) ) {
-			throw new \RuntimeException( I18n::text( 'Attachment does not exist.' ) );
+			throw new \RuntimeException( __( 'Attachment does not exist.', 'smart-media-auditor-optimizer' ) );
 		}
 		$group  = self::group( $id );
 		$reason = self::protected_reason( $id, $group );
@@ -209,7 +209,7 @@ final class Media {
 			$shared = $wpdb->get_var( $wpdb->prepare( "SELECT meta_id FROM {$wpdb->postmeta} WHERE post_id <> %d AND meta_key IN ('_wp_attached_file','_wp_attachment_metadata','_wp_attachment_backup_sizes','_smao_alternates') AND meta_value LIKE %s LIMIT 1", $id, $like ) );
 			Database::check( $shared );
 			if ( $shared ) {
-				throw new \RuntimeException( I18n::text( 'Filename may be shared with another attachment. Manual review required.' ) );
+				throw new \RuntimeException( __( 'Filename may be shared with another attachment. Manual review required.', 'smart-media-auditor-optimizer' ) );
 			}
 		}
 		return $group;

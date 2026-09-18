@@ -43,20 +43,20 @@ final class Optimizer {
 	private static function encode( string $source, string $target, string $mime, array $settings, bool $resize = false ): void {
 		$info = wp_getimagesize( $source );
 		if ( ! $info || ( $info[0] * $info[1] > 40000000 ) || filesize( $source ) > 64 * MB_IN_BYTES ) {
-			throw new \RuntimeException( I18n::text( 'Image exceeds the conservative 40 MP / 64 MiB processing limit.' ) );
+			throw new \RuntimeException( __( 'Image exceeds the conservative 40 MP / 64 MiB processing limit.', 'smart-media-auditor-optimizer' ) );
 		}
 		if ( ! in_array( $mime, array( 'image/jpeg', 'image/png', 'image/webp', 'image/avif' ), true ) ) {
-			throw new \RuntimeException( I18n::text( 'Unsupported image format.' ) ); }
+			throw new \RuntimeException( __( 'Unsupported image format.', 'smart-media-auditor-optimizer' ) ); }
 		$lossless = 'lossless' === $settings['compression'];
 		if ( $lossless && ( $resize || 'image/jpeg' === $mime ) ) {
-			throw new \RuntimeException( I18n::text( 'Lossless JPEG recompression and lossless resizing are unsupported. Choose lossy explicitly, or keep the original.' ) ); }
+			throw new \RuntimeException( __( 'Lossless JPEG recompression and lossless resizing are unsupported. Choose lossy explicitly, or keep the original.', 'smart-media-auditor-optimizer' ) ); }
 		if ( class_exists( '\Imagick' ) ) {
 			$image = new \Imagick( $source );
 			try {
 				if ( $image->getNumberImages() !== 1 || $image->getImageColorspace() === \Imagick::COLORSPACE_CMYK ) {
-					throw new \RuntimeException( I18n::text( 'Animated/multi-frame and CMYK images require specialist processing.' ) ); }
+					throw new \RuntimeException( __( 'Animated/multi-frame and CMYK images require specialist processing.', 'smart-media-auditor-optimizer' ) ); }
 				if ( $settings['strip_exif'] && ! in_array( $image->getImageOrientation(), array( \Imagick::ORIENTATION_UNDEFINED, \Imagick::ORIENTATION_TOPLEFT ), true ) ) {
-					throw new \RuntimeException( I18n::text( 'Orientation metadata is required; normalize orientation before stripping EXIF.' ) ); }
+					throw new \RuntimeException( __( 'Orientation metadata is required; normalize orientation before stripping EXIF.', 'smart-media-auditor-optimizer' ) ); }
 				$signature = $image->getImageSignature();
 				if ( $settings['strip_exif'] ) {
 					$icc = $image->getImageProfiles( 'icc', true );
@@ -80,12 +80,12 @@ final class Optimizer {
 					$image->setOption( 'heic:lossless', 'true' );
 				}
 				if ( ! $image->writeImage( $target ) ) {
-					throw new \RuntimeException( I18n::text( 'Image encoder failed.' ) ); }
+					throw new \RuntimeException( __( 'Image encoder failed.', 'smart-media-auditor-optimizer' ) ); }
 				if ( $lossless ) {
 					$verify = new \Imagick( $target );
 					try {
 						if ( $verify->getImageSignature() !== $signature ) {
-							throw new \RuntimeException( I18n::text( 'Encoder did not preserve decoded pixels; lossless output rejected.' ) ); }
+							throw new \RuntimeException( __( 'Encoder did not preserve decoded pixels; lossless output rejected.', 'smart-media-auditor-optimizer' ) ); }
 					} finally {
 						$verify->clear(); }
 				}
@@ -93,22 +93,22 @@ final class Optimizer {
 				$image->clear(); }
 		} else {
 			if ( $lossless || ! $settings['strip_exif'] ) {
-				throw new \RuntimeException( I18n::text( 'This mode requires ImageMagick. GD requires explicit lossy compression and metadata-removal consent.' ) ); }
+				throw new \RuntimeException( __( 'This mode requires ImageMagick. GD requires explicit lossy compression and metadata-removal consent.', 'smart-media-auditor-optimizer' ) ); }
 			// GD can silently flatten animation and lose color profiles. Only JPEG/PNG
 			// without orientation/profile requirements are eligible on this fallback.
 			if ( ! in_array( $info['mime'], array( 'image/jpeg', 'image/png' ), true ) ) {
-				throw new \RuntimeException( I18n::text( 'WebP/AVIF input requires ImageMagick for frame inspection.' ) ); }
+				throw new \RuntimeException( __( 'WebP/AVIF input requires ImageMagick for frame inspection.', 'smart-media-auditor-optimizer' ) ); }
 			if ( 'image/jpeg' === $info['mime'] ) {
 				if ( ! function_exists( 'exif_read_data' ) ) {
-					throw new \RuntimeException( I18n::text( 'EXIF inspection is unavailable.' ) ); }
+					throw new \RuntimeException( __( 'EXIF inspection is unavailable.', 'smart-media-auditor-optimizer' ) ); }
 				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Valid JPEGs without EXIF emit a warning; absent EXIF is an allowed inspected state.
 				$exif = @exif_read_data( $source );
 				if ( ! empty( $exif['Orientation'] ) && 1 !== (int) $exif['Orientation'] ) {
-					throw new \RuntimeException( I18n::text( 'Orientation requires normalization before GD optimization.' ) ); }
+					throw new \RuntimeException( __( 'Orientation requires normalization before GD optimization.', 'smart-media-auditor-optimizer' ) ); }
 			}
 			$probe = file_get_contents( $source );
 			if ( str_contains( $probe, 'ICC_PROFILE' ) || str_contains( $probe, 'iCCP' ) || str_contains( $probe, 'acTL' ) ) {
-				throw new \RuntimeException( I18n::text( 'Color-profiled or animated media requires ImageMagick.' ) ); }
+				throw new \RuntimeException( __( 'Color-profiled or animated media requires ImageMagick.', 'smart-media-auditor-optimizer' ) ); }
 			unset( $probe );
 			$editor = wp_get_image_editor( $source );
 			if ( is_wp_error( $editor ) ) {
@@ -123,11 +123,11 @@ final class Optimizer {
 			}
 			$result = $editor->save( $target, $mime );
 			if ( is_wp_error( $result ) || empty( $result['path'] ) || wp_normalize_path( $result['path'] ) !== wp_normalize_path( $target ) ) {
-				throw new \RuntimeException( I18n::text( 'Image editor returned an unexpected output path.' ) ); }
+				throw new \RuntimeException( __( 'Image editor returned an unexpected output path.', 'smart-media-auditor-optimizer' ) ); }
 		}
 		$output = wp_getimagesize( $target );
 		if ( ! $output || $output['mime'] !== $mime ) {
-			throw new \RuntimeException( I18n::text( 'Encoded image failed format validation.' ) ); }
+			throw new \RuntimeException( __( 'Encoded image failed format validation.', 'smart-media-auditor-optimizer' ) ); }
 	}
 
 	/**
@@ -139,12 +139,12 @@ final class Optimizer {
 	 */
 	public static function optimize( int $id ): void {
 		if ( get_post_meta( $id, '_smao_optimized', true ) ) {
-			throw new \RuntimeException( I18n::text( 'Already optimized. Restore originals before re-optimizing.' ) ); }
+			throw new \RuntimeException( __( 'Already optimized. Restore originals before re-optimizing.', 'smart-media-auditor-optimizer' ) ); }
 		$settings = Settings::get();
 		$group    = Media::assert_local( $id );
 		$mime     = (string) get_post_mime_type( $id );
 		if ( ! in_array( $mime, array( 'image/jpeg', 'image/png', 'image/webp', 'image/avif' ), true ) ) {
-			throw new \RuntimeException( I18n::text( 'Only JPEG, PNG, WebP and AVIF images are eligible.' ) ); }
+			throw new \RuntimeException( __( 'Only JPEG, PNG, WebP and AVIF images are eligible.', 'smart-media-auditor-optimizer' ) ); }
 		$record          = Vault::prepare( $id, 'optimize', $group );
 		$record['state'] = 'optimizing';
 		Vault::save( $record );
@@ -157,7 +157,7 @@ final class Optimizer {
 				$before += filesize( $path );
 				$info    = wp_getimagesize( $path );
 				if ( ! $info ) {
-					throw new \RuntimeException( I18n::text( 'Invalid image in attachment group.' ) ); }
+					throw new \RuntimeException( __( 'Invalid image in attachment group.', 'smart-media-auditor-optimizer' ) ); }
 				$ext  = pathinfo( $relative, PATHINFO_EXTENSION );
 				$temp = dirname( $path ) . '/.smao-' . bin2hex( random_bytes( 12 ) ) . '.' . $ext;
 				try {
@@ -166,11 +166,11 @@ final class Optimizer {
 					if ( filesize( $temp ) < filesize( $path ) ) {
 						$entry = &$record['manifest']['files'][ $relative ];
 						if ( hash_file( 'sha256', $path ) !== $entry['before'] ) {
-							throw new \RuntimeException( I18n::text( 'Original changed during optimization.' ) ); }
+							throw new \RuntimeException( __( 'Original changed during optimization.', 'smart-media-auditor-optimizer' ) ); }
 						$entry['after'] = hash_file( 'sha256', $temp );
 						Vault::save( $record );
 						if ( ! rename( $temp, $path ) ) {
-							throw new \RuntimeException( I18n::text( 'Could not atomically replace optimized image.' ) ); }
+							throw new \RuntimeException( __( 'Could not atomically replace optimized image.', 'smart-media-auditor-optimizer' ) ); }
 						unset( $entry );
 					}
 				} finally {
@@ -183,7 +183,7 @@ final class Optimizer {
 					$alternate = $relative . '.smao-' . substr( hash_file( 'sha256', $path ), 0, 12 ) . '.' . $settings['alternate'];
 					$alt_path  = Media::path( $alternate, false );
 					if ( file_exists( $alt_path ) ) {
-						throw new \RuntimeException( I18n::text( 'Alternate filename already exists; refusing to overwrite.' ) ); }
+						throw new \RuntimeException( __( 'Alternate filename already exists; refusing to overwrite.', 'smart-media-auditor-optimizer' ) ); }
 					$temp_alt = dirname( $alt_path ) . '/.smao-' . bin2hex( random_bytes( 12 ) ) . '.' . $settings['alternate'];
 					try {
 						self::encode( $path, $temp_alt, 'image/' . $settings['alternate'], $settings );
@@ -191,7 +191,7 @@ final class Optimizer {
 							$record['manifest']['generated'][ $alternate ] = hash_file( 'sha256', $temp_alt );
 							Vault::save( $record );
 							if ( ! rename( $temp_alt, $alt_path ) ) {
-								throw new \RuntimeException( I18n::text( 'Could not publish alternate image.' ) ); }
+								throw new \RuntimeException( __( 'Could not publish alternate image.', 'smart-media-auditor-optimizer' ) ); }
 							$d                       = wp_getimagesize( $alt_path );
 							$alternates[ $relative ] = array(
 								'file'   => $alternate,
@@ -273,7 +273,7 @@ final class Optimizer {
 	public static function thumbnails( int $id ): void {
 		Media::assert_local( $id );
 		if ( Vault::record( $id ) ) {
-			throw new \RuntimeException( I18n::text( 'Restore the active recovery record before regenerating thumbnails.' ) ); }
+			throw new \RuntimeException( __( 'Restore the active recovery record before regenerating thumbnails.', 'smart-media-auditor-optimizer' ) ); }
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 		$result = wp_update_image_subsizes( $id );
 		if ( is_wp_error( $result ) ) {

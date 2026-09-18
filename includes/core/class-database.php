@@ -22,8 +22,8 @@ final class Database {
 	 */
 	public static function table( string $name ): string {
 		global $wpdb;
-		if ( ! in_array( $name, array( 'media', 'tokens', 'evidence', 'vault', 'log', 'jobs' ), true ) ) {
-			throw new \InvalidArgumentException( I18n::text( 'Unknown table.' ) );
+		if ( ! in_array( $name, array( 'media', 'tokens', 'evidence', 'vault', 'log', 'jobs', 'pages', 'render' ), true ) ) {
+			throw new \InvalidArgumentException( __( 'Unknown table.', 'smart-media-auditor-optimizer' ) );
 		}
 		return $wpdb->prefix . 'smao_' . $name;
 	}
@@ -50,13 +50,15 @@ final class Database {
 				height int unsigned NOT NULL DEFAULT 0,
 				optimized tinyint NOT NULL DEFAULT 0,
 				saved bigint(20) NOT NULL DEFAULT 0,
+				impact_score int NOT NULL DEFAULT 0,
 				reason text NOT NULL,
 				details longtext NOT NULL,
 				PRIMARY KEY  (attachment_id),
 				KEY scan_status (scan_id,status),
 				KEY mime (mime),
 				KEY uploaded (uploaded),
-				KEY bytes (bytes)",
+				KEY bytes (bytes),
+				KEY impact (impact_score)",
 			'tokens'   => 'token_hash char(64) NOT NULL,
 				attachment_id bigint(20) unsigned NOT NULL,
 				kind varchar(8) NOT NULL,
@@ -69,10 +71,12 @@ final class Database {
 				field varchar(191) NOT NULL,
 				strength tinyint NOT NULL,
 				kind varchar(20) NOT NULL,
+				provider varchar(32) NOT NULL DEFAULT \'core\',
 				fingerprint char(64) NOT NULL,
 				PRIMARY KEY  (id),
 				UNIQUE KEY location (attachment_id,fingerprint),
-				KEY strength (attachment_id,strength)',
+				KEY strength (attachment_id,strength),
+				KEY provider (provider)',
 			'vault'    => 'attachment_id bigint(20) unsigned NOT NULL,
 				operation varchar(20) NOT NULL,
 				state varchar(20) NOT NULL,
@@ -97,11 +101,35 @@ final class Database {
 				PRIMARY KEY  (id),
 				KEY state (state,id),
 				KEY created (created)",
+			/*
+			 * Reserved for 2.1/2.2 per-page attribution. Created now, populated
+			 * later, so feature releases ship without migrating live installs.
+			 */
+			'pages'    => 'url_hash char(64) NOT NULL,
+				url varchar(255) NOT NULL,
+				object_id bigint(20) unsigned NOT NULL DEFAULT 0,
+				image_count int unsigned NOT NULL DEFAULT 0,
+				image_bytes bigint(20) unsigned NOT NULL DEFAULT 0,
+				lcp_attachment_id bigint(20) unsigned NOT NULL DEFAULT 0,
+				measured_at bigint(20) unsigned NOT NULL DEFAULT 0,
+				PRIMARY KEY  (url_hash),
+				KEY object_id (object_id),
+				KEY image_bytes (image_bytes)',
+			'render'   => 'id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				attachment_id bigint(20) unsigned NOT NULL,
+				url_hash char(64) NOT NULL,
+				rendered_width int unsigned NOT NULL DEFAULT 0,
+				rendered_height int unsigned NOT NULL DEFAULT 0,
+				dpr decimal(3,1) NOT NULL DEFAULT 1.0,
+				observed_at bigint(20) unsigned NOT NULL DEFAULT 0,
+				PRIMARY KEY  (id),
+				UNIQUE KEY observation (attachment_id,url_hash),
+				KEY attachment_id (attachment_id)',
 		);
 		foreach ( $definitions as $name => $sql ) {
 			dbDelta( 'CREATE TABLE ' . self::table( $name ) . " (\n$sql\n) $collate;" );
 			if ( $wpdb->last_error ) {
-				throw new \RuntimeException( I18n::text( 'Could not install plugin tables.' ) );
+				throw new \RuntimeException( __( 'Could not install plugin tables.', 'smart-media-auditor-optimizer' ) );
 			}
 		}
 		update_option( 'smao_schema', SMAO_VERSION, false );
@@ -117,7 +145,7 @@ final class Database {
 	public static function check( mixed $result ): mixed {
 		global $wpdb;
 		if ( false === $result || $wpdb->last_error ) {
-			throw new \RuntimeException( I18n::text( 'Database operation failed. Scan or action stopped safely.' ) );
+			throw new \RuntimeException( __( 'Database operation failed. Scan or action stopped safely.', 'smart-media-auditor-optimizer' ) );
 		}
 		return $result;
 	}
@@ -133,7 +161,7 @@ final class Database {
 		global $wpdb;
 		$key = 'smao_' . substr( hash( 'sha256', DB_NAME . $wpdb->prefix ), 0, 40 );
 		if ( '1' !== (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $key ) ) ) {
-			throw new \RuntimeException( I18n::text( 'Another media operation is running. Retry shortly.' ), 409 );
+			throw new \RuntimeException( __( 'Another media operation is running. Retry shortly.', 'smart-media-auditor-optimizer' ), 409 );
 		}
 		try {
 			return $callback();
@@ -185,7 +213,7 @@ final class Database {
 	public static function save_state( array $state ): void {
 		update_option( 'smao_scan', $state, false );
 		if ( get_option( 'smao_scan' ) !== $state ) {
-			throw new \RuntimeException( I18n::text( 'Could not save scan checkpoint.' ) );
+			throw new \RuntimeException( __( 'Could not save scan checkpoint.', 'smart-media-auditor-optimizer' ) );
 		}
 	}
 }

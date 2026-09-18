@@ -119,7 +119,6 @@ final class Plugin {
 				return $sizes;
 			}
 		);
-		add_filter( 'wp_get_attachment_image', array( self::class, 'picture' ), 20, 5 );
 		add_filter(
 			'pre_delete_attachment',
 			static function ( $delete, $post ) {
@@ -128,7 +127,8 @@ final class Plugin {
 			10,
 			2
 		);
-		add_action( 'wp_head', array( self::class, 'preload' ), 2 );
+		Viewport::boot();
+		Delivery::boot();
 		add_action(
 			'wp_enqueue_scripts',
 			static function (): void {
@@ -209,11 +209,11 @@ final class Plugin {
 	public static function enqueue( string $action, array $ids ): void {
 		global $wpdb;
 		if ( ! in_array( $action, array( 'optimize', 'thumbnails' ), true ) ) {
-			throw new \RuntimeException( I18n::text( 'Unsupported background action.' ) ); }
+			throw new \RuntimeException( __( 'Unsupported background action.', 'smart-media-auditor-optimizer' ) ); }
 		$table = Database::table( 'jobs' );
 		foreach ( array_unique( array_map( 'absint', $ids ) ) as $id ) {
 			if ( ! $id || ! current_user_can( 'edit_post', $id ) ) {
-				throw new \RuntimeException( I18n::text( 'Attachment permission denied.' ) ); }
+				throw new \RuntimeException( __( 'Attachment permission denied.', 'smart-media-auditor-optimizer' ) ); }
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Identifiers/predicates come from fixed internal maps; all request values use prepared placeholders.
 			$existing = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $table WHERE attachment_id=%d AND action=%s AND state IN ('queued','running') LIMIT 1", $id, $action ) );
 			Database::check( $existing );
@@ -279,7 +279,7 @@ final class Plugin {
 		Database::check( $wpdb->update( $table, array( 'state' => 'running' ), array( 'id' => $job['id'] ) ) );
 		try {
 			if ( ! self::allowed() || ! current_user_can( 'edit_post', (int) $job['attachment_id'] ) ) {
-				throw new \RuntimeException( I18n::text( 'Requesting administrator no longer has permission.' ) ); }
+				throw new \RuntimeException( __( 'Requesting administrator no longer has permission.', 'smart-media-auditor-optimizer' ) ); }
 			if ( 'optimize' === $job['action'] ) {
 				Optimizer::optimize( (int) $job['attachment_id'] ); } else {
 				Optimizer::thumbnails( (int) $job['attachment_id'] ); }
@@ -309,67 +309,4 @@ final class Plugin {
 			wp_set_current_user( $previous ); }
 	}
 
-	/**
-	 * Add a compatible modern-format source while retaining the core image fallback.
-	 *
-	 * @param string $html Html.
-	 * @param int    $id Id.
-	 * @param mixed  $size Size.
-	 * @param bool   $icon Icon.
-	 * @param array  $attr Attr.
-	 * @return string
-	 */
-	public static function picture( string $html, int $id, $size, bool $icon, array $attr ): string {
-		if ( is_admin() || ! Settings::get()['delivery'] || $icon || Media::remote( $id ) ) {
-			return $html; }
-		$alternates = get_post_meta( $id, '_smao_alternates', true );
-		if ( ! is_array( $alternates ) || ! $alternates ) {
-			return $html; }
-		$image = wp_get_attachment_image_src( $id, $size );
-		if ( ! $image ) {
-			return $html; }
-		$uploads = wp_upload_dir();
-		$prefix  = trailingslashit( $uploads['baseurl'] );
-		if ( ! str_starts_with( $image[0], $prefix ) ) {
-			return $html; }
-		$relative = substr( $image[0], strlen( $prefix ) );
-		if ( empty( $alternates[ $relative ] ) ) {
-			return $html; }
-		$selected = $alternates[ $relative ];
-		$sources  = array();
-		foreach ( $alternates as $alt ) {
-			if ( $alt['mime'] !== $selected['mime'] || abs( $alt['width'] / max( 1, $alt['height'] ) - $selected['width'] / max( 1, $selected['height'] ) ) > 0.01 ) {
-				continue; }
-			try {
-				Media::path( $alt['file'] );
-			} catch ( \Throwable $e ) {
-				continue; }
-			$sources[ (int) $alt['width'] ] = esc_url( $prefix . $alt['file'] ) . ' ' . (int) $alt['width'] . 'w';
-		}
-		if ( ! $sources ) {
-			return $html; }
-		ksort( $sources );
-		$sizes = wp_calculate_image_sizes( $size, $image[0], wp_get_attachment_metadata( $id ), $id );
-		return '<picture><source type="' . esc_attr( $selected['mime'] ) . '" srcset="' . esc_attr( implode( ', ', $sources ) ) . '" sizes="' . esc_attr( $attr['sizes'] ?? ( $sizes ? $sizes : '100vw' ) ) . '">' . $html . '</picture>';
-	}
-
-	/**
-	 * Preload the explicitly selected front-page image when compatible with delivery settings.
-	 *
-	 * @return void
-	 */
-	public static function preload(): void {
-		$id = Settings::get()['preload_id'];
-		if ( ! $id || ! is_front_page() || Settings::get()['delivery'] ) {
-			return; }
-		$url = wp_get_attachment_image_url( $id, 'full' );
-		if ( ! $url ) {
-			return; }
-		$srcset = wp_get_attachment_image_srcset( $id, 'full' );
-		$sizes  = wp_get_attachment_image_sizes( $id, 'full' );
-		echo '<link rel="preload" as="image" href="' . esc_url( $url ) . '"';
-		if ( $srcset && $sizes ) {
-			echo ' imagesrcset="' . esc_attr( $srcset ) . '" imagesizes="' . esc_attr( $sizes ) . '"'; }
-		echo ' fetchpriority="high">' . "\n";
-	}
 }

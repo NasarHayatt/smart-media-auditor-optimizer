@@ -47,7 +47,7 @@ final class Matcher {
 		// Disable JIT for this expression only; leave server configuration unchanged.
 		$matched = preg_match_all( '~(*NO_JIT)(?<![\pL\pN_.%+@\~:/-])(?:https?://[^\s<>"\'()]+|/?[\pL\pN_.%+@\~:/-]+\.[a-zA-Z0-9]{2,8})(?:\?[^\s<>"\'()]*)?~u', $text, $matches );
 		if ( false === $matched ) {
-			throw new \RuntimeException( I18n::text( 'Unparseable or overly complex source text; scan requires review.' ) ); }
+			throw new \RuntimeException( __( 'Unparseable or overly complex source text; scan requires review.', 'smart-media-auditor-optimizer' ) ); }
 		foreach ( $matches[0] as $value ) {
 			$value = self::normalize( $value );
 			$parts = explode( '/', $value );

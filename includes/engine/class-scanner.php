@@ -18,6 +18,80 @@ final class Scanner {
 	 *
 	 * @return array
 	 */
+	/**
+	 * WordPress options that are machinery, not content.
+	 *
+	 * These hold routing regexes, capability maps, schedules and salts. They
+	 * cannot legitimately reference a media file, but they are full of bare
+	 * integers, so scanning them produced weak "evidence" for files nothing
+	 * uses and suppressed almost every unused result.
+	 *
+	 * Options that genuinely can hold media, notably theme_mods_* with
+	 * custom_logo and header_image, are deliberately absent from this list.
+	 *
+	 * @return array
+	 */
+	public static function ignored_options(): array {
+		$ignored = array(
+			'rewrite_rules',
+			'cron',
+			'wp_user_roles',
+			'user_roles',
+			'active_plugins',
+			'active_sitewide_plugins',
+			'recently_activated',
+			'uninstall_plugins',
+			'nonce_salt',
+			'nonce_key',
+			'auth_salt',
+			'auth_key',
+			'secure_auth_salt',
+			'secure_auth_key',
+			'logged_in_salt',
+			'logged_in_key',
+			'sidebars_widgets',
+			'can_compress_scripts',
+			'db_version',
+			'initial_db_version',
+			'wp_force_deactivated_plugins',
+			'https_detection_errors',
+			'finished_updating_comment_type',
+			'finished_splitting_shared_terms',
+			'auto_update_core_major',
+			'auto_update_core_minor',
+			'auto_update_core_dev',
+		);
+		global $wpdb;
+		$ignored[] = $wpdb->prefix . 'user_roles';
+
+		/**
+		 * Filter the options excluded from reference scanning.
+		 *
+		 * Only add options that can never contain a media reference. Removing
+		 * entries makes scans noisier, not safer.
+		 *
+		 * @param array $ignored Option names to skip.
+		 */
+		return array_values( array_unique( (array) apply_filters( 'smao_ignored_options', $ignored ) ) );
+	}
+
+	/**
+	 * Build the WHERE predicate limiting which options are scanned.
+	 *
+	 * @return string
+	 */
+	private static function option_predicate(): string {
+		global $wpdb;
+		$names = self::ignored_options();
+		$list  = implode( ',', array_fill( 0, count( $names ), '%s' ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Placeholders are generated from a counted array.
+		$excluded = $wpdb->prepare( "option_name NOT IN ($list)", $names );
+		return "option_name NOT LIKE 'smao\\_%'"
+			. " AND option_name NOT LIKE '\\_transient\\_%'"
+			. " AND option_name NOT LIKE '\\_site\\_transient\\_%'"
+			. ' AND ' . $excluded;
+	}
+
 	public static function sources(): array {
 		global $wpdb;
 		return array(
@@ -26,7 +100,7 @@ final class Scanner {
 			array( $wpdb->term_taxonomy, 'term_taxonomy_id', 'term_id', 'description', '1=1', 'taxonomy' ),
 			array( $wpdb->links, 'link_id', 'link_id', 'link_image', '1=1', 'links' ),
 			array( $wpdb->postmeta, 'meta_id', 'post_id', 'meta_value', "meta_key NOT IN ('_wp_attached_file','_wp_attachment_metadata','_wp_attachment_backup_sizes') AND meta_key NOT LIKE '\\_smao\\_%'", 'postmeta', 'meta_key' ),
-			array( $wpdb->options, 'option_id', 'option_id', 'option_value', "option_name NOT LIKE 'smao\\_%'", 'options', 'option_name' ),
+			array( $wpdb->options, 'option_id', 'option_id', 'option_value', self::option_predicate(), 'options', 'option_name' ),
 			array( $wpdb->termmeta, 'meta_id', 'term_id', 'meta_value', '1=1', 'termmeta', 'meta_key' ),
 			array( $wpdb->usermeta, 'umeta_id', 'user_id', 'meta_value', '1=1', 'usermeta', 'meta_key' ),
 			array( $wpdb->comments, 'comment_ID', 'comment_ID', 'comment_content', '1=1', 'comments' ),
@@ -44,7 +118,7 @@ final class Scanner {
 		global $wpdb;
 		$old = Database::state();
 		if ( in_array( $old['state'], array( 'running', 'paused' ), true ) ) {
-			throw new \RuntimeException( I18n::text( 'Finish or cancel the existing scan first.' ) );
+			throw new \RuntimeException( __( 'Finish or cancel the existing scan first.', 'smart-media-auditor-optimizer' ) );
 		}
 		foreach ( array( 'tokens', 'evidence' ) as $name ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Identifiers/predicates come from fixed internal maps; all request values use prepared placeholders.
@@ -104,7 +178,7 @@ final class Scanner {
 			'cancel' => array( 'running', 'paused' ),
 		);
 		if ( ! isset( $allowed[ $action ] ) || ! in_array( $state['state'], $allowed[ $action ], true ) ) {
-			throw new \RuntimeException( I18n::text( 'This scan transition is not available.' ) );
+			throw new \RuntimeException( __( 'This scan transition is not available.', 'smart-media-auditor-optimizer' ) );
 		}
 		$state['state'] = array(
 			'pause'  => 'paused',
@@ -464,14 +538,14 @@ final class Scanner {
 		global $wpdb;
 		$state = Database::state();
 		if ( 'complete' !== $state['state'] || ! empty( $state['incomplete'] ) || ( $state['epoch'] ?? null ) !== get_option( 'smao_epoch', '' ) || time() - ( $state['finished'] ?? 0 ) > DAY_IN_SECONDS || ! Settings::get()['coverage_reviewed'] ) {
-			throw new \RuntimeException( I18n::text( 'A complete, unchanged scan from the last 24 hours and scope review are required.' ) );
+			throw new \RuntimeException( __( 'A complete, unchanged scan from the last 24 hours and scope review are required.', 'smart-media-auditor-optimizer' ) );
 		}
 		$table = Database::table( 'media' );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Identifiers/predicates come from fixed internal maps; all request values use prepared placeholders.
 		$row = $wpdb->get_row( $wpdb->prepare( "SELECT status,scan_id FROM $table WHERE attachment_id=%d", $id ), ARRAY_A );
 		Database::check( $row );
 		if ( ! $row || 'unused' !== $row['status'] || $state['id'] !== $row['scan_id'] ) {
-			throw new \RuntimeException( I18n::text( 'Only reviewed unused candidates can be quarantined.' ) );
+			throw new \RuntimeException( __( 'Only reviewed unused candidates can be quarantined.', 'smart-media-auditor-optimizer' ) );
 		}
 		$group = Media::assert_local( $id );
 		// Synchronous recheck closes the normal gap between the scan and quarantine.
@@ -497,7 +571,7 @@ final class Scanner {
 			$hit = $wpdb->get_var( $wpdb->prepare( "SELECT {$s[1]} FROM {$s[0]} WHERE ({$s[4]}) AND ($where) LIMIT 1", $terms ) );
 			Database::check( $hit );
 			if ( $hit ) {
-				throw new \RuntimeException( I18n::text( 'A current database reference may exist. Rescan and review; no files were moved.' ) ); }
+				throw new \RuntimeException( __( 'A current database reference may exist. Rescan and review; no files were moved.', 'smart-media-auditor-optimizer' ) ); }
 		}
 	}
 }

@@ -29,21 +29,21 @@ final class Vault {
 		$document_root = isset( $_SERVER['DOCUMENT_ROOT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['DOCUMENT_ROOT'] ) ) : '';
 		$document      = $document_root ? realpath( $document_root ) : false;
 		if ( ! preg_match( '~^(?:/|[a-zA-Z]:[/\\\\])~', $path ) || Media::within( (string) $root, wp_upload_dir()['basedir'] ) ) {
-			throw new \RuntimeException( I18n::text( 'Vault must be an absolute private path outside uploads.' ) );
+			throw new \RuntimeException( __( 'Vault must be an absolute private path outside uploads.', 'smart-media-auditor-optimizer' ) );
 		}
 		if ( ! $root || ! is_dir( $root ) || ! is_writable( $root ) || Media::within( $root, ABSPATH ) || ( $document && Media::within( $root, $document ) ) ) {
-			throw new \RuntimeException( I18n::text( 'Private vault is unavailable or inside a public web root.' ) );
+			throw new \RuntimeException( __( 'Private vault is unavailable or inside a public web root.', 'smart-media-auditor-optimizer' ) );
 		}
 		// Reject symlinks before resolving, including ancestor symlinks.
 		$walk = rtrim( $path, '/\\' );
 		while ( dirname( $walk ) !== $walk ) {
 			if ( is_link( $walk ) ) {
-				throw new \RuntimeException( I18n::text( 'Vault symlinks are not supported.' ) ); }
+				throw new \RuntimeException( __( 'Vault symlinks are not supported.', 'smart-media-auditor-optimizer' ) ); }
 			$walk = dirname( $walk );
 		}
 		$site = $root . '/site-' . get_current_blog_id();
 		if ( is_link( $site ) || ( $create && ! is_dir( $site ) && ! mkdir( $site, 0700 ) ) ) {
-			throw new \RuntimeException( I18n::text( 'Cannot create private site vault.' ) );
+			throw new \RuntimeException( __( 'Cannot create private site vault.', 'smart-media-auditor-optimizer' ) );
 		}
 		return $site;
 	}
@@ -114,12 +114,12 @@ final class Vault {
 	public static function backup_path( array $record, string $name ): string {
 		$dir = $record['manifest']['directory'];
 		if ( ! preg_match( '/^[a-f0-9]{32}$/D', $dir ) || ! preg_match( '/^[a-f0-9]{64}\.bin$/D', $name ) ) {
-			throw new \RuntimeException( I18n::text( 'Invalid backup manifest.' ) );
+			throw new \RuntimeException( __( 'Invalid backup manifest.', 'smart-media-auditor-optimizer' ) );
 		}
 		$folder = self::root() . '/' . $dir;
 		$path   = $folder . '/' . $name;
 		if ( is_link( $folder ) || is_link( $path ) ) {
-			throw new \RuntimeException( I18n::text( 'Backup symlink rejected.' ) ); }
+			throw new \RuntimeException( __( 'Backup symlink rejected.', 'smart-media-auditor-optimizer' ) ); }
 		return $path;
 	}
 
@@ -134,11 +134,11 @@ final class Vault {
 	 */
 	public static function prepare( int $id, string $operation, array $group ): array {
 		if ( self::record( $id ) ) {
-			throw new \RuntimeException( I18n::text( 'A recovery record already exists. Restore it before another operation.' ) ); }
+			throw new \RuntimeException( __( 'A recovery record already exists. Restore it before another operation.', 'smart-media-auditor-optimizer' ) ); }
 		$directory = bin2hex( random_bytes( 16 ) );
 		$folder    = self::root() . '/' . $directory;
 		if ( ! mkdir( $folder, 0700 ) ) {
-			throw new \RuntimeException( I18n::text( 'Cannot create backup directory.' ) ); }
+			throw new \RuntimeException( __( 'Cannot create backup directory.', 'smart-media-auditor-optimizer' ) ); }
 		$record = array(
 			'attachment_id' => $id,
 			'operation'     => $operation,
@@ -159,7 +159,7 @@ final class Vault {
 			$path = Media::path( $relative );
 			$hash = hash_file( 'sha256', $path );
 			if ( false === $hash ) {
-				throw new \RuntimeException( I18n::text( 'Cannot hash original.' ) ); }
+				throw new \RuntimeException( __( 'Cannot hash original.', 'smart-media-auditor-optimizer' ) ); }
 			$name = hash( 'sha256', $relative ) . '.bin';
 			// Persist intent first. A killed copy never authorizes removal of the original.
 			$record['manifest']['files'][ $relative ] = array(
@@ -171,7 +171,7 @@ final class Vault {
 			self::save( $record );
 			$backup = self::backup_path( $record, $name );
 			if ( ! copy( $path, $backup ) || hash_file( 'sha256', $backup ) !== $hash || hash_file( 'sha256', $path ) !== $hash ) {
-				throw new \RuntimeException( I18n::text( 'Backup verification failed; originals retained.' ) );
+				throw new \RuntimeException( __( 'Backup verification failed; originals retained.', 'smart-media-auditor-optimizer' ) );
 			}
 			chmod( $backup, 0600 );
 			$record['manifest']['files'][ $relative ]['ready'] = true;
@@ -201,7 +201,7 @@ final class Vault {
 		foreach ( $record['manifest']['files'] as $relative => $entry ) {
 			$path = Media::path( $relative );
 			if ( hash_file( 'sha256', $path ) !== $entry['before'] || ! unlink( $path ) ) {
-				throw new \RuntimeException( I18n::text( 'File changed or could not be moved. Recovery journal retained; use Restore.' ) );
+				throw new \RuntimeException( __( 'File changed or could not be moved. Recovery journal retained; use Restore.', 'smart-media-auditor-optimizer' ) );
 			}
 		}
 		$record['state'] = 'quarantined';
@@ -231,12 +231,12 @@ final class Vault {
 	public static function restore( int $id ): void {
 		$record = self::record( $id );
 		if ( ! $record ) {
-			throw new \RuntimeException( I18n::text( 'No recovery record exists.' ) ); }
+			throw new \RuntimeException( __( 'No recovery record exists.', 'smart-media-auditor-optimizer' ) ); }
 		if ( ( $record['manifest']['uploads_root'] ?? null ) !== realpath( wp_upload_dir()['basedir'] ) ) {
-			throw new \RuntimeException( I18n::text( 'Uploads location changed since backup. Restore requires administrator recovery of the original location.' ) );
+			throw new \RuntimeException( __( 'Uploads location changed since backup. Restore requires administrator recovery of the original location.', 'smart-media-auditor-optimizer' ) );
 		}
 		if ( 'purging' === $record['state'] ) {
-			throw new \RuntimeException( I18n::text( 'Permanent purge has started; restore from your independent backup.' ) ); }
+			throw new \RuntimeException( __( 'Permanent purge has started; restore from your independent backup.', 'smart-media-auditor-optimizer' ) ); }
 		if ( 'restored' === $record['state'] ) {
 			self::discard( $record );
 			return; }
@@ -246,18 +246,18 @@ final class Vault {
 			$backup = self::backup_path( $record, $entry['backup'] );
 			if ( ! $entry['ready'] ) {
 				if ( ! is_file( $path ) || hash_file( 'sha256', $path ) !== $entry['before'] ) {
-					throw new \RuntimeException( I18n::text( 'Incomplete backup and original changed. Manual recovery required.' ) ); }
+					throw new \RuntimeException( __( 'Incomplete backup and original changed. Manual recovery required.', 'smart-media-auditor-optimizer' ) ); }
 				continue;
 			}
 			if ( ! is_file( $backup ) || hash_file( 'sha256', $backup ) !== $entry['before'] ) {
-				throw new \RuntimeException( I18n::text( 'Backup is missing or damaged. Restore stopped.' ) ); }
+				throw new \RuntimeException( __( 'Backup is missing or damaged. Restore stopped.', 'smart-media-auditor-optimizer' ) ); }
 			if ( file_exists( $path ) && ! in_array( hash_file( 'sha256', $path ), array( $entry['before'], $entry['after'] ), true ) ) {
-				throw new \RuntimeException( I18n::text( 'An original path has newer content; refusing to overwrite it.' ) ); }
+				throw new \RuntimeException( __( 'An original path has newer content; refusing to overwrite it.', 'smart-media-auditor-optimizer' ) ); }
 		}
 		foreach ( $record['manifest']['generated'] as $relative => $hash ) {
 			$path = Media::path( $relative, false );
 			if ( file_exists( $path ) && ( ! $hash || hash_file( 'sha256', $path ) !== $hash ) ) {
-				throw new \RuntimeException( I18n::text( 'Generated file has changed; manual review required.' ) ); }
+				throw new \RuntimeException( __( 'Generated file has changed; manual review required.', 'smart-media-auditor-optimizer' ) ); }
 		}
 		$record['state'] = 'restoring';
 		self::save( $record );
@@ -269,16 +269,16 @@ final class Vault {
 			if ( ! copy( self::backup_path( $record, $entry['backup'] ), $temp ) || hash_file( 'sha256', $temp ) !== $entry['before'] ) {
 				if ( is_file( $temp ) ) {
 					unlink( $temp ); }
-				throw new \RuntimeException( I18n::text( 'Restore copy failed; backup retained.' ) );
+				throw new \RuntimeException( __( 'Restore copy failed; backup retained.', 'smart-media-auditor-optimizer' ) );
 			}
 			if ( ! rename( $temp, $path ) ) {
 				unlink( $temp );
-				throw new \RuntimeException( I18n::text( 'Atomic restore failed; backup retained.' ) ); }
+				throw new \RuntimeException( __( 'Atomic restore failed; backup retained.', 'smart-media-auditor-optimizer' ) ); }
 		}
 		foreach ( $record['manifest']['generated'] as $relative => $hash ) {
 			$path = Media::path( $relative, false );
 			if ( is_file( $path ) && ! unlink( $path ) ) {
-				throw new \RuntimeException( I18n::text( 'Could not remove a generated derivative.' ) ); }
+				throw new \RuntimeException( __( 'Could not remove a generated derivative.', 'smart-media-auditor-optimizer' ) ); }
 		}
 		wp_update_attachment_metadata( $id, $record['manifest']['metadata'] );
 		if ( $record['manifest']['metadata'] && get_post_meta( $id, '_wp_attachment_metadata', true ) !== $record['manifest']['metadata'] ) {
@@ -323,11 +323,11 @@ final class Vault {
 		foreach ( $record['manifest']['files'] as $entry ) {
 			$path = self::backup_path( $record, $entry['backup'] );
 			if ( is_file( $path ) && ! unlink( $path ) ) {
-				throw new \RuntimeException( I18n::text( 'Could not remove backup; recovery record retained.' ) ); }
+				throw new \RuntimeException( __( 'Could not remove backup; recovery record retained.', 'smart-media-auditor-optimizer' ) ); }
 		}
 		$folder = self::root() . '/' . $record['manifest']['directory'];
 		if ( is_dir( $folder ) && ! rmdir( $folder ) ) {
-			throw new \RuntimeException( I18n::text( 'Unexpected files in backup folder; record retained.' ) ); }
+			throw new \RuntimeException( __( 'Unexpected files in backup folder; record retained.', 'smart-media-auditor-optimizer' ) ); }
 		global $wpdb;
 		Database::check( $wpdb->delete( Database::table( 'vault' ), array( 'attachment_id' => $record['attachment_id'] ) ) );
 	}
@@ -342,15 +342,15 @@ final class Vault {
 	public static function purge( int $id ): void {
 		$record = self::record( $id );
 		if ( ! $record || 'quarantine' !== $record['operation'] || ! in_array( $record['state'], array( 'quarantined', 'purging' ), true ) || time() - (int) $record['created'] < Settings::get()['retention_days'] * DAY_IN_SECONDS ) {
-			throw new \RuntimeException( I18n::text( 'Only retained quarantine groups can be permanently deleted after the retention period.' ) );
+			throw new \RuntimeException( __( 'Only retained quarantine groups can be permanently deleted after the retention period.', 'smart-media-auditor-optimizer' ) );
 		}
 		if ( 'purging' !== $record['state'] ) {
 			if ( is_multisite() || Media::remote( $id ) || Media::protected_reason( $id, Media::group( $id ) ) ) {
-				throw new \RuntimeException( I18n::text( 'Attachment is now protected.' ) ); }
+				throw new \RuntimeException( __( 'Attachment is now protected.', 'smart-media-auditor-optimizer' ) ); }
 			Scanner::assert_no_references( $id, Media::group( $id ) );
 			foreach ( $record['manifest']['files'] as $relative => $entry ) {
 				if ( file_exists( Media::path( $relative, false ) ) ) {
-					throw new \RuntimeException( I18n::text( 'A live file exists at an original path; purge refused.' ) ); }
+					throw new \RuntimeException( __( 'A live file exists at an original path; purge refused.', 'smart-media-auditor-optimizer' ) ); }
 			}
 			// Purge only plugin-owned backups. Never invoke attachment deletion hooks that
 			// can remove newly generated or shared files. Keep the attachment as a tombstone.

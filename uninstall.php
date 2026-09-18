@@ -22,12 +22,12 @@ if ( $exists && (int) $wpdb->get_var( "SELECT COUNT(*) FROM `$vault`" ) > 0 ) {
 }
 wp_clear_scheduled_hook( 'smao_worker' );
 wp_clear_scheduled_hook( 'smao_scheduled_scan' );
-foreach ( array( 'media', 'tokens', 'evidence', 'vault', 'jobs', 'log' ) as $name ) {
+foreach ( array( 'media', 'tokens', 'evidence', 'vault', 'jobs', 'log', 'pages', 'render' ) as $name ) {
 	$table = $wpdb->prefix . 'smao_' . $name;
 	// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Identifiers/predicates come from fixed internal maps; all request values use prepared placeholders.
 	$wpdb->query( "DROP TABLE IF EXISTS `$table`" );
 }
-foreach ( array( 'smao_schema', 'smao_scan', 'smao_settings', 'smao_epoch', 'smao_jobs_paused' ) as $name ) {
+foreach ( array( 'smao_schema', 'smao_scan', 'smao_settings', 'smao_epoch', 'smao_jobs_paused', 'smao_vault_path' ) as $name ) {
 	delete_option( $name );
 }
 // Attachment metadata, original media and generated alternate files are retained.

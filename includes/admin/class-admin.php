@@ -1,0 +1,593 @@
+<?php
+/**
+ * Admin router, REST endpoints and CSV export.
+ *
+ * Screens own their markup; this class only decides which one runs and serves
+ * the endpoints they depend on.
+ *
+ * @package SMAO
+ */
+
+namespace SMAO;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Administrator entry point.
+ */
+final class Admin {
+
+	/**
+	 * Screen slug to menu label.
+	 *
+	 * @return array<string,string>
+	 */
+	public static function screens(): array {
+		return array(
+			'audit'    => __( 'Audit', 'smart-media-auditor-optimizer' ),
+			'cleanup'  => __( 'Clean up', 'smart-media-auditor-optimizer' ),
+			'optimize' => __( 'Optimize', 'smart-media-auditor-optimizer' ),
+			'settings' => __( 'Settings', 'smart-media-auditor-optimizer' ),
+		);
+	}
+
+	/**
+	 * Register WordPress hooks for this component.
+	 *
+	 * @return void
+	 */
+	public static function boot(): void {
+		add_action( 'admin_menu', array( self::class, 'menu' ) );
+		add_action( 'admin_enqueue_scripts', array( self::class, 'assets' ) );
+		add_action( 'rest_api_init', array( self::class, 'routes' ) );
+		add_action( 'admin_post_smao_export', array( self::class, 'export' ) );
+		add_action( 'admin_bar_menu', array( self::class, 'admin_bar' ), 100 );
+	}
+
+	/**
+	 * Register the single menu and its four screens.
+	 *
+	 * @return void
+	 */
+	public static function menu(): void {
+		add_menu_page(
+			__( 'Smart Media Auditor', 'smart-media-auditor-optimizer' ),
+			__( 'Media Auditor', 'smart-media-auditor-optimizer' ),
+			'manage_options',
+			'smao-audit',
+			array( self::class, 'render' ),
+			'dashicons-format-gallery',
+			81
+		);
+		foreach ( self::screens() as $slug => $label ) {
+			add_submenu_page( 'smao-audit', $label, $label, 'manage_options', 'smao-' . $slug, array( self::class, 'render' ) );
+		}
+	}
+
+	/**
+	 * Surface the delivery kill switch in the toolbar when speed is active.
+	 *
+	 * @param \WP_Admin_Bar $bar Toolbar.
+	 * @return void
+	 */
+	public static function admin_bar( $bar ): void {
+		if ( ! Plugin::allowed() || ! Settings::get()['speed_enabled'] ) {
+			return;
+		}
+		$bar->add_node(
+			array(
+				'id'    => 'smao-speed',
+				'title' => __( 'Speed: on', 'smart-media-auditor-optimizer' ),
+				'href'  => admin_url( 'admin.php?page=smao-settings&tab=speed' ),
+				'meta'  => array( 'title' => __( 'Media Auditor speed corrections are active', 'smart-media-auditor-optimizer' ) ),
+			)
+		);
+	}
+
+	/**
+	 * Load admin assets only on this plugin's screens.
+	 *
+	 * @param string $hook Current admin page hook.
+	 * @return void
+	 */
+	public static function assets( string $hook ): void {
+		if ( ! str_contains( $hook, 'smao-' ) ) {
+			return;
+		}
+		wp_enqueue_style( 'smao-admin', plugins_url( 'assets/admin.css', SMAO_FILE ), array(), SMAO_VERSION );
+		wp_register_script( 'smao-model', plugins_url( 'assets/model.js', SMAO_FILE ), array(), SMAO_VERSION, true );
+		wp_enqueue_script( 'smao-admin', plugins_url( 'assets/admin.js', SMAO_FILE ), array( 'smao-model', 'wp-i18n' ), SMAO_VERSION, true );
+		wp_set_script_translations( 'smao-admin', 'smart-media-auditor-optimizer' );
+		wp_localize_script(
+			'smao-admin',
+			'smaoConfig',
+			array(
+				'root'  => esc_url_raw( rest_url( 'smao/v1/' ) ),
+				'nonce' => wp_create_nonce( 'wp_rest' ),
+			)
+		);
+	}
+
+	/**
+	 * Require administrator capabilities and a valid REST nonce.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return bool|\WP_Error
+	 */
+	public static function permission( \WP_REST_Request $request ): bool|\WP_Error {
+		if ( ! Plugin::allowed() || ! wp_verify_nonce( (string) $request->get_header( 'X-WP-Nonce' ), 'wp_rest' ) ) {
+			return new \WP_Error(
+				'smao_forbidden',
+				__( 'Administrator capability and a valid REST nonce are required.', 'smart-media-auditor-optimizer' ),
+				array( 'status' => 403 )
+			);
+		}
+		return true;
+	}
+
+	/**
+	 * Register nonce-protected administrator REST routes.
+	 *
+	 * @return void
+	 */
+	public static function routes(): void {
+		$routes = array(
+			'status'   => 'GET',
+			'digest'   => 'GET',
+			'fragment' => 'GET',
+			'evidence' => 'GET',
+			'control'  => 'POST',
+			'action'   => 'POST',
+			'settings' => 'POST',
+			'runtime'  => 'POST',
+			'storage'  => 'POST',
+		);
+		foreach ( $routes as $route => $method ) {
+			register_rest_route(
+				'smao/v1',
+				'/' . $route,
+				array(
+					'methods'             => $method,
+					'permission_callback' => array( self::class, 'permission' ),
+					'callback'            => static function ( \WP_REST_Request $request ) use ( $route ) {
+						return self::dispatch( $route, $request );
+					},
+				)
+			);
+		}
+	}
+
+	/**
+	 * Execute one REST route with uniform error handling.
+	 *
+	 * @param string           $route   Route name.
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	private static function dispatch( string $route, \WP_REST_Request $request ) {
+		try {
+			// Reads need no lock.
+			if ( 'status' === $route ) {
+				return rest_ensure_response( self::status() );
+			}
+			if ( 'digest' === $route ) {
+				return rest_ensure_response( Live::digest( (array) $request->get_query_params() ) );
+			}
+			if ( 'fragment' === $route ) {
+				$params = (array) $request->get_query_params();
+				$screen = self::screen_of( (string) ( $params['screen'] ?? 'audit' ) );
+				return rest_ensure_response(
+					array(
+						'html'   => Report_Table::fragment( $screen, $params ),
+						'digest' => Live::digest( $params ),
+					)
+				);
+			}
+			if ( 'evidence' === $route ) {
+				return rest_ensure_response( Live::evidence( absint( $request->get_param( 'id' ) ) ) );
+			}
+
+			return rest_ensure_response(
+				Database::lock(
+					static function () use ( $request, $route ) {
+						if ( 'storage' === $route ) {
+							Vault::configure( (string) $request->get_param( 'path' ) );
+							return self::status();
+						}
+						if ( 'runtime' === $route ) {
+							Settings::runtime( (array) $request->get_json_params() );
+							return self::status();
+						}
+						if ( 'settings' === $route ) {
+							$payload  = (array) $request->get_json_params();
+							$result   = Settings::save( $payload );
+							$result['status'] = self::status();
+							return $result;
+						}
+						if ( 'control' === $route ) {
+							return self::control( $request );
+						}
+						return self::action( $request );
+					}
+				)
+			);
+		} catch ( \Throwable $e ) {
+			return new \WP_Error(
+				409 === $e->getCode() ? 'smao_busy' : 'smao_stopped',
+				$e->getMessage(),
+				array( 'status' => 409 )
+			);
+		}
+	}
+
+	/**
+	 * Map an untrusted screen name onto a known screen.
+	 *
+	 * @param string $screen Requested screen.
+	 * @return string
+	 */
+	private static function screen_of( string $screen ): string {
+		$screen = sanitize_key( $screen );
+		return isset( self::screens()[ $screen ] ) ? $screen : 'audit';
+	}
+
+	/**
+	 * Run a scan or queue control command.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return array
+	 * @throws \RuntimeException When a command is refused.
+	 */
+	private static function control( \WP_REST_Request $request ): array {
+		global $wpdb;
+		$command = sanitize_key( (string) $request->get_param( 'command' ) );
+
+		if ( 'review_scan' === $command ) {
+			if ( true !== $request->get_param( 'scope_reviewed' ) ) {
+				throw new \RuntimeException( __( 'Confirm the scope review before starting.', 'smart-media-auditor-optimizer' ) );
+			}
+			$settings                      = Settings::get();
+			$settings['coverage_reviewed'] = true;
+			update_option( 'smao_settings', $settings, false );
+			Database::log( 'scope_reviewed', 0, __( 'Administrator confirmed the usage-scope review.', 'smart-media-auditor-optimizer' ) );
+			Scanner::control( 'restart' );
+			return self::status();
+		}
+
+		if ( 'cleanup_records' === $command ) {
+			if ( 'CLEAR' !== $request->get_param( 'confirmation' ) ) {
+				throw new \RuntimeException( __( 'Type CLEAR to confirm removing old plugin records.', 'smart-media-auditor-optimizer' ) );
+			}
+			return array( 'removed' => Plugin::cleanup() );
+		}
+
+		if ( 'tick' === $command ) {
+			Plugin::tick();
+			return self::status();
+		}
+
+		if ( in_array( $command, array( 'pause_jobs', 'resume_jobs', 'cancel_jobs' ), true ) ) {
+			if ( 'cancel_jobs' === $command ) {
+				Database::check( $wpdb->update( Database::table( 'jobs' ), array( 'state' => 'cancelled' ), array( 'state' => 'queued' ) ) );
+			} else {
+				update_option( 'smao_jobs_paused', 'pause_jobs' === $command, false );
+			}
+			return self::status();
+		}
+
+		Scanner::control( $command );
+		return self::status();
+	}
+
+	/**
+	 * Validate confirmation and execute a selected-attachment action.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return array
+	 * @throws \RuntimeException When validation or permission fails.
+	 */
+	private static function action( \WP_REST_Request $request ): array {
+		$action      = sanitize_key( (string) $request->get_param( 'action' ) );
+		$destructive = array( 'quarantine', 'purge' );
+		$allowed     = array( 'quarantine', 'restore', 'purge', 'optimize', 'thumbnails' );
+		if ( ! in_array( $action, $allowed, true ) ) {
+			throw new \RuntimeException( __( 'Unsupported action.', 'smart-media-auditor-optimizer' ) );
+		}
+
+		$raw = $request->get_param( 'ids' );
+		if ( ! is_array( $raw ) || ! $raw || count( $raw ) > 50 ) {
+			throw new \RuntimeException( __( 'Select between 1 and 50 files.', 'smart-media-auditor-optimizer' ) );
+		}
+		foreach ( $raw as $candidate ) {
+			if ( ( ! is_int( $candidate ) && ! is_string( $candidate ) ) || ! preg_match( '/^[1-9][0-9]*$/D', (string) $candidate ) ) {
+				throw new \RuntimeException( __( 'File IDs must be positive integers.', 'smart-media-auditor-optimizer' ) );
+			}
+		}
+		$ids = array_values( array_unique( array_map( 'absint', $raw ) ) );
+
+		// Only irreversible actions demand a typed confirmation.
+		if ( in_array( $action, $destructive, true ) && strtoupper( $action ) !== $request->get_param( 'confirmation' ) ) {
+			throw new \RuntimeException( __( 'Type the confirmation word to continue.', 'smart-media-auditor-optimizer' ) );
+		}
+
+		foreach ( $ids as $id ) {
+			if ( ! current_user_can( 'edit_post', $id ) ) {
+				throw new \RuntimeException( __( 'You do not have permission to change one of the selected files.', 'smart-media-auditor-optimizer' ) );
+			}
+			if ( in_array( $action, $destructive, true ) && ! current_user_can( 'delete_post', $id ) ) {
+				throw new \RuntimeException( __( 'You do not have permission to remove one of the selected files.', 'smart-media-auditor-optimizer' ) );
+			}
+		}
+
+		if ( in_array( $action, array( 'optimize', 'thumbnails' ), true ) ) {
+			Plugin::enqueue( $action, $ids );
+			return array(
+				'message' => __( 'Queued. Progress appears in the optimization queue above.', 'smart-media-auditor-optimizer' ),
+				'status'  => self::status(),
+			);
+		}
+
+		$results = array();
+		foreach ( $ids as $id ) {
+			try {
+				if ( 'quarantine' === $action ) {
+					Vault::quarantine( $id );
+				} elseif ( 'restore' === $action ) {
+					Vault::restore( $id );
+				} else {
+					Vault::purge( $id );
+				}
+				$results[] = array(
+					'id'      => $id,
+					'ok'      => true,
+					'message' => __( 'Done.', 'smart-media-auditor-optimizer' ),
+				);
+			} catch ( \Throwable $e ) {
+				$results[] = array(
+					'id'      => $id,
+					'ok'      => false,
+					'message' => $e->getMessage(),
+				);
+				Database::log( $action . '_blocked', $id, $e->getMessage() );
+			}
+		}
+		return array(
+			'results' => $results,
+			'status'  => self::status(),
+		);
+	}
+
+	/**
+	 * Read compact scan and queue progress for polling.
+	 *
+	 * @return array
+	 */
+	public static function status(): array {
+		global $wpdb;
+		$table = Database::table( 'jobs' );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fixed internal table name.
+		$jobs = $wpdb->get_results( "SELECT id,attachment_id,action,state,message FROM $table ORDER BY id DESC LIMIT 20", ARRAY_A );
+		Database::check( $jobs );
+		$state          = Database::state();
+		$state['stale'] = isset( $state['epoch'] ) && get_option( 'smao_epoch', '' ) !== $state['epoch'];
+		return array(
+			'scan'        => $state,
+			'jobs'        => $jobs,
+			'jobs_paused' => (bool) get_option( 'smao_jobs_paused', false ),
+			'live'        => Live::snapshot(),
+		);
+	}
+
+	/**
+	 * Build a prepared report predicate with allowlisted ordering.
+	 *
+	 * @param array $input Filter input.
+	 * @param int   $after Cursor for streaming exports.
+	 * @return array{0:string,1:string}
+	 */
+	public static function query( array $input, int $after = -1 ): array {
+		global $wpdb;
+		$where = array( '1=1' );
+		$args  = array();
+		$scan  = Database::state();
+		if ( isset( $scan['id'] ) ) {
+			$where[] = 'scan_id=%s';
+			$args[]  = $scan['id'];
+		}
+		$status = sanitize_key( (string) ( $input['status'] ?? '' ) );
+		if ( array_key_exists( $status, Report_Table::statuses() ) ) {
+			$where[] = 'status=%s';
+			$args[]  = $status;
+		}
+		if ( isset( $input['optimized'] ) && in_array( (string) $input['optimized'], array( '0', '1' ), true ) ) {
+			$where[] = 'optimized=%d';
+			$args[]  = (int) $input['optimized'];
+		}
+		if ( ! empty( $input['mime'] ) ) {
+			$where[] = 'mime LIKE %s';
+			$args[]  = $wpdb->esc_like( sanitize_text_field( (string) $input['mime'] ) ) . '%';
+		}
+		if ( ! empty( $input['search'] ) ) {
+			$where[] = '(filename LIKE %s OR attachment_id=%d)';
+			$args[]  = '%' . $wpdb->esc_like( sanitize_text_field( (string) $input['search'] ) ) . '%';
+			$args[]  = absint( $input['search'] );
+		}
+		foreach ( array(
+			'from'  => '>=',
+			'until' => '<=',
+		) as $key => $operator ) {
+			if ( ! empty( $input[ $key ] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/D', (string) $input[ $key ] ) ) {
+				$where[] = "uploaded $operator %s";
+				$args[]  = $input[ $key ] . ( 'from' === $key ? ' 00:00:00' : ' 23:59:59' );
+			}
+		}
+		foreach ( array(
+			'min_bytes' => '>=',
+			'max_bytes' => '<=',
+		) as $key => $operator ) {
+			if ( isset( $input[ $key ] ) && '' !== (string) $input[ $key ] ) {
+				$where[] = "bytes $operator %d";
+				$args[]  = absint( $input[ $key ] );
+			}
+		}
+		if ( $after >= 0 ) {
+			$where[] = 'attachment_id>%d';
+			$args[]  = $after;
+		}
+		$sort      = in_array( $input['sort'] ?? '', array( 'attachment_id', 'filename', 'bytes', 'uploaded', 'status', 'saved' ), true )
+			? $input['sort']
+			: 'attachment_id';
+		$direction = 'desc' === ( $input['direction'] ?? '' ) ? 'DESC' : 'ASC';
+		$sql       = implode( ' AND ', $where );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Predicates come from fixed internal maps; values use placeholders.
+		$sql = $args ? $wpdb->prepare( $sql, $args ) : $sql;
+		return array( $sql, $after >= 0 ? 'attachment_id ASC' : "$sort $direction, attachment_id ASC" );
+	}
+
+	/**
+	 * Render the requested screen.
+	 *
+	 * @return void
+	 */
+	public static function render(): void {
+		if ( ! Plugin::allowed() ) {
+			wp_die( esc_html__( 'You do not have permission to manage media audits.', 'smart-media-auditor-optimizer' ) );
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only screen routing and filters.
+		$input   = wp_unslash( $_GET );
+		$screens = self::screens();
+		$slug    = str_replace( 'smao-', '', sanitize_key( (string) ( $input['page'] ?? 'smao-audit' ) ) );
+
+		if ( ! isset( $screens[ $slug ] ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=smao-audit&unknown=1' ) );
+			exit;
+		}
+		$input['screen'] = $slug;
+		?>
+		<div class="wrap smao" data-screen="<?php echo esc_attr( $slug ); ?>">
+			<h1 class="smao-title">
+				<?php echo esc_html( $screens[ $slug ] ); ?>
+				<span class="smao-version">v<?php echo esc_html( SMAO_VERSION ); ?></span>
+			</h1>
+
+			<?php self::steps( $slug ); ?>
+
+			<div id="smao-notice" role="status" aria-live="polite" tabindex="-1"></div>
+
+			<?php if ( ! empty( $input['unknown'] ) ) : ?>
+				<div class="notice notice-warning"><p><?php esc_html_e( 'That screen no longer exists. This is the Audit screen.', 'smart-media-auditor-optimizer' ); ?></p></div>
+			<?php endif; ?>
+
+			<?php
+			try {
+				switch ( $slug ) {
+					case 'cleanup':
+						Screen_Cleanup::render( $input );
+						break;
+					case 'optimize':
+						Screen_Optimize::render( $input );
+						break;
+					case 'settings':
+						Screen_Settings::render( $input );
+						break;
+					default:
+						Screen_Audit::render( $input );
+				}
+			} catch ( \Throwable $e ) {
+				echo '<div class="notice notice-error"><p>' . esc_html( $e->getMessage() ) . '</p></div>';
+			}
+			?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the workflow position indicator, present on every screen.
+	 *
+	 * @param string $slug Current screen.
+	 * @return void
+	 */
+	private static function steps( string $slug ): void {
+		$steps = array(
+			'audit'    => __( 'Scan', 'smart-media-auditor-optimizer' ),
+			'cleanup'  => __( 'Clean up', 'smart-media-auditor-optimizer' ),
+			'optimize' => __( 'Optimize', 'smart-media-auditor-optimizer' ),
+		);
+		$index = array_search( $slug, array_keys( $steps ), true );
+		?>
+		<ol class="smao-workflow" aria-label="<?php esc_attr_e( 'Where you are', 'smart-media-auditor-optimizer' ); ?>">
+			<?php $position = 0; ?>
+			<?php foreach ( $steps as $step => $label ) : ?>
+				<?php
+				$state = 'todo';
+				if ( $step === $slug ) {
+					$state = 'current';
+				} elseif ( false !== $index && $position < $index ) {
+					$state = 'done';
+				}
+				++$position;
+				?>
+				<li class="is-<?php echo esc_attr( $state ); ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=smao-' . $step ) ); ?>"
+						<?php echo $step === $slug ? 'aria-current="step"' : ''; ?>>
+						<span class="smao-step-number"><?php echo esc_html( number_format_i18n( $position ) ); ?></span>
+						<?php echo esc_html( $label ); ?>
+					</a>
+				</li>
+			<?php endforeach; ?>
+		</ol>
+		<?php
+	}
+
+	/**
+	 * Stream filtered, formula-safe CSV rows in primary-key order.
+	 *
+	 * @return void
+	 */
+	public static function export(): void {
+		if ( ! Plugin::allowed() ) {
+			wp_die( esc_html__( 'Forbidden.', 'smart-media-auditor-optimizer' ), '', array( 'response' => 403 ) );
+		}
+		check_admin_referer( 'smao_export' );
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="smart-media-audit.csv"' );
+		header( 'X-Content-Type-Options: nosniff' );
+
+		$output  = fopen( 'php://output', 'w' );
+		$columns = array( 'attachment_id', 'filename', 'mime', 'uploaded', 'bytes', 'width', 'height', 'status', 'optimized', 'saved', 'reason', 'locations' );
+		fputcsv( $output, $columns, ',', '"', '' );
+
+		global $wpdb;
+		$table = Database::table( 'media' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce verified above.
+		$input  = wp_unslash( $_GET );
+		$cursor = 0;
+		do {
+			list( $where, $order ) = self::query( $input, $cursor );
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- query() prepares every value.
+			$rows = $wpdb->get_results( "SELECT * FROM $table WHERE $where ORDER BY $order LIMIT 100", ARRAY_A );
+			Database::check( $rows );
+			foreach ( $rows as $row ) {
+				$evidence = Database::table( 'evidence' );
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fixed internal table name.
+				$row['locations'] = wp_json_encode(
+					$wpdb->get_results(
+						$wpdb->prepare( "SELECT source,source_id,field,strength,kind FROM $evidence WHERE attachment_id=%d LIMIT 100", $row['attachment_id'] ),
+						ARRAY_A
+					)
+				);
+				$line = array();
+				foreach ( $columns as $column ) {
+					$line[] = Matcher::csv( $row[ $column ] );
+				}
+				fputcsv( $output, $line, ',', '"', '' );
+				$cursor = (int) $row['attachment_id'];
+			}
+			$batch = count( $rows );
+		} while ( 100 === $batch && ! connection_aborted() );
+
+		fclose( $output );
+		exit;
+	}
+}

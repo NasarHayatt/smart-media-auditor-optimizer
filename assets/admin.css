@@ -1,2 +1,833 @@
-.smao{--ink:#172b3a;--muted:#637787;--line:#dfe7ec;--accent:#087f79;max-width:1600px;color:var(--ink);padding:20px 22px 40px 0;font-size:13px}.smao *{box-sizing:border-box}.smao h1,.smao h2,.smao h3{color:var(--ink)}.smao h2{font-size:21px;line-height:1.3;margin:0 0 12px}.smao p{line-height:1.7}.smao-app-header{display:flex;align-items:center;gap:14px;padding:6px 0 24px}.smao-brand-mark{display:grid;place-items:center;background:var(--ink);color:#8be1d6;border-radius:13px;width:48px;height:48px;font-size:26px;font-weight:750}.smao-app-header h1{padding:0;font-size:24px;font-weight:650}.smao-eyebrow{font-size:10px;letter-spacing:1.8px;font-weight:750;color:var(--accent)}.smao-version{margin-left:auto;color:var(--muted);font-size:12px}.smao-app-nav{display:flex;gap:4px;flex-wrap:wrap;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:24px}.smao-app-nav a{white-space:nowrap;text-decoration:none;color:var(--muted);padding:13px 15px;border-bottom:3px solid transparent;font-weight:600}.smao-app-nav a[aria-current=page]{color:var(--accent);border-color:var(--accent);background:#e7f2ef;border-radius:7px 7px 0 0}.smao-page-heading,.smao-section-heading,.smao-card-top{display:flex;align-items:center;justify-content:space-between;gap:14px}.smao-page-heading{margin-bottom:18px}.smao-page-heading h2{font-size:26px;margin:7px 0}.smao-safe-tag{color:#397465;background:#e6f1ec;border:1px solid #cddfd7;border-radius:20px;padding:7px 12px;font-size:12px}.smao-safety{padding:12px 16px;background:#fcf7e8;border:1px solid #e9dfbf;border-radius:9px;margin:14px 0 24px;color:#76652b}.smao summary{cursor:pointer}.smao-safety p{margin-bottom:0}.smao-metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin:22px 0}.smao-metric{background:white;border:1px solid var(--line);border-radius:12px;padding:18px}.smao-metric span,.smao-metric small{display:block;font-size:11px;color:var(--muted)}.smao-metric strong{display:block;font-size:29px;line-height:1.35;margin:10px 0 6px;font-weight:650;letter-spacing:-.7px}.smao-metric:first-child{background:#e7f4f0;border-color:#bdddd3}.smao-workspace-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(290px,1fr);gap:20px}.smao-scan-card,.smao-activity-card,.smao-queue-card,.smao-results,.smao-expert,.smao-panel{background:white;border:1px solid var(--line);border-radius:14px;padding:24px}.smao-card-top{margin-bottom:17px}.smao-card-top h2{font-size:16px;margin:0}.smao-muted{color:var(--muted)}.smao-badge{display:inline-block;white-space:nowrap;padding:4px 9px;border-radius:20px;background:#edf1f5;color:#536677;font-size:11px;font-weight:600;text-transform:capitalize}.smao-status-used{background:#dff4e9;color:#216649}.smao-status-unused{background:#fff0d0;color:#8a620e}.smao-status-broken{background:#fde7e5;color:#a23e37}.smao-status-possible{background:#e9eafa;color:#635b9c}.smao-progress-heading{display:flex;justify-content:space-between;align-items:center;margin-top:30px}.smao-progress-heading span{font-size:24px;font-weight:700;color:var(--accent)}#smao-progress-bar{width:100%;height:10px;border:0;border-radius:10px;overflow:hidden;margin:13px 0 9px;appearance:none;background:#e9eff1}#smao-progress-bar::-webkit-progress-bar{background:#e9eff1}#smao-progress-bar::-webkit-progress-value{background:var(--accent);transition:width .5s}#smao-progress-bar::-moz-progress-bar{background:var(--accent)}.smao-progress-meta{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;gap:10px}.smao-steps{display:grid;grid-template-columns:repeat(3,1fr);list-style:none;margin:23px 0;padding:0;gap:10px}.smao-steps li{border:1px solid var(--line);border-radius:9px;padding:12px;color:var(--muted);display:grid;grid-template-columns:25px 1fr;gap:5px;align-items:center;font-size:11px}.smao-steps li b{grid-row:span 2;font-size:12px;color:#90a2ad}.smao-steps li small{grid-column:2}.smao-steps li.active{border-color:#8ec4ba;background:#f0f8f5;color:var(--accent)}.smao-current{display:flex;align-items:center;gap:12px;background:#f5f8fa;padding:14px;border-radius:8px}.smao-current div{min-width:0;flex:1}.smao-current small{display:block;font-size:9px;letter-spacing:1px;color:var(--muted)}.smao-current strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;margin-top:3px}#smao-freshness{font-size:10px;color:var(--muted)}.smao-pulse{width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 0 4px #dcefe9}.smao-controls{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:20px 0 12px}.smao .button{border-color:#ccd9e0;border-radius:7px;color:#304959;background:#fff;padding:6px 13px;line-height:1.6;min-height:34px;font-weight:600}.smao .button:hover{background:#f0f6f6;border-color:#91b8b3;color:var(--accent)}.smao .button-primary{background:var(--accent);border-color:var(--accent);color:#fff}.smao .button-primary:hover{background:#096760;color:white}.smao button[hidden]{display:none}.smao .button:disabled{opacity:.55}.smao .smao-danger-text{color:#a9423a}.smao-connection{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);padding-top:12px;border-top:1px solid var(--line);gap:12px}.smao-live-dot{font-size:9px;color:var(--accent);font-weight:700;letter-spacing:1px}.smao-activity{list-style:none;padding:0;margin:0;max-height:325px;overflow:auto}.smao-activity li{border-left:2px solid #d2e4dd;padding:0 0 15px 15px;margin:0 0 0 5px}.smao-activity li strong{display:block;font-size:12px;overflow-wrap:anywhere;font-weight:500;margin-top:3px}.smao-activity li small{color:var(--muted);font-size:10px}.smao-discovery{margin:25px 0}.smao-section-heading h2{font-size:17px;margin:0}.smao-section-heading{margin-bottom:16px}.smao-section-heading>span{font-size:11px}.smao-media-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}.smao-media-grid article{padding:12px;background:#fff;border:1px solid var(--line);border-radius:10px;min-width:0}.smao-media-grid .smao-thumb{width:100%;height:90px;float:none;margin:0 0 10px;background:#f2f5f6;border-radius:6px;object-fit:contain}.smao-media-grid strong{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.smao-media-grid small{display:block;font-size:10px;margin:6px 0 9px;color:var(--muted)}.smao-empty{padding:20px;color:var(--muted);grid-column:1/-1}.smao-expert{padding:0;margin:22px 0}.smao-expert>summary{padding:18px 22px;font-weight:650}.smao-expert>summary small{font-weight:400;color:var(--muted);margin-left:18px}.smao-runtime{padding:0 22px 22px}.smao-runtime-fields{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin:12px 0 20px}.smao-runtime-fields label{display:grid;gap:8px;font-size:12px}.smao input:not([type=checkbox]),.smao select,.smao textarea{border:1px solid #cdd9e0;border-radius:6px;padding:6px 10px;min-height:35px;max-width:100%;color:var(--ink)}.smao input:focus,.smao select:focus{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}.smao-queue-card{margin:22px 0}.smao-queue-card p{margin:5px 0}#smao-jobs{max-height:160px;overflow:auto;font-size:12px}#smao-jobs p{padding:8px 0;border-top:1px solid var(--line)}.smao-results{margin:24px 0;padding:22px 0 0;overflow:hidden}.smao-results>.smao-section-heading,.smao-results>.smao-filters,.smao-results>p,.smao-results>.smao-controls{margin-left:22px;margin-right:22px}.smao-filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin:20px 0}.smao-filters label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--muted);flex:1 1 135px}.smao-filters input{width:100%}.smao-table{overflow-x:auto}.smao .widefat{border:0;box-shadow:none}.smao .widefat th{background:#f5f8fa;color:var(--muted);font-size:11px;font-weight:600;padding:13px 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.smao .widefat td{vertical-align:top;padding:16px 12px;border-bottom:1px solid #edf1f4;font-size:12px;white-space:pre-line;overflow-wrap:anywhere}.smao .striped>tbody>:nth-child(odd){background:#fff}.smao .widefat tbody tr:hover{background:#f7fafb}.smao .widefat td:nth-child(2){min-width:190px;max-width:290px}.smao .widefat small{display:block;font-size:10px;color:var(--muted);margin-top:5px}.smao-thumb{object-fit:contain;float:left;margin:0 12px 6px 0;border-radius:5px;background:#f4f7f8}.smao table details{max-width:300px;min-width:140px}.smao table summary{color:var(--accent);font-size:11px}#smao-pagination{display:flex;gap:15px;align-items:center;justify-content:flex-end;padding:15px 22px}.smao-bulk-bar{border-top:1px solid var(--line);padding:18px 0}.smao-bulk-bar label{flex-basis:100%;font-size:12px}.smao-settings{display:grid;gap:20px;max-width:850px;padding:24px;background:white;border:1px solid var(--line);border-radius:12px}.smao-settings>label{display:grid;gap:7px}.smao-settings input[type=number],.smao-settings select{max-width:360px}.smao-settings label:has(input[type=checkbox]){display:block}.smao-settings fieldset{border:1px solid var(--line);padding:16px;border-radius:8px}.smao-settings fieldset label{display:block;margin:10px 0}.smao-system{display:grid;grid-template-columns:230px 1fr;max-width:1000px}.smao-system dt{font-weight:600;padding:8px}.smao-system dd{padding:8px;margin:0}.smao-inline-warning{background:#fff4da;padding:12px;border-radius:7px}#smao-notice{white-space:pre-wrap;padding:12px;border-radius:6px}#smao-notice:empty{display:none}.smao-dialog{max-width:530px;width:90%;padding:30px;border:1px solid #dfe7ec;border-radius:16px;color:#172b3a;box-shadow:0 20px 100px #172b3a44}.smao-dialog::backdrop{background:#172b3a88}.smao-dialog input{display:block;width:100%;margin:10px 0 22px;padding:10px}.smao-dialog button{margin-right:10px}.smao-dialog p{line-height:1.7;overflow-wrap:anywhere}@media(max-width:1200px){.smao-metrics{grid-template-columns:repeat(3,1fr)}.smao-media-grid{grid-template-columns:repeat(3,1fr)}}@media(max-width:900px){.smao-workspace-grid{grid-template-columns:1fr}.smao-runtime-fields{grid-template-columns:repeat(2,1fr)}.smao-activity{max-height:180px}}@media(max-width:600px){.smao{padding-right:10px}.smao-metrics{grid-template-columns:repeat(2,1fr)}.smao-media-grid{grid-template-columns:repeat(2,1fr)}.smao-scan-card,.smao-activity-card{padding:18px}.smao-steps{gap:5px}.smao-steps li{display:block;padding:9px;font-size:10px}.smao-steps li span,.smao-steps li small{display:block;margin-top:6px}.smao-version,.smao-safe-tag{display:none}.smao-expert>summary small{display:block;margin:8px 0 0}.smao-system{grid-template-columns:1fr}.smao-runtime-fields{grid-template-columns:1fr}.smao-app-header h1{font-size:20px}.smao-progress-meta,.smao-connection{flex-wrap:wrap}}
-.smao-workflow{display:flex;flex-wrap:wrap;gap:12px;margin:18px 0}.smao-workflow a{flex:1;min-width:200px;padding:15px 18px;border:1px solid #b7d5ce;border-radius:9px;background:#eaf5f1;color:#096b64;text-decoration:none;font-weight:650}.smao-cleanup-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;margin:20px 0}.smao-cleanup-card ul{list-style:disc;margin:15px 0 20px 22px;color:#85621e}.smao-cleanup-card li{padding:4px}.smao-cleanup-card label{display:block;line-height:1.7}.smao-cleanup-card input[type=text]{display:block;min-width:300px;max-width:100%;margin:10px 0}.smao[data-screen=review] .smao-bulk-bar{position:sticky;bottom:0;background:#fff;padding:18px 22px;box-shadow:0 -3px 15px #172b3a12;z-index:5}.smao[data-screen=review] .smao-results{overflow:visible}.smao-bulk-bar [data-action=quarantine]{background:#087f79;color:white;border-color:#087f79}
+/**
+ * Smart Media Auditor & Optimizer - admin styles.
+ *
+ * This is the editable source. assets/admin.css is generated from it by
+ * tools/build-release.py. Edit this file, never the build artifact.
+ */
+
+.smao {
+	--smao-ink: #1d2327;
+	--smao-muted: #646970;
+	--smao-line: #dcdcde;
+	--smao-accent: #0b6e66;
+	--smao-accent-soft: #e6f2f0;
+	--smao-warn-bg: #fcf3d6;
+	--smao-warn-ink: #7a5c11;
+	--smao-danger: #a4342a;
+	--smao-radius: 6px;
+
+	max-width: 1440px;
+	color: var(--smao-ink);
+}
+
+.smao *,
+.smao *::before,
+.smao *::after {
+	box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------------- header */
+
+.smao-title {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+}
+
+.smao-version {
+	font-size: 12px;
+	font-weight: 400;
+	color: var(--smao-muted);
+}
+
+/* -------------------------------------------------------------- workflow */
+
+.smao-workflow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 16px 0 20px;
+	padding: 0;
+	list-style: none;
+	counter-reset: smao-step;
+}
+
+.smao-workflow li {
+	margin: 0;
+}
+
+.smao-workflow a {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 9px 16px 9px 10px;
+	border: 1px solid var(--smao-line);
+	border-radius: 999px;
+	background: #fff;
+	color: var(--smao-muted);
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.smao-workflow a:focus-visible {
+	outline: 2px solid var(--smao-accent);
+	outline-offset: 2px;
+}
+
+.smao-step-number {
+	display: grid;
+	place-items: center;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: #f0f0f1;
+	color: var(--smao-muted);
+	font-size: 12px;
+}
+
+.smao-workflow .is-current a {
+	border-color: var(--smao-accent);
+	background: var(--smao-accent-soft);
+	color: var(--smao-accent);
+}
+
+.smao-workflow .is-current .smao-step-number,
+.smao-workflow .is-done .smao-step-number {
+	background: var(--smao-accent);
+	color: #fff;
+}
+
+.smao-workflow .is-done a {
+	color: var(--smao-ink);
+}
+
+/* --------------------------------------------------------------- notices */
+
+#smao-notice {
+	margin: 12px 0;
+	padding: 12px 14px;
+	border-radius: var(--smao-radius);
+	border-left: 4px solid var(--smao-accent);
+	background: var(--smao-accent-soft);
+	white-space: pre-wrap;
+}
+
+#smao-notice:empty {
+	display: none;
+}
+
+#smao-notice.is-error {
+	border-left-color: var(--smao-danger);
+	background: #fcf0ef;
+}
+
+#smao-notice:focus {
+	outline: 2px solid var(--smao-accent);
+	outline-offset: 1px;
+}
+
+.smao-inline-warning {
+	padding: 10px 12px;
+	border-radius: var(--smao-radius);
+	background: var(--smao-warn-bg);
+	color: var(--smao-warn-ink);
+}
+
+.smao-muted {
+	color: var(--smao-muted);
+}
+
+.smao-ok {
+	color: #1a6b45;
+}
+
+/* ---------------------------------------------------------------- panels */
+
+.smao-panel {
+	margin: 0 0 20px;
+	padding: 20px;
+	border: 1px solid var(--smao-line);
+	border-radius: 10px;
+	background: #fff;
+}
+
+.smao-panel-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 14px;
+}
+
+.smao-panel-head h2,
+.smao-panel > h2 {
+	margin: 0 0 4px;
+	font-size: 16px;
+}
+
+.smao-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+	gap: 20px;
+}
+
+/* --------------------------------------------------------------- metrics */
+
+.smao-metrics {
+	display: grid;
+	grid-template-columns: repeat(6, minmax(0, 1fr));
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.smao-metric {
+	padding: 14px 16px;
+	border: 1px solid var(--smao-line);
+	border-radius: 10px;
+	background: #fff;
+}
+
+.smao-metric span {
+	display: block;
+	font-size: 11px;
+	color: var(--smao-muted);
+}
+
+.smao-metric strong {
+	display: block;
+	margin-top: 6px;
+	font-size: 24px;
+	line-height: 1.2;
+	letter-spacing: -0.5px;
+}
+
+.smao-metric:first-child {
+	background: var(--smao-accent-soft);
+	border-color: #bcdcd6;
+}
+
+/* -------------------------------------------------------------- progress */
+
+.smao-progress-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	margin-top: 18px;
+}
+
+.smao-progress-head span {
+	font-size: 20px;
+	font-weight: 700;
+	color: var(--smao-accent);
+}
+
+#smao-progress-bar {
+	width: 100%;
+	height: 8px;
+	margin: 10px 0 6px;
+	border: 0;
+	border-radius: 8px;
+	background: #f0f0f1;
+	appearance: none;
+}
+
+#smao-progress-bar::-webkit-progress-bar {
+	background: #f0f0f1;
+	border-radius: 8px;
+}
+
+#smao-progress-bar::-webkit-progress-value {
+	background: var(--smao-accent);
+	border-radius: 8px;
+}
+
+#smao-progress-bar::-moz-progress-bar {
+	background: var(--smao-accent);
+	border-radius: 8px;
+}
+
+.smao-progress-meta {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	font-size: 11px;
+	color: var(--smao-muted);
+}
+
+.smao-steps {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+	margin: 18px 0;
+	padding: 0;
+	list-style: none;
+}
+
+.smao-steps li {
+	margin: 0;
+	padding: 10px 12px;
+	border: 1px solid var(--smao-line);
+	border-radius: 8px;
+	font-size: 12px;
+	color: var(--smao-muted);
+}
+
+.smao-steps li.active {
+	border-color: var(--smao-accent);
+	background: var(--smao-accent-soft);
+	color: var(--smao-accent);
+}
+
+.smao-steps small {
+	display: block;
+	margin-top: 4px;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--smao-ink);
+}
+
+.smao-current {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 10px 12px;
+	border-radius: 8px;
+	background: #f6f7f7;
+}
+
+.smao-current small {
+	display: block;
+	font-size: 10px;
+	letter-spacing: 0.6px;
+	text-transform: uppercase;
+	color: var(--smao-muted);
+}
+
+.smao-current strong {
+	display: block;
+	margin-top: 2px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 44ch;
+	font-size: 12px;
+}
+
+.smao-connection {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	margin-top: 14px;
+	padding-top: 10px;
+	border-top: 1px solid var(--smao-line);
+	font-size: 11px;
+	color: var(--smao-muted);
+}
+
+/* -------------------------------------------------------------- activity */
+
+.smao-activity {
+	max-height: 340px;
+	margin: 0;
+	padding: 0;
+	overflow: auto;
+	list-style: none;
+}
+
+.smao-activity li {
+	margin: 0 0 10px;
+	padding: 0 0 10px 12px;
+	border-left: 2px solid var(--smao-accent-soft);
+}
+
+.smao-activity li small {
+	display: block;
+	font-size: 10px;
+	color: var(--smao-muted);
+}
+
+.smao-activity li strong {
+	display: block;
+	font-weight: 500;
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+
+.smao-empty {
+	color: var(--smao-muted);
+}
+
+/* --------------------------------------------------------------- controls */
+
+.smao-controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 14px 0 0;
+}
+
+.smao button[hidden] {
+	display: none;
+}
+
+.smao .button.smao-danger {
+	background: var(--smao-danger);
+	border-color: var(--smao-danger);
+	color: #fff;
+}
+
+.smao .button.smao-danger:hover:not(:disabled) {
+	background: #8d2c23;
+	border-color: #8d2c23;
+}
+
+.smao .button:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+/* ----------------------------------------------------------------- forms */
+
+.smao-field-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 16px;
+	margin-bottom: 14px;
+}
+
+.smao-settings {
+	display: grid;
+	gap: 18px;
+	max-width: 780px;
+}
+
+.smao-settings > label,
+.smao-field-grid label {
+	display: grid;
+	gap: 5px;
+	font-weight: 600;
+}
+
+.smao-settings small,
+.smao-field-grid small {
+	font-weight: 400;
+	color: var(--smao-muted);
+}
+
+.smao-settings input[type="number"],
+.smao-settings input[type="text"],
+.smao-settings select {
+	max-width: 360px;
+}
+
+.smao-settings textarea {
+	width: 100%;
+	max-width: 560px;
+	font-family: Consolas, Monaco, monospace;
+	font-size: 12px;
+}
+
+.smao-settings fieldset {
+	padding: 14px 16px;
+	border: 1px solid var(--smao-line);
+	border-radius: 8px;
+}
+
+.smao-settings legend {
+	padding: 0 6px;
+	font-weight: 600;
+}
+
+.smao-checkbox {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	margin: 10px 0;
+	font-weight: 400;
+}
+
+.smao-checkbox small {
+	display: block;
+	color: var(--smao-muted);
+}
+
+.smao-checkbox.smao-master {
+	padding: 12px 14px;
+	border: 1px solid var(--smao-accent);
+	border-radius: 8px;
+	background: var(--smao-accent-soft);
+}
+
+.smao-expert > summary {
+	cursor: pointer;
+	font-weight: 600;
+}
+
+.smao-expert > summary small {
+	display: block;
+	margin-top: 2px;
+	font-weight: 400;
+	color: var(--smao-muted);
+}
+
+.smao-runtime {
+	margin-top: 16px;
+}
+
+/* ------------------------------------------------------------------ tabs */
+
+.smao-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px;
+	margin-bottom: 18px;
+	border-bottom: 1px solid var(--smao-line);
+}
+
+.smao-tabs a {
+	padding: 10px 14px;
+	border-bottom: 3px solid transparent;
+	color: var(--smao-muted);
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.smao-tabs a[aria-current="page"] {
+	border-bottom-color: var(--smao-accent);
+	color: var(--smao-accent);
+}
+
+/* --------------------------------------------------------------- filters */
+
+.smao-filters {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.smao-filters label {
+	display: grid;
+	gap: 4px;
+	flex: 1 1 140px;
+	font-size: 11px;
+	color: var(--smao-muted);
+}
+
+.smao-filters input,
+.smao-filters select {
+	width: 100%;
+}
+
+/* ----------------------------------------------------------------- table */
+
+.smao-table-meta {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 8px;
+	font-size: 12px;
+	color: var(--smao-muted);
+}
+
+.smao-table {
+	overflow-x: auto;
+}
+
+.smao .widefat td {
+	vertical-align: top;
+	padding: 12px 10px;
+}
+
+.smao .widefat small {
+	display: block;
+	margin-top: 3px;
+	font-size: 11px;
+	color: var(--smao-muted);
+}
+
+.smao-cell-media {
+	min-width: 220px;
+}
+
+.smao-thumb {
+	float: left;
+	width: 48px;
+	height: 48px;
+	margin: 0 10px 4px 0;
+	border-radius: 4px;
+	background: #f0f0f1;
+	object-fit: cover;
+}
+
+.smao-filename {
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.smao-evidence summary {
+	cursor: pointer;
+	color: var(--smao-accent);
+	font-size: 12px;
+}
+
+.smao-evidence-list {
+	margin: 8px 0 0;
+	padding-left: 16px;
+	font-size: 11px;
+}
+
+.smao-evidence-list code {
+	font-size: 11px;
+}
+
+.smao-empty-row td {
+	padding: 24px 10px;
+	color: var(--smao-muted);
+	text-align: center;
+}
+
+/* ---------------------------------------------------------------- badges */
+
+.smao-badge {
+	display: inline-block;
+	padding: 3px 9px;
+	border-radius: 999px;
+	background: #f0f0f1;
+	color: #50575e;
+	font-size: 11px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.smao-status-used { background: #e3f3e9; color: #1a6b45; }
+.smao-status-possible { background: #e8eaf8; color: #4b4f9c; }
+.smao-status-unused { background: #fcf3d6; color: var(--smao-warn-ink); }
+.smao-status-broken { background: #fcf0ef; color: var(--smao-danger); }
+.smao-status-external { background: #e7f1f7; color: #2b5f7d; }
+.smao-status-download { background: #f0ebf7; color: #5f4b8b; }
+.smao-status-quarantined { background: #eceff1; color: #4a5560; }
+
+.smao-strength-strong { background: #e3f3e9; color: #1a6b45; }
+.smao-strength-weak { background: #f0f0f1; color: #646970; }
+
+/* ------------------------------------------------------------ pagination */
+
+.smao-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 12px;
+	margin-top: 14px;
+}
+
+.smao-pagination .page-numbers {
+	padding: 4px 9px;
+	border: 1px solid var(--smao-line);
+	border-radius: 4px;
+	text-decoration: none;
+}
+
+.smao-pagination .page-numbers.current {
+	background: var(--smao-accent);
+	border-color: var(--smao-accent);
+	color: #fff;
+}
+
+/* -------------------------------------------------------------- bulk bar */
+
+.smao-bulk-bar {
+	position: sticky;
+	bottom: 0;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-top: 16px;
+	padding: 14px 16px;
+	border-top: 1px solid var(--smao-line);
+	background: #fff;
+	box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+	z-index: 5;
+}
+
+.smao-selection-count {
+	min-width: 12ch;
+}
+
+.smao-ack {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex: 1 1 320px;
+	font-size: 12px;
+}
+
+.smao-bulk-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-left: auto;
+}
+
+/* --------------------------------------------------------------- refresh */
+
+.smao-refresh-bar {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
+	padding: 8px 12px;
+	border-radius: var(--smao-radius);
+	background: var(--smao-accent-soft);
+	font-size: 12px;
+}
+
+/* ----------------------------------------------------------- prereq list */
+
+.smao-blockers {
+	margin: 12px 0;
+	padding-left: 20px;
+	list-style: disc;
+}
+
+.smao-blockers li {
+	margin-bottom: 6px;
+}
+
+.smao-prereq.is-ready {
+	border-color: #bcdcd6;
+	background: var(--smao-accent-soft);
+}
+
+/* ----------------------------------------------------------------- queue */
+
+.smao-queue-counts {
+	margin: 10px 0;
+	font-size: 12px;
+	color: var(--smao-muted);
+}
+
+.smao-jobs {
+	max-height: 180px;
+	overflow: auto;
+	font-size: 12px;
+}
+
+.smao-jobs p {
+	margin: 0;
+	padding: 7px 0;
+	border-top: 1px solid var(--smao-line);
+}
+
+/* ---------------------------------------------------------------- system */
+
+.smao-system {
+	display: grid;
+	grid-template-columns: 220px 1fr;
+	max-width: 720px;
+	margin: 0;
+}
+
+.smao-system dt {
+	padding: 8px 0;
+	font-weight: 600;
+}
+
+.smao-system dd {
+	margin: 0;
+	padding: 8px 0;
+}
+
+/* ---------------------------------------------------------------- dialog */
+
+.smao-dialog {
+	width: min(520px, 92vw);
+	padding: 24px;
+	border: 1px solid var(--smao-line);
+	border-radius: 12px;
+	color: var(--smao-ink);
+}
+
+.smao-dialog::backdrop {
+	background: rgba(29, 35, 39, 0.55);
+}
+
+.smao-dialog h2 {
+	margin-top: 0;
+}
+
+.smao-dialog input[type="text"] {
+	width: 100%;
+	margin: 8px 0 18px;
+}
+
+.smao-dialog .smao-dialog-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
+.smao-dialog-list {
+	max-height: 140px;
+	overflow: auto;
+	margin: 0 0 14px;
+	padding: 8px 10px;
+	border-radius: var(--smao-radius);
+	background: #f6f7f7;
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+
+/* ------------------------------------------------------------ responsive */
+
+@media screen and (max-width: 1200px) {
+	.smao-metrics {
+		grid-template-columns: repeat(3, 1fr);
+	}
+
+	.smao-field-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media screen and (max-width: 960px) {
+	.smao-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media screen and (max-width: 782px) {
+	.smao-metrics {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.smao-steps {
+		grid-template-columns: 1fr;
+	}
+
+	.smao-field-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.smao-system {
+		grid-template-columns: 1fr;
+	}
+
+	.smao-system dt {
+		padding-bottom: 0;
+	}
+
+	.smao-bulk-actions {
+		margin-left: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.smao * {
+		transition: none !important;
+		animation: none !important;
+	}
+}
