@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -107,6 +107,12 @@ builders reference are reported conservatively rather than as unused.
    changes your markup.
 
 == Changelog ==
+
+= 2.0.1 =
+* Fixed a fatal error after updating from 1.x. 2.0 moved every class into
+  subdirectories, and a site still running the previous plugin bootstrap, which
+  an opcode cache can easily cause, looked for them at their old paths and died.
+  The old paths now forward to the new ones, so the update cannot half-apply.
 
 = 2.0.0 =
 * Rebuilt the interface around four screens instead of nine, with one
