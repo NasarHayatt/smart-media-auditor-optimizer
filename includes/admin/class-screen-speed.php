@@ -25,7 +25,9 @@ final class Screen_Speed {
 		self::right_size();
 		?>
 		<form class="smao-settings" data-settings="speed">
-			<input type="hidden" name="_flags" value="speed_enabled,dimensions,lcp_preload,lazy_correct,delivery,rightsize,defer_js,delay_js,async_css,optimize_fonts">
+			<?php self::cache_panel(); ?>
+
+			<input type="hidden" name="_flags" value="speed_enabled,dimensions,lcp_preload,lazy_correct,delivery,rightsize,defer_js,delay_js,async_css,optimize_fonts,page_cache,browser_cache,cache_gzip,cache_warm,separate_mobile">
 
 			<section class="smao-panel smao-master-panel">
 				<label class="smao-switch">
@@ -336,5 +338,160 @@ final class Screen_Speed {
 		return (bool) $wpdb->get_var(
 			$wpdb->prepare( 'SELECT meta_id FROM %i WHERE meta_key=%s LIMIT 1', $wpdb->postmeta, '_smao_alternates' )
 		);
+	}
+
+	/**
+	 * The caching panel: what is stored, and the controls for it.
+	 *
+	 * @return void
+	 */
+	private static function cache_panel(): void {
+		$settings    = Settings::get();
+		$owner       = Environment::conflict( 'cache' );
+		$environment = Environment::get();
+		$stats       = Cache::active() ? Cache::stats() : array(
+			'pages'   => 0,
+			'bytes'   => 0,
+			'updated' => 0,
+		);
+		$purged = (int) get_option( 'smao_cache_purged', 0 );
+		?>
+		<section class="smao-panel">
+			<div class="smao-panel-head">
+				<h2><?php esc_html_e( 'Page cache', 'smart-media-auditor-optimizer' ); ?></h2>
+				<span class="smao-chip <?php echo Cache::active() ? 'is-on' : ''; ?>">
+					<?php
+					echo Cache::active()
+						? esc_html__( 'On', 'smart-media-auditor-optimizer' )
+						: esc_html__( 'Off', 'smart-media-auditor-optimizer' );
+					?>
+				</span>
+			</div>
+
+			<?php if ( $owner ) : ?>
+				<p class="smao-inline-note">
+					<?php
+					printf(
+						/* translators: %s is the name of another caching plugin. */
+						esc_html__( '%s is already caching this site, so this is switched off. Two page caches on one site cause stale and mismatched pages.', 'smart-media-auditor-optimizer' ),
+						esc_html( Environment::label( $owner ) )
+					);
+					?>
+				</p>
+			<?php else : ?>
+				<p><?php esc_html_e( 'Saves the finished page so the next visitor gets a file instead of waiting for WordPress to build it again. Logged-in visitors, carts, checkouts and account pages are never cached.', 'smart-media-auditor-optimizer' ); ?></p>
+
+				<?php if ( Cache::active() && ! Cache::wp_cache_defined() ) : ?>
+					<p class="smao-inline-note">
+						<?php esc_html_e( 'Caching is working, but the fastest path needs one line in wp-config.php. Add this above the line that says "stop editing":', 'smart-media-auditor-optimizer' ); ?>
+						<code>define( 'WP_CACHE', true );</code>
+					</p>
+				<?php endif; ?>
+
+				<div class="smao-figures">
+					<article class="smao-figure">
+						<span><?php esc_html_e( 'Pages stored', 'smart-media-auditor-optimizer' ); ?></span>
+						<strong><?php echo esc_html( number_format_i18n( $stats['pages'] ) ); ?></strong>
+					</article>
+					<article class="smao-figure">
+						<span><?php esc_html_e( 'Space used', 'smart-media-auditor-optimizer' ); ?></span>
+						<strong><?php echo esc_html( size_format( $stats['bytes'] ) ); ?></strong>
+					</article>
+					<article class="smao-figure">
+						<span><?php esc_html_e( 'Waiting to rebuild', 'smart-media-auditor-optimizer' ); ?></span>
+						<strong><?php echo esc_html( number_format_i18n( Warm::pending() ) ); ?></strong>
+					</article>
+					<article class="smao-figure">
+						<span><?php esc_html_e( 'Last cleared', 'smart-media-auditor-optimizer' ); ?></span>
+						<strong style="font-size:15px">
+							<?php
+							echo $purged
+								/* translators: %s is a human readable time difference. */
+								? esc_html( sprintf( __( '%s ago', 'smart-media-auditor-optimizer' ), human_time_diff( $purged ) ) )
+								: esc_html__( 'Never', 'smart-media-auditor-optimizer' );
+							?>
+						</strong>
+					</article>
+				</div>
+
+				<div class="smao-controls">
+					<button type="button" class="smao-cta smao-cta-quiet" data-command="cache_flush"><?php esc_html_e( 'Clear everything', 'smart-media-auditor-optimizer' ); ?></button>
+					<button type="button" class="smao-cta smao-cta-quiet" data-command="cache_warm"><?php esc_html_e( 'Rebuild main pages', 'smart-media-auditor-optimizer' ); ?></button>
+				</div>
+
+				<details class="smao-filters-more">
+					<summary><?php esc_html_e( 'More cache options', 'smart-media-auditor-optimizer' ); ?></summary>
+					<label>
+						<?php esc_html_e( 'Clear one address', 'smart-media-auditor-optimizer' ); ?>
+						<input type="url" id="smao-forget-url" placeholder="<?php echo esc_attr( home_url( '/example-page/' ) ); ?>">
+					</label>
+					<p><button type="button" class="button" id="smao-forget"><?php esc_html_e( 'Clear that address', 'smart-media-auditor-optimizer' ); ?></button></p>
+					<label>
+						<?php esc_html_e( 'Never cache these addresses', 'smart-media-auditor-optimizer' ); ?>
+						<textarea rows="4" name="cache_exclusions" spellcheck="false"><?php echo esc_textarea( $settings['cache_exclusions'] ); ?></textarea>
+						<small><?php esc_html_e( 'One path per line, for example /landing-page/. End with * to match everything beneath it.', 'smart-media-auditor-optimizer' ); ?></small>
+					</label>
+					<?php self::number_row_hours( 'cache_ttl', __( 'Rebuild pages older than (hours)', 'smart-media-auditor-optimizer' ), $settings ); ?>
+					<label class="smao-checkbox">
+						<input type="checkbox" name="separate_mobile" <?php checked( $settings['separate_mobile'] ); ?>>
+						<span><?php esc_html_e( 'Keep a separate copy for phones', 'smart-media-auditor-optimizer' ); ?>
+						<small><?php esc_html_e( 'Only needed if your theme sends different HTML to phones. Most responsive themes do not.', 'smart-media-auditor-optimizer' ); ?></small></span>
+					</label>
+					<label class="smao-checkbox">
+						<input type="checkbox" name="cache_warm" <?php checked( $settings['cache_warm'] ); ?>>
+						<span><?php esc_html_e( 'Rebuild pages in the background after a change', 'smart-media-auditor-optimizer' ); ?></span>
+					</label>
+					<label class="smao-checkbox">
+						<input type="checkbox" name="cache_gzip" <?php checked( $settings['cache_gzip'] ); ?>>
+						<span><?php esc_html_e( 'Store a compressed copy as well', 'smart-media-auditor-optimizer' ); ?></span>
+					</label>
+				</details>
+			<?php endif; ?>
+
+			<?php self::switch_row( 'page_cache', $settings['page_cache'], __( 'Cache my pages', 'smart-media-auditor-optimizer' ), __( 'Serves a stored copy of each public page instead of rebuilding it for every visitor.', 'smart-media-auditor-optimizer' ), __( 'The single biggest reduction in server response time', 'smart-media-auditor-optimizer' ) ); ?>
+		</section>
+
+		<section class="smao-panel">
+			<div class="smao-panel-head">
+				<h2><?php esc_html_e( 'Browser caching', 'smart-media-auditor-optimizer' ); ?></h2>
+			</div>
+			<p><?php esc_html_e( 'Tells browsers to keep images, stylesheets, scripts and fonts rather than downloading them again on every visit. Addresses change when a file changes, so visitors always get the current version.', 'smart-media-auditor-optimizer' ); ?></p>
+			<?php self::switch_row( 'browser_cache', $settings['browser_cache'], __( 'Let browsers keep static files', 'smart-media-auditor-optimizer' ), __( 'Applies the right expiry to images, CSS, JavaScript and fonts.', 'smart-media-auditor-optimizer' ), __( 'Returning visitors download almost nothing', 'smart-media-auditor-optimizer' ) ); ?>
+
+			<?php if ( $environment['server']['apache'] ) : ?>
+				<p class="smao-muted">
+					<?php
+					echo Headers::installed()
+						? esc_html__( 'Rules are installed in your .htaccess file.', 'smart-media-auditor-optimizer' )
+						: esc_html__( 'Rules will be added to your .htaccess file when this is saved.', 'smart-media-auditor-optimizer' );
+					?>
+				</p>
+			<?php else : ?>
+				<details class="smao-filters-more">
+					<summary><?php esc_html_e( 'Your server needs these rules added by hand', 'smart-media-auditor-optimizer' ); ?></summary>
+					<p class="smao-muted"><?php esc_html_e( 'This server does not read .htaccess, so paste the following into your server configuration. Everything else works without it.', 'smart-media-auditor-optimizer' ); ?></p>
+					<textarea rows="12" readonly spellcheck="false"><?php echo esc_textarea( Headers::nginx_rules() ); ?></textarea>
+				</details>
+			<?php endif; ?>
+		</section>
+		<?php
+	}
+
+	/**
+	 * Render a bounded number field measured in hours.
+	 *
+	 * @param string $key      Setting name.
+	 * @param string $label    Field label.
+	 * @param array  $settings Current settings.
+	 * @return void
+	 */
+	private static function number_row_hours( string $key, string $label, array $settings ): void {
+		list( $min, $max ) = Settings::bounds( $key );
+		?>
+		<label>
+			<?php echo esc_html( $label ); ?>
+			<input type="number" name="<?php echo esc_attr( $key ); ?>" min="<?php echo esc_attr( (string) $min ); ?>" max="<?php echo esc_attr( (string) $max ); ?>" step="1" value="<?php echo esc_attr( (string) $settings[ $key ] ); ?>">
+		</label>
+		<?php
 	}
 }

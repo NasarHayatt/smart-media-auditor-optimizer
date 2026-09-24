@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.2.0\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.3.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
@@ -43,13 +43,22 @@ msgstr ""
 msgid "#smao-worker-mode"
 msgstr ""
 
+msgid "%s ago"
+msgstr ""
+
 msgid "%s image is not used anywhere"
+msgstr ""
+
+msgid "%s is already caching this site, so this is switched off. Two page caches on one site cause stale and mismatched pages."
 msgstr ""
 
 msgid "%s is already handling scripts on this site, so these are switched off to avoid two plugins rewriting the same page. Turn that plugin off if you would rather this one did the work."
 msgstr ""
 
 msgid "%s matching file"
+msgstr ""
+
+msgid "%s page queued for rebuilding."
 msgstr ""
 
 msgid "%s saved"
@@ -184,6 +193,9 @@ msgstr ""
 msgid "Anything you remove can be restored later."
 msgstr ""
 
+msgid "Applies the right expiry to images, CSS, JavaScript and fonts."
+msgstr ""
+
 msgid "Apply"
 msgstr ""
 
@@ -229,7 +241,16 @@ msgstr ""
 msgid "Broken"
 msgstr ""
 
+msgid "Browser caching"
+msgstr ""
+
 msgid "CSS and fonts"
+msgstr ""
+
+msgid "Cache my pages"
+msgstr ""
+
+msgid "Caching is working, but the fastest path needs one line in wp-config.php. Add this above the line that says \"stop editing\":"
 msgstr ""
 
 msgid "Cancel"
@@ -298,7 +319,22 @@ msgstr ""
 msgid "Clear"
 msgstr ""
 
+msgid "Clear everything"
+msgstr ""
+
 msgid "Clear old records"
+msgstr ""
+
+msgid "Clear one address"
+msgstr ""
+
+msgid "Clear that address"
+msgstr ""
+
+msgid "Cleared %s cached file. The most important pages are being rebuilt."
+msgstr ""
+
+msgid "Cleared. That page will be rebuilt on the next visit."
 msgstr ""
 
 msgid "Color-profiled or animated media requires ImageMagick."
@@ -398,6 +434,12 @@ msgid "Encoded image failed format validation."
 msgstr ""
 
 msgid "Encoder did not preserve decoded pixels; lossless output rejected."
+msgstr ""
+
+msgid "Enter a full address on this site."
+msgstr ""
+
+msgid "Enter the address of the page to clear."
 msgstr ""
 
 msgid "Even after this, nothing is removed until you pick the images yourself."
@@ -565,6 +607,9 @@ msgstr ""
 msgid "JavaScript"
 msgstr ""
 
+msgid "Keep a separate copy for phones"
+msgstr ""
+
 msgid "Keep all of these"
 msgstr ""
 
@@ -583,6 +628,9 @@ msgstr ""
 msgid "Last checked"
 msgstr ""
 
+msgid "Last cleared"
+msgstr ""
+
 msgid "Last measured %s ago. Measure again after a theme or layout change."
 msgstr ""
 
@@ -590,6 +638,9 @@ msgid "Latest checkpoint"
 msgstr ""
 
 msgid "Less to download before the page is usable"
+msgstr ""
+
+msgid "Let browsers keep static files"
 msgstr ""
 
 msgid "Live scan totals"
@@ -670,6 +721,9 @@ msgstr ""
 msgid "More"
 msgstr ""
 
+msgid "More cache options"
+msgstr ""
+
 msgid "More images"
 msgstr ""
 
@@ -698,6 +752,9 @@ msgid "Needs another look"
 msgstr ""
 
 msgid "Never"
+msgstr ""
+
+msgid "Never cache these addresses"
 msgstr ""
 
 msgid "Never touch these files"
@@ -811,6 +868,9 @@ msgstr ""
 msgid "On"
 msgstr ""
 
+msgid "One path per line, for example /landing-page/. End with * to match everything beneath it."
+msgstr ""
+
 msgid "One per line. A script handle, or any part of its URL. Add something here if a feature stops working."
 msgstr ""
 
@@ -827,6 +887,9 @@ msgid "One thing we cannot check for you"
 msgstr ""
 
 msgid "Only JPEG, PNG, WebP and AVIF images are eligible."
+msgstr ""
+
+msgid "Only needed if your theme sends different HTML to phones. Most responsive themes do not."
 msgstr ""
 
 msgid "Only pages on this site can be measured."
@@ -892,7 +955,13 @@ msgstr ""
 msgid "Page %1$s of %2$s"
 msgstr ""
 
+msgid "Page cache"
+msgstr ""
+
 msgid "Pages checked"
+msgstr ""
+
+msgid "Pages stored"
 msgstr ""
 
 msgid "Part of your site could not be read, so these results are not complete enough to act on. Running it again usually sorts it out."
@@ -959,6 +1028,15 @@ msgid "Ready to scan"
 msgstr ""
 
 msgid "Reason:"
+msgstr ""
+
+msgid "Rebuild main pages"
+msgstr ""
+
+msgid "Rebuild pages in the background after a change"
+msgstr ""
+
+msgid "Rebuild pages older than (hours)"
 msgstr ""
 
 msgid "Recently removed"
@@ -1030,10 +1108,19 @@ msgstr ""
 msgid "Retry processing"
 msgstr ""
 
+msgid "Returning visitors download almost nothing"
+msgstr ""
+
 msgid "Review %s image"
 msgstr ""
 
 msgid "Right now, on every page:"
+msgstr ""
+
+msgid "Rules are installed in your .htaccess file."
+msgstr ""
+
+msgid "Rules will be added to your .htaccess file when this is saved."
 msgstr ""
 
 msgid "Run held-back scripts anyway after (seconds)"
@@ -1052,6 +1139,9 @@ msgid "Save scanning settings"
 msgstr ""
 
 msgid "Saved so far"
+msgstr ""
+
+msgid "Saves the finished page so the next visitor gets a file instead of waiting for WordPress to build it again. Logged-in visitors, carts, checkouts and account pages are never cached."
 msgstr ""
 
 msgid "Savings"
@@ -1129,6 +1219,9 @@ msgstr ""
 msgid "Serve images at the size they are shown"
 msgstr ""
 
+msgid "Serves a stored copy of each public page instead of rebuilding it for every visitor."
+msgstr ""
+
 msgid "Set up private recovery storage before removal: %s"
 msgstr ""
 
@@ -1174,6 +1267,9 @@ msgstr ""
 msgid "Source rows per batch"
 msgstr ""
 
+msgid "Space used"
+msgstr ""
+
 msgid "Space you can free up"
 msgstr ""
 
@@ -1210,6 +1306,9 @@ msgstr ""
 msgid "Stops the browser hiding your text until a font arrives, and opens the connection to the font host early."
 msgstr ""
 
+msgid "Store a compressed copy as well"
+msgstr ""
+
 msgid "Summary of your media"
 msgstr ""
 
@@ -1222,6 +1321,9 @@ msgstr ""
 msgid "System status"
 msgstr ""
 
+msgid "Tells browsers to keep images, stylesheets, scripts and fonts rather than downloading them again on every visit. Addresses change when a file changes, so visitors always get the current version."
+msgstr ""
+
 msgid "Text appears immediately instead of after the font"
 msgstr ""
 
@@ -1232,6 +1334,9 @@ msgid "That file could not be"
 msgstr ""
 
 msgid "That page has moved. Here is the overview."
+msgstr ""
+
+msgid "That page was not in the cache, so there was nothing to clear."
 msgstr ""
 
 msgid "That request failed. Please try again."
@@ -1247,6 +1352,9 @@ msgid "The page becomes readable sooner"
 msgstr ""
 
 msgid "The page paints before the full stylesheet arrives"
+msgstr ""
+
+msgid "The single biggest reduction in server response time"
 msgstr ""
 
 msgid "There are no published pages to measure yet."
@@ -1292,6 +1400,9 @@ msgid "This scan is more than 24 hours old. Run a fresh scan."
 msgstr ""
 
 msgid "This scan transition is not available."
+msgstr ""
+
+msgid "This server does not read .htaccess, so paste the following into your server configuration. Everything else works without it."
 msgstr ""
 
 msgid "This site sets the recovery folder with SMAO_VAULT_DIR in wp-config.php, so it cannot be changed here."
@@ -1405,6 +1516,9 @@ msgstr ""
 msgid "Waiting for worker"
 msgstr ""
 
+msgid "Waiting to rebuild"
+msgstr ""
+
 msgid "Wasted"
 msgstr ""
 
@@ -1501,6 +1615,9 @@ msgstr ""
 msgid "Your scan results were invalidated because the scan scope changed. Run a fresh scan."
 msgstr ""
 
+msgid "Your server needs these rules added by hand"
+msgstr ""
+
 msgid "Your session expired. Reload this page to reconnect."
 msgstr ""
 
@@ -1544,6 +1661,9 @@ msgid "audit"
 msgstr ""
 
 msgid "beforebegin"
+msgstr ""
+
+msgid "cache"
 msgstr ""
 
 msgid "control"
@@ -1652,6 +1772,9 @@ msgid "smao-measure"
 msgstr ""
 
 msgid "smao-model"
+msgstr ""
+
+msgid "smao_warm_lock"
 msgstr ""
 
 msgid "source records"

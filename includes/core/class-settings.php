@@ -34,6 +34,7 @@ final class Settings {
 		'max_height'     => array( 320, 12000 ),
 		'preload_id'     => array( 0, PHP_INT_MAX ),
 		'delay_timeout'  => array( 0, 30 ),
+		'cache_ttl'      => array( 1, 720 ),
 	);
 
 	/**
@@ -50,6 +51,11 @@ final class Settings {
 		'delay_js',
 		'async_css',
 		'optimize_fonts',
+		'page_cache',
+		'browser_cache',
+		'cache_gzip',
+		'cache_warm',
+		'separate_mobile',
 		'coverage_reviewed',
 		'resize',
 		'strip_exif',
@@ -100,6 +106,13 @@ final class Settings {
 			'style_exclusions'  => '',
 			'async_css'         => true,
 			'optimize_fonts'    => true,
+			'page_cache'        => true,
+			'browser_cache'     => true,
+			'cache_gzip'        => true,
+			'cache_warm'        => true,
+			'separate_mobile'   => false,
+			'cache_ttl'         => 24,
+			'cache_exclusions'  => '',
 			'preload_id'        => 0,
 			'batch'             => 50,
 			'source_batch'      => 100,
@@ -198,7 +211,7 @@ final class Settings {
 			}
 		}
 
-		foreach ( array( 'delay_extra', 'script_exclusions', 'style_exclusions' ) as $key ) {
+		foreach ( array( 'delay_extra', 'script_exclusions', 'style_exclusions', 'cache_exclusions' ) as $key ) {
 			if ( array_key_exists( $key, $input ) ) {
 				$out[ $key ] = sanitize_textarea_field( substr( (string) $input[ $key ], 0, 8000 ) );
 			}

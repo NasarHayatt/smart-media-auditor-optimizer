@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.2.0
+Stable tag: 2.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -110,6 +110,23 @@ builders reference are reported conservatively rather than as unused.
 
 == Changelog ==
 
+= 2.3.0 =
+* New: page cache. Finished pages are stored and served by a drop-in that runs
+  before WordPress loads, so a repeat visit costs a file read instead of a full
+  page build. Measured on the test site, server response time fell from 332ms
+  to 16ms.
+* New: compressed copies are stored alongside each page, cutting the HTML sent
+  to browsers that accept them by around 80 percent.
+* New: targeted invalidation. Editing a post clears that post, the front page
+  and the archives it appears on, rather than emptying the whole cache.
+* New: background rebuilding after a change, a few pages at a time, so the next
+  visitor still gets a stored page without the site being hammered to achieve it.
+* New: browser caching. Images, stylesheets, scripts and fonts are given long
+  lifetimes with correct validators, written to .htaccess where the server reads
+  it and shown for pasting where it does not.
+* Never cached: logged-in visitors, carts, checkouts, accounts, searches, feeds,
+  password-protected posts, and anything carrying a personal cookie.
+
 = 2.2.0 =
 * New: holds third-party scripts until a visitor interacts. Analytics, chat
   widgets, pixels and social embeds contribute nothing to the first view of a
@@ -191,6 +208,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.3.0 =
+Adds page and browser caching, both on by default. If another caching plugin is
+active this one stands down automatically.
 
 = 2.2.0 =
 Adds JavaScript and CSS optimisation. Check a few pages after updating, and use

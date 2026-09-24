@@ -298,6 +298,44 @@ final class Admin {
 			return array( 'removed' => Plugin::cleanup() );
 		}
 
+		if ( 'cache_flush' === $command ) {
+			$removed = Cache::flush();
+			Warm::queue_important();
+			return array(
+				'message' => sprintf(
+					/* translators: %s is a number of cached files. */
+					_n( 'Cleared %s cached file. The most important pages are being rebuilt.', 'Cleared %s cached files. The most important pages are being rebuilt.', $removed, 'smart-media-auditor-optimizer' ),
+					number_format_i18n( $removed )
+				),
+				'status'  => self::status(),
+			);
+		}
+		if ( 'cache_forget' === $command ) {
+			$url = esc_url_raw( (string) $request->get_param( 'url' ) );
+			if ( '' === $url || ! str_starts_with( $url, home_url() ) ) {
+				throw new \RuntimeException( __( 'Enter a full address on this site.', 'smart-media-auditor-optimizer' ) );
+			}
+			$done = Cache::forget( $url );
+			Warm::queue( array( $url ) );
+			return array(
+				'message' => $done
+					? __( 'Cleared. That page will be rebuilt on the next visit.', 'smart-media-auditor-optimizer' )
+					: __( 'That page was not in the cache, so there was nothing to clear.', 'smart-media-auditor-optimizer' ),
+				'status'  => self::status(),
+			);
+		}
+		if ( 'cache_warm' === $command ) {
+			$queued = Warm::queue_important();
+			Warm::run();
+			return array(
+				'message' => sprintf(
+					/* translators: %s is a number of pages. */
+					_n( '%s page queued for rebuilding.', '%s pages queued for rebuilding.', $queued, 'smart-media-auditor-optimizer' ),
+					number_format_i18n( $queued )
+				),
+				'status'  => self::status(),
+			);
+		}
 		if ( 'tick' === $command ) {
 			Plugin::tick();
 			return self::status();

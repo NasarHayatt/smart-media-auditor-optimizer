@@ -127,6 +127,10 @@ final class Plugin {
 			10,
 			2
 		);
+		Cache::boot();
+		Purge::boot();
+		Warm::boot();
+		Headers::boot();
 		Viewport::boot();
 		Rightsize::boot();
 		Delivery::boot();

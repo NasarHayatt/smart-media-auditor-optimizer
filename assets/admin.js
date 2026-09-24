@@ -378,6 +378,22 @@
 		});
 	});
 
+	var forgetButton = $('#smao-forget');
+	if (forgetButton) {
+		forgetButton.addEventListener('click', function () {
+			run(async function () {
+				var field = $('#smao-forget-url');
+				var url = field ? field.value.trim() : '';
+				if (!url) {
+					throw new Error(t('Enter the address of the page to clear.'));
+				}
+				var result = await request('control', { command: 'cache_forget', url: url });
+				notice(result.message, false, forgetButton);
+				if (result.status) { render(result.status); }
+			}, forgetButton);
+		});
+	}
+
 	var recordsButton = $('#smao-cleanup-records');
 	if (recordsButton) {
 		recordsButton.addEventListener('click', function () {

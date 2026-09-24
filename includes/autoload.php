@@ -37,7 +37,7 @@ if ( ! function_exists( 'smao_register_autoloader' ) ) {
 					return;
 				}
 				$file = 'class-' . str_replace( '_', '-', strtolower( $name ) ) . '.php';
-				foreach ( array( 'core', 'engine', 'admin', 'delivery', 'speed' ) as $module ) {
+				foreach ( array( 'core', 'engine', 'admin', 'delivery', 'speed', 'cache' ) as $module ) {
 					$path = __DIR__ . '/' . $module . '/' . $file;
 					if ( is_file( $path ) ) {
 						require_once $path;
