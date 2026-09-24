@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.3.0
+Stable tag: 2.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -110,6 +110,15 @@ builders reference are reported conservatively rather than as unused.
 
 == Changelog ==
 
+= 2.3.1 =
+* Fixed two fatal errors that took down the front end while leaving the admin
+  working, so the problem was easy to miss. Sites behind a CDN saw stale pages
+  rather than errors, hiding it further. Update immediately if you are on 2.3.0.
+* The first affected Apache and LiteSpeed hosts: environment detection called a
+  function that only exists inside the WordPress admin.
+* The second affected every host: the caching rules were loaded later in the
+  request than the first code that needed them.
+
 = 2.3.0 =
 * New: page cache. Finished pages are stored and served by a drop-in that runs
   before WordPress loads, so a repeat visit costs a file read instead of a full
@@ -208,6 +217,9 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.3.1 =
+Fixes a fatal error on Apache and LiteSpeed hosts in 2.3.0. Update immediately.
 
 = 2.3.0 =
 Adds page and browser caching, both on by default. If another caching plugin is

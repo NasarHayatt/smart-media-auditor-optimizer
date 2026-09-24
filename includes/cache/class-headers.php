@@ -271,10 +271,10 @@ final class Headers {
 	 * @return string
 	 */
 	private static function htaccess_path(): string {
-		if ( ! function_exists( 'get_home_path' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
+		$home = function_exists( 'get_home_path' ) ? get_home_path() : Environment::home_path();
+		if ( '' === $home ) {
+			return '';
 		}
-		$home = get_home_path();
-		return $home ? $home . '.htaccess' : '';
+		return untrailingslashit( wp_normalize_path( $home ) ) . '/.htaccess';
 	}
 }

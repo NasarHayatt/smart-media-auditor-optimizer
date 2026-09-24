@@ -30,6 +30,11 @@ final class Cache {
 	 * @return void
 	 */
 	public static function boot(): void {
+		// Load once, unconditionally. Several callers reach the shared rules
+		// before template_redirect, notably the header layer on send_headers,
+		// and a missing function there is a fatal error on every request.
+		self::rules();
+
 		add_action( 'admin_init', array( self::class, 'sync' ) );
 
 		if ( is_admin() || ! self::active() ) {
@@ -53,8 +58,19 @@ final class Cache {
 	 * @return string
 	 */
 	public static function root(): string {
-		require_once __DIR__ . '/cache-rules.php';
+		self::rules();
 		return smao_cache_root( WP_CONTENT_DIR );
+	}
+
+	/**
+	 * Load the rules shared with the drop-in.
+	 *
+	 * @return void
+	 */
+	private static function rules(): void {
+		if ( ! function_exists( 'smao_cache_bypass_reason' ) ) {
+			require_once __DIR__ . '/cache-rules.php';
+		}
 	}
 
 	/**
@@ -63,7 +79,7 @@ final class Cache {
 	 * @return void
 	 */
 	public static function start(): void {
-		require_once __DIR__ . '/cache-rules.php';
+		self::rules();
 
 		$reason = self::bypass();
 		if ( '' !== $reason ) {
@@ -87,6 +103,7 @@ final class Cache {
 	 * @return string
 	 */
 	public static function bypass(): string {
+		self::rules();
 		$shared = smao_cache_bypass_reason( $_SERVER, $_COOKIE ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only request inspection.
 		if ( '' !== $shared ) {
 			return $shared;
@@ -164,6 +181,7 @@ final class Cache {
 	 * @return string
 	 */
 	public static function store( string $html ): string {
+		self::rules();
 		// Something later in the request may have decided this is private.
 		if ( strlen( $html ) < 255 || '' !== self::bypass() || http_response_code() !== 200 ) {
 			return $html;
@@ -453,7 +471,7 @@ final class Cache {
 	 * @return bool
 	 */
 	public static function forget( string $url ): bool {
-		require_once __DIR__ . '/cache-rules.php';
+		self::rules();
 		$parts = wp_parse_url( $url );
 		if ( empty( $parts['host'] ) ) {
 			return false;

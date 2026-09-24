@@ -203,8 +203,44 @@ final class Environment {
 	 * @return bool
 	 */
 	private static function htaccess_writable(): bool {
-		$file = get_home_path() . '.htaccess';
-		return ( file_exists( $file ) && is_writable( $file ) ) || is_writable( get_home_path() );
+		/*
+		 * get_home_path() lives in wp-admin and does not exist on the front
+		 * end. Calling it there is a fatal error, and because this runs while
+		 * deciding whether to cache, it took down every front-end request on
+		 * Apache and LiteSpeed hosts. Derive the path instead, and only fall
+		 * back to the admin helper when it is genuinely loaded.
+		 */
+		$home = function_exists( 'get_home_path' ) ? get_home_path() : self::home_path();
+		if ( '' === $home ) {
+			return false;
+		}
+		$file = rtrim( $home, '/\\' ) . '/.htaccess';
+		return ( file_exists( $file ) && is_writable( $file ) ) || is_writable( $home );
+	}
+
+	/**
+	 * The filesystem path the site is served from, without wp-admin helpers.
+	 *
+	 * Mirrors the logic of get_home_path(): when WordPress lives in a
+	 * subdirectory, the site root is that many levels above ABSPATH.
+	 *
+	 * @return string Trailing-slashed path, or an empty string.
+	 */
+	public static function home_path(): string {
+		$home    = set_url_scheme( (string) get_option( 'home' ), 'http' );
+		$siteurl = set_url_scheme( (string) get_option( 'siteurl' ), 'http' );
+
+		if ( '' !== $home && 0 !== strcasecmp( $home, $siteurl ) ) {
+			// WordPress is installed in a subdirectory of the site root.
+			$offset = str_ireplace( $home, '', $siteurl );
+			$offset = trim( (string) $offset, '/' );
+			$path   = str_replace( '\\', '/', ABSPATH );
+			if ( '' !== $offset && str_ends_with( rtrim( $path, '/' ), $offset ) ) {
+				$path = substr( rtrim( $path, '/' ), 0, -strlen( $offset ) );
+			}
+			return trailingslashit( $path );
+		}
+		return trailingslashit( str_replace( '\\', '/', ABSPATH ) );
 	}
 
 	/**
