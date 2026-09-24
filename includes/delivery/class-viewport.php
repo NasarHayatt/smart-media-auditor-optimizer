@@ -161,14 +161,70 @@ final class Viewport {
 		}
 		$srcset = wp_get_attachment_image_srcset( $id, 'full' );
 		$sizes  = wp_get_attachment_image_sizes( $id, 'full' );
+		$type   = '';
+
+		/*
+		 * When an alternate format is being served, preload that instead of the
+		 * original. Preloading the original while the picture element serves a
+		 * WebP makes the browser download the same image twice.
+		 */
+		$alternate = Delivery::alternates_for( $id, $url );
+		if ( $alternate ) {
+			$srcset = $alternate['srcset'];
+			$type   = ' type="' . esc_attr( $alternate['mime'] ) . '"';
+			if ( ! $sizes ) {
+				$sizes = '100vw';
+			}
+			// A browser that ignores imagesrcset falls back to href, so point
+			// that at the alternate as well rather than the original format.
+			$fallback = self::nearest( $alternate['srcset'], Measure::needed( $id ) );
+			if ( $fallback ) {
+				$url = $fallback;
+			}
+		}
+
 		printf(
-			'<link rel="preload" as="image" href="%s"%s fetchpriority="high">%s',
+			'<link rel="preload" as="image" href="%s"%s%s fetchpriority="high">%s',
 			esc_url( $url ),
 			$srcset && $sizes
 				? ' imagesrcset="' . esc_attr( $srcset ) . '" imagesizes="' . esc_attr( $sizes ) . '"'
 				: '',
+			$type,
 			"\n"
 		);
+	}
+
+	/**
+	 * Pick the srcset candidate closest to a required width.
+	 *
+	 * @param string $srcset   Candidate list.
+	 * @param int    $required Required width, zero when unmeasured.
+	 * @return string Empty when no candidate can be read.
+	 */
+	private static function nearest( string $srcset, int $required ): string {
+		$best      = '';
+		$bestWidth = 0;
+		foreach ( explode( ',', $srcset ) as $candidate ) {
+			$parts = preg_split( '/\s+/', trim( $candidate ) );
+			if ( empty( $parts[0] ) || empty( $parts[1] ) ) {
+				continue;
+			}
+			$width = (int) rtrim( $parts[1], 'w' );
+			if ( ! $width ) {
+				continue;
+			}
+			// Smallest candidate that still covers the requirement.
+			if ( $required > 0 && $width >= $required && ( 0 === $bestWidth || $width < $bestWidth ) ) {
+				$best      = $parts[0];
+				$bestWidth = $width;
+			}
+			// With no measurement, fall back to the largest available.
+			if ( 0 === $required && $width > $bestWidth ) {
+				$best      = $parts[0];
+				$bestWidth = $width;
+			}
+		}
+		return $best;
 	}
 
 	/**

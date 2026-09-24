@@ -83,6 +83,91 @@ final class Delivery {
 	}
 
 	/**
+	 * The alternate-format candidates that would be served for an image.
+	 *
+	 * Exposed so the preload hint can point at the file the browser will
+	 * actually choose. Preloading the original while the picture element
+	 * serves an alternate downloads the image twice.
+	 *
+	 * @param int    $id  Attachment ID.
+	 * @param string $src Resolved image URL.
+	 * @return array{srcset:string,mime:string}|null
+	 */
+	public static function alternates_for( int $id, string $src ): ?array {
+		$settings = Settings::get();
+		if ( ! $settings['speed_enabled'] || ! $settings['delivery'] ) {
+			return null;
+		}
+		$alternates = get_post_meta( $id, '_smao_alternates', true );
+		if ( ! is_array( $alternates ) || ! $alternates ) {
+			return null;
+		}
+		$uploads = wp_upload_dir();
+		$prefix  = trailingslashit( $uploads['baseurl'] );
+		if ( ! str_starts_with( $src, $prefix ) ) {
+			return null;
+		}
+		$relative = substr( $src, strlen( $prefix ) );
+		if ( empty( $alternates[ $relative ] ) ) {
+			return null;
+		}
+		$selected = $alternates[ $relative ];
+		$sources  = self::candidates( $alternates, $selected, $prefix, Measure::needed( $id ) );
+		if ( ! $sources ) {
+			return null;
+		}
+		return array(
+			'srcset' => implode( ', ', $sources ),
+			'mime'   => (string) $selected['mime'],
+		);
+	}
+
+	/**
+	 * Collect same-format, same-aspect candidates that exist on disk.
+	 *
+	 * @param array  $alternates All recorded alternates.
+	 * @param array  $selected   The alternate matching the requested size.
+	 * @param string $prefix     Uploads base URL.
+	 * @return array<int,string>
+	 */
+	private static function candidates( array $alternates, array $selected, string $prefix, int $needed = 0 ): array {
+		$ratio   = (int) $selected['width'] / max( 1, (int) $selected['height'] );
+		$sources = array();
+		foreach ( $alternates as $alt ) {
+			if ( $alt['mime'] !== $selected['mime'] ) {
+				continue;
+			}
+			if ( abs( (int) $alt['width'] / max( 1, (int) $alt['height'] ) - $ratio ) > 0.01 ) {
+				continue;
+			}
+			try {
+				Media::path( $alt['file'] );
+			} catch ( \Throwable $e ) {
+				continue;
+			}
+			$sources[ (int) $alt['width'] ] = esc_url( $prefix . $alt['file'] ) . ' ' . (int) $alt['width'] . 'w';
+		}
+		ksort( $sources );
+
+		/*
+		 * Alternates are only generated where they actually beat the original,
+		 * so a set can cover the large sizes and skip the small ones. When the
+		 * smallest alternate is still far wider than the image is drawn, using
+		 * it would send more bytes than the correctly sized original. Decline
+		 * rather than make the page slower.
+		 */
+		if ( $needed > 0 && $sources ) {
+			// $needed already allows for a high-density screen, so an alternate
+			// wider than that is oversized on every display.
+			$smallest = (int) array_key_first( $sources );
+			if ( $smallest > $needed ) {
+				return array();
+			}
+		}
+		return $sources;
+	}
+
+	/**
 	 * Build the picture element around an existing image tag.
 	 *
 	 * @param string $html  Original image markup, used unchanged as the fallback.
@@ -106,26 +191,10 @@ final class Delivery {
 			return $html;
 		}
 		$selected = $alternates[ $relative ];
-		$ratio    = (int) $selected['width'] / max( 1, (int) $selected['height'] );
-		$sources  = array();
-		foreach ( $alternates as $alt ) {
-			if ( $alt['mime'] !== $selected['mime'] ) {
-				continue;
-			}
-			if ( abs( (int) $alt['width'] / max( 1, (int) $alt['height'] ) - $ratio ) > 0.01 ) {
-				continue;
-			}
-			try {
-				Media::path( $alt['file'] );
-			} catch ( \Throwable $e ) {
-				continue;
-			}
-			$sources[ (int) $alt['width'] ] = esc_url( $prefix . $alt['file'] ) . ' ' . (int) $alt['width'] . 'w';
-		}
+		$sources  = self::candidates( $alternates, $selected, $prefix, Measure::needed( $id ) );
 		if ( ! $sources ) {
 			return $html;
 		}
-		ksort( $sources );
 		return sprintf(
 			'<picture><source type="%s" srcset="%s" sizes="%s">%s</picture>',
 			esc_attr( $selected['mime'] ),

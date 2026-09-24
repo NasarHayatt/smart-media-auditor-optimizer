@@ -128,6 +128,7 @@ final class Plugin {
 			2
 		);
 		Viewport::boot();
+		Rightsize::boot();
 		Delivery::boot();
 		add_action(
 			'wp_enqueue_scripts',

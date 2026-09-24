@@ -115,17 +115,33 @@ final class Database {
 				PRIMARY KEY  (url_hash),
 				KEY object_id (object_id),
 				KEY image_bytes (image_bytes)',
+			/*
+			 * One row per image, per measured page, per viewport width. The
+			 * viewport is part of the key because an image renders at a
+			 * different size on a phone than on a desktop, and the sizes
+			 * attribute has to describe both.
+			 */
 			'render'   => 'id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				attachment_id bigint(20) unsigned NOT NULL,
 				url_hash char(64) NOT NULL,
+				viewport int unsigned NOT NULL DEFAULT 0,
 				rendered_width int unsigned NOT NULL DEFAULT 0,
 				rendered_height int unsigned NOT NULL DEFAULT 0,
-				dpr decimal(3,1) NOT NULL DEFAULT 1.0,
 				observed_at bigint(20) unsigned NOT NULL DEFAULT 0,
 				PRIMARY KEY  (id),
-				UNIQUE KEY observation (attachment_id,url_hash),
+				UNIQUE KEY observation (attachment_id,url_hash,viewport),
 				KEY attachment_id (attachment_id)',
 		);
+		/*
+		 * The render table changed shape in 2.1 and has never held data worth
+		 * keeping, so recreate it rather than carry a fragile column migration.
+		 */
+		if ( version_compare( (string) get_option( 'smao_schema', '0' ), '2.1.0', '<' ) ) {
+			$render = self::table( 'render' );
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fixed internal table name.
+			$wpdb->query( "DROP TABLE IF EXISTS `$render`" );
+		}
+
 		foreach ( $definitions as $name => $sql ) {
 			dbDelta( 'CREATE TABLE ' . self::table( $name ) . " (\n$sql\n) $collate;" );
 			if ( $wpdb->last_error ) {

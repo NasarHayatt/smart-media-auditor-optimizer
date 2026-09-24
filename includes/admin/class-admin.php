@@ -98,6 +98,18 @@ final class Admin {
 		wp_register_script( 'smao-model', plugins_url( 'assets/model.js', SMAO_FILE ), array(), SMAO_VERSION, true );
 		wp_enqueue_script( 'smao-admin', plugins_url( 'assets/admin.js', SMAO_FILE ), array( 'smao-model', 'wp-i18n' ), SMAO_VERSION, true );
 		wp_set_script_translations( 'smao-admin', 'smart-media-auditor-optimizer' );
+		if ( str_contains( $hook, 'smao-speed' ) ) {
+			wp_enqueue_script( 'smao-measure', plugins_url( 'assets/measure.js', SMAO_FILE ), array( 'smao-admin', 'wp-i18n' ), SMAO_VERSION, true );
+			wp_set_script_translations( 'smao-measure', 'smart-media-auditor-optimizer' );
+			wp_localize_script(
+				'smao-measure',
+				'smaoMeasure',
+				array(
+					'targets'   => Measure::targets(),
+					'viewports' => Measure::VIEWPORTS,
+				)
+			);
+		}
 		wp_localize_script(
 			'smao-admin',
 			'smaoConfig',
@@ -141,6 +153,7 @@ final class Admin {
 			'settings' => 'POST',
 			'runtime'  => 'POST',
 			'storage'  => 'POST',
+			'measure'  => 'POST',
 		);
 		foreach ( $routes as $route => $method ) {
 			register_rest_route(
@@ -190,6 +203,16 @@ final class Admin {
 			return rest_ensure_response(
 				Database::lock(
 					static function () use ( $request, $route ) {
+						if ( 'measure' === $route ) {
+							$payload = (array) $request->get_json_params();
+							return array(
+								'stored' => Measure::store(
+									(string) ( $payload['url'] ?? '' ),
+									(int) ( $payload['viewport'] ?? 0 ),
+									(array) ( $payload['observations'] ?? array() )
+								),
+							);
+						}
 						if ( 'storage' === $route ) {
 							Vault::configure( (string) $request->get_param( 'path' ) );
 							return self::status();

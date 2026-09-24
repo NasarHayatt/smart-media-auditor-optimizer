@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.0.1\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
@@ -65,6 +65,9 @@ msgid "/[\\s,]+/"
 msgstr ""
 
 msgid "/\\R/"
+msgstr ""
+
+msgid "/\\s+/"
 msgstr ""
 
 msgid "?"
@@ -337,6 +340,9 @@ msgstr ""
 msgid "Could not save scan checkpoint."
 msgstr ""
 
+msgid "Could not save the measurements."
+msgstr ""
+
 msgid "Could not verify updated image metadata; restoring originals."
 msgstr ""
 
@@ -359,6 +365,9 @@ msgid "Do not use your uploads folder, the plugin folder, or anything inside you
 msgstr ""
 
 msgid "Done."
+msgstr ""
+
+msgid "Done. Reloading the results."
 msgstr ""
 
 msgid "Download"
@@ -442,6 +451,9 @@ msgstr ""
 msgid "Forbidden."
 msgstr ""
 
+msgid "Front page"
+msgstr ""
+
 msgid "GD"
 msgstr ""
 
@@ -472,6 +484,9 @@ msgstr ""
 msgid "ID"
 msgstr ""
 
+msgid "Image"
+msgstr ""
+
 msgid "Image editor returned an unexpected output path."
 msgstr ""
 
@@ -497,6 +512,9 @@ msgid "Images further down the page wait until someone scrolls near them, and th
 msgstr ""
 
 msgid "Images in use"
+msgstr ""
+
+msgid "Images measured"
 msgstr ""
 
 msgid "Images on your site"
@@ -536,6 +554,9 @@ msgid "Largest first"
 msgstr ""
 
 msgid "Last checked"
+msgstr ""
+
+msgid "Last measured %s ago. Measure again after a theme or layout change."
 msgstr ""
 
 msgid "Latest checkpoint"
@@ -586,6 +607,15 @@ msgstr ""
 msgid "Maximum width"
 msgstr ""
 
+msgid "Measure again"
+msgstr ""
+
+msgid "Measure my pages"
+msgstr ""
+
+msgid "Measured"
+msgstr ""
+
 msgid "Media"
 msgstr ""
 
@@ -617,6 +647,9 @@ msgid "More images"
 msgstr ""
 
 msgid "More options"
+msgstr ""
+
+msgid "Most recent post"
 msgstr ""
 
 msgid "Move selected to safe storage"
@@ -751,6 +784,9 @@ msgstr ""
 msgid "Only JPEG, PNG, WebP and AVIF images are eligible."
 msgstr ""
 
+msgid "Only pages on this site can be measured."
+msgstr ""
+
 msgid "Only retained quarantine groups can be permanently deleted after the retention period."
 msgstr ""
 
@@ -806,6 +842,9 @@ msgid "PNG support"
 msgstr ""
 
 msgid "Page %1$s of %2$s"
+msgstr ""
+
+msgid "Pages checked"
 msgstr ""
 
 msgid "Part of your site could not be read, so these results are not complete enough to act on. Running it again usually sorts it out."
@@ -1021,7 +1060,16 @@ msgstr ""
 msgid "Select images below and choose Optimize selected to add jobs."
 msgstr ""
 
+msgid "Send images at the size they are shown"
+msgstr ""
+
 msgid "Send smaller image files where possible"
+msgstr ""
+
+msgid "Sent at"
+msgstr ""
+
+msgid "Serve images at the size they are shown"
 msgstr ""
 
 msgid "Set up private recovery storage before removal: %s"
@@ -1037,6 +1085,9 @@ msgid "Setup needed"
 msgstr ""
 
 msgid "Show"
+msgstr ""
+
+msgid "Shown at"
 msgstr ""
 
 msgid "Site content changed during this scan. Run a fresh scan before removing files."
@@ -1120,6 +1171,9 @@ msgstr ""
 msgid "The check could not finish properly"
 msgstr ""
 
+msgid "There are no published pages to measure yet."
+msgstr ""
+
 msgid "There is too much matching content to verify safely, so nothing was moved. Run a fresh scan and try a smaller selection."
 msgstr ""
 
@@ -1195,6 +1249,9 @@ msgstr ""
 msgid "Unexpected files in backup folder; record retained."
 msgstr ""
 
+msgid "Unexpected viewport width."
+msgstr ""
+
 msgid "Unknown table."
 msgstr ""
 
@@ -1240,7 +1297,13 @@ msgstr ""
 msgid "Used"
 msgstr ""
 
+msgid "Uses the measurements above to tell the browser how big each image really is, so it picks a file that fits instead of the largest one available. No image is altered and no new file is created."
+msgstr ""
+
 msgid "Usually takes a minute or two"
+msgstr ""
+
+msgid "Usually the single biggest saving on an image-heavy page"
 msgstr ""
 
 msgid "Vault must be an absolute private path outside uploads."
@@ -1259,6 +1322,12 @@ msgid "Waiting for the first batch"
 msgstr ""
 
 msgid "Waiting for worker"
+msgstr ""
+
+msgid "Wasted"
+msgstr ""
+
+msgid "Wasted on every page load"
 msgstr ""
 
 msgid "We can see everything stored in your site. We cannot see images used by custom code, or linked from somewhere else on the internet. Have a think about that, then confirm and we will finish the job."
@@ -1315,6 +1384,9 @@ msgstr ""
 msgid "WordPress"
 msgstr ""
 
+msgid "WordPress tells the browser every image fills the whole window. It usually does not, so the browser downloads a much larger file than it draws. We can only know the real size by looking at your pages, so that is what this does."
+msgstr ""
+
 msgid "Worth testing first"
 msgstr ""
 
@@ -1337,6 +1409,9 @@ msgid "You do not have permission to remove one of the selected files."
 msgstr ""
 
 msgid "Your media is tidy"
+msgstr ""
+
+msgid "Your pages open in a hidden frame here in the dashboard, at phone, tablet and desktop widths. Nothing is added to the pages your visitors see, and no file is changed."
 msgstr ""
 
 msgid "Your results are ready to look at"
@@ -1411,6 +1486,9 @@ msgstr ""
 msgid "fragment?"
 msgstr ""
 
+msgid "iframe"
+msgstr ""
+
 msgid "images below the fold wait their turn"
 msgstr ""
 
@@ -1481,6 +1559,9 @@ msgid "smao-admin"
 msgstr ""
 
 msgid "smao-inspector"
+msgstr ""
+
+msgid "smao-measure"
 msgstr ""
 
 msgid "smao-model"

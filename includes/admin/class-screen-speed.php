@@ -22,9 +22,10 @@ final class Screen_Speed {
 	 */
 	public static function render( array $input ): void {
 		$settings = Settings::get();
+		self::right_size();
 		?>
 		<form class="smao-settings" data-settings="speed">
-			<input type="hidden" name="_flags" value="speed_enabled,dimensions,lcp_preload,lazy_correct,delivery">
+			<input type="hidden" name="_flags" value="speed_enabled,dimensions,lcp_preload,lazy_correct,delivery,rightsize">
 
 			<section class="smao-panel smao-master-panel">
 				<label class="smao-switch">
@@ -56,6 +57,13 @@ final class Screen_Speed {
 					__( 'Stop pages jumping about', 'smart-media-auditor-optimizer' ),
 					__( 'When an image does not say how big it is, the browser guesses, then shoves everything down the page once the real image arrives. We fill in the missing sizes.', 'smart-media-auditor-optimizer' ),
 					__( 'Nothing moves under the reader as they start reading', 'smart-media-auditor-optimizer' )
+				);
+				self::switch_row(
+					'rightsize',
+					$settings['rightsize'],
+					__( 'Send images at the size they are shown', 'smart-media-auditor-optimizer' ),
+					__( 'Uses the measurements above to tell the browser how big each image really is, so it picks a file that fits instead of the largest one available. No image is altered and no new file is created.', 'smart-media-auditor-optimizer' ),
+					__( 'Usually the single biggest saving on an image-heavy page', 'smart-media-auditor-optimizer' )
 				);
 				self::switch_row(
 					'lazy_correct',
@@ -92,6 +100,98 @@ final class Screen_Speed {
 				<button class="smao-cta"><?php esc_html_e( 'Save', 'smart-media-auditor-optimizer' ); ?></button>
 			</div>
 		</form>
+		<?php
+	}
+
+	/**
+	 * The measured right-sizing panel: what it found, and how to refresh it.
+	 *
+	 * @return void
+	 */
+	private static function right_size(): void {
+		$coverage = Measure::coverage();
+		$wasted   = $coverage['images'] ? Measure::wasted() : 0;
+		$worst    = $coverage['images'] ? Measure::oversized( 8 ) : array();
+		$settings = Settings::get();
+		?>
+		<section class="smao-panel smao-measure-panel">
+			<div class="smao-panel-head">
+				<h2><?php esc_html_e( 'Serve images at the size they are shown', 'smart-media-auditor-optimizer' ); ?></h2>
+				<?php if ( $coverage['images'] ) : ?>
+					<span class="smao-chip is-on"><?php esc_html_e( 'Measured', 'smart-media-auditor-optimizer' ); ?></span>
+				<?php endif; ?>
+			</div>
+
+			<p><?php esc_html_e( 'WordPress tells the browser every image fills the whole window. It usually does not, so the browser downloads a much larger file than it draws. We can only know the real size by looking at your pages, so that is what this does.', 'smart-media-auditor-optimizer' ); ?></p>
+
+			<?php if ( ! $coverage['images'] ) : ?>
+				<p class="smao-muted"><?php esc_html_e( 'Your pages open in a hidden frame here in the dashboard, at phone, tablet and desktop widths. Nothing is added to the pages your visitors see, and no file is changed.', 'smart-media-auditor-optimizer' ); ?></p>
+			<?php else : ?>
+				<div class="smao-figures">
+					<article class="smao-figure">
+						<span><?php esc_html_e( 'Wasted on every page load', 'smart-media-auditor-optimizer' ); ?></span>
+						<strong><?php echo esc_html( size_format( $wasted ) ); ?></strong>
+					</article>
+					<article class="smao-figure">
+						<span><?php esc_html_e( 'Images measured', 'smart-media-auditor-optimizer' ); ?></span>
+						<strong><?php echo esc_html( number_format_i18n( $coverage['images'] ) ); ?></strong>
+					</article>
+					<article class="smao-figure">
+						<span><?php esc_html_e( 'Pages checked', 'smart-media-auditor-optimizer' ); ?></span>
+						<strong><?php echo esc_html( number_format_i18n( $coverage['pages'] ) ); ?></strong>
+					</article>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( $worst ) : ?>
+				<div class="smao-table">
+					<table class="widefat striped">
+						<thead>
+							<tr>
+								<th scope="col"><?php esc_html_e( 'Image', 'smart-media-auditor-optimizer' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Sent at', 'smart-media-auditor-optimizer' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Shown at', 'smart-media-auditor-optimizer' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Wasted', 'smart-media-auditor-optimizer' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+						<?php foreach ( $worst as $row ) : ?>
+							<tr>
+								<td><?php echo esc_html( $row['filename'] ); ?></td>
+								<td><?php echo esc_html( $row['served'] . 'px' ); ?></td>
+								<td><?php echo esc_html( $row['drawn'] . 'px' ); ?></td>
+								<td><?php echo esc_html( size_format( $row['wasted'] ) ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+			<?php endif; ?>
+
+			<div class="smao-measure-actions">
+				<button type="button" class="smao-cta smao-cta-quiet" id="smao-measure">
+					<?php
+					echo $coverage['images']
+						? esc_html__( 'Measure again', 'smart-media-auditor-optimizer' )
+						: esc_html__( 'Measure my pages', 'smart-media-auditor-optimizer' );
+					?>
+				</button>
+				<span id="smao-measure-status" class="smao-muted" role="status"></span>
+			</div>
+			<div class="smao-track"><div class="smao-track-fill" id="smao-measure-bar"></div></div>
+
+			<?php if ( $coverage['measured_at'] ) : ?>
+				<p class="smao-reassure">
+					<?php
+					printf(
+						/* translators: %s is a human readable time difference, for example "2 hours". */
+						esc_html__( 'Last measured %s ago. Measure again after a theme or layout change.', 'smart-media-auditor-optimizer' ),
+						esc_html( human_time_diff( $coverage['measured_at'] ) )
+					);
+					?>
+				</p>
+			<?php endif; ?>
+		</section>
 		<?php
 	}
 

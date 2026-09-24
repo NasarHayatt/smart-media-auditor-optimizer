@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.0.1
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -34,7 +34,7 @@ deliberate action with its own confirmation.
 
 **Speed that is on from the moment you activate**
 
-Three corrections are enabled by default because none of them can change how
+These corrections are enabled by default because none of them can change how
 your pages look:
 
 * Missing width and height are added to images, which stops layout shifting as
@@ -43,6 +43,8 @@ your pages look:
   downloading sooner.
 * Lazy loading is corrected, so the main image is never deferred and the images
   further down are.
+* Once you have measured your layout, images are requested at the size they are
+  actually shown rather than the size of your browser window.
 
 WebP and AVIF delivery is available too, but stays off until you enable it,
 because it changes the markup your theme emits. When enabled it wraps images in
@@ -108,6 +110,24 @@ builders reference are reported conservatively rather than as unused.
 
 == Changelog ==
 
+= 2.1.0 =
+* New: measures how large each image is actually displayed, by loading your own
+  pages in a hidden frame inside the dashboard at phone, tablet and desktop
+  widths. Nothing is added to the pages your visitors see.
+* New: uses those measurements to tell the browser the real display size, so it
+  picks a file that fits instead of the largest one available. No image is
+  altered and no new file is created. On the test site this took the main image
+  from 587 KB to 168 KB.
+* New: shows exactly which images are being sent larger than they are shown,
+  and how much that costs on every page load.
+* Fixed: with WebP delivery on, the main image was downloaded twice, once as
+  WebP for the picture element and again as the original for the preload hint.
+  The preload now points at the file the browser will actually use.
+* Fixed: WebP copies are only made where they beat the original, so a set can
+  cover large sizes and skip small ones. Delivery now declines an alternate
+  that is wider than the image is ever drawn, instead of sending more bytes
+  than the correctly sized original would have.
+
 = 2.0.1 =
 * Fixed a fatal error after updating from 1.x. 2.0 moved every class into
   subdirectories, and a site still running the previous plugin bootstrap, which
@@ -146,6 +166,9 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.1.0 =
+Adds measured right-sizing. Open Speed and run "Measure my pages" to switch it on.
 
 = 2.0.1 =
 Fixes a fatal error some sites hit when updating from 1.x. Update straight away
