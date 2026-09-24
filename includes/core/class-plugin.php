@@ -77,30 +77,69 @@ final class Plugin {
 					}
 			}
 		);
-		foreach ( array( 'save_post', 'deleted_post', 'created_term', 'edited_term', 'delete_term', 'profile_update', 'switch_theme' ) as $hook ) {
-			add_action( $hook, array( self::class, 'dirty' ) ); }
-		foreach ( array( 'added_post_meta', 'updated_post_meta', 'deleted_post_meta', 'added_term_meta', 'updated_term_meta', 'deleted_term_meta', 'added_user_meta', 'updated_user_meta', 'deleted_user_meta', 'added_comment_meta', 'updated_comment_meta', 'deleted_comment_meta' ) as $hook ) {
-			add_action(
-				$hook,
-				static function ( $meta_id, $object_id, $key ): void {
-					if ( ! str_starts_with( (string) $key, '_smao_' ) && ! in_array( $key, array( '_edit_lock', '_edit_last', 'session_tokens' ), true ) && ! preg_match( '/(?:^|_)user-settings(?:-time)?$/', (string) $key ) ) {
-						self::dirty();
-					} },
-				10,
-				3
-			);
-		}
-		foreach ( array( 'added_option', 'updated_option', 'deleted_option' ) as $hook ) {
-			add_action(
-				$hook,
-				static function ( $key ): void {
-					if ( ! str_starts_with( (string) $key, 'smao_' ) && ! str_starts_with( (string) $key, '_transient_' ) && ! str_starts_with( (string) $key, '_site_transient_' ) && 'cron' !== $key ) {
-						self::dirty(); }
+		/*
+		 * A scan's results go stale only when something could add a reference
+		 * to a media file. Removing a reference can only make a file look used
+		 * when it no longer is, which is safe. Page builders and many plugins
+		 * rewrite their own caches on ordinary visits; counting those as
+		 * changes meant a scan on a live site never finished cleanly. Every
+		 * removal is still re-verified against live data before it happens.
+		 */
+		add_action(
+			'save_post',
+			static function ( $post_id, $post ): void {
+				if ( $post instanceof \WP_Post && self::relevant_post( $post ) ) {
+					self::dirty();
 				}
-			);
+			},
+			10,
+			2
+		);
+		add_action( 'switch_theme', array( self::class, 'dirty' ) );
+		foreach ( array( 'post', 'term', 'user', 'comment' ) as $type ) {
+			foreach ( array( 'added', 'updated' ) as $verb ) {
+				add_action(
+					"{$verb}_{$type}_meta",
+					static function ( $meta_id, $object_id, $key, $value ): void {
+						if ( self::relevant_meta( (string) $key, $value ) ) {
+							self::dirty();
+						}
+					},
+					10,
+					4
+				);
+			}
 		}
-		foreach ( array( 'wp_insert_comment', 'edit_comment', 'delete_comment' ) as $hook ) {
-			add_action( $hook, array( self::class, 'dirty' ) ); }
+		add_action(
+			'added_option',
+			static function ( $name, $value ): void {
+				if ( self::relevant_option( (string) $name, $value ) ) {
+					self::dirty();
+				}
+			},
+			10,
+			2
+		);
+		add_action(
+			'updated_option',
+			static function ( $name, $old, $value ): void {
+				if ( self::relevant_option( (string) $name, $value ) ) {
+					self::dirty();
+				}
+			},
+			10,
+			3
+		);
+		add_action(
+			'wp_insert_comment',
+			static function ( $id, $comment ): void {
+				if ( is_object( $comment ) && self::references_media( (string) $comment->comment_content ) ) {
+					self::dirty();
+				}
+			},
+			10,
+			2
+		);
 		add_filter(
 			'wp_generate_attachment_metadata',
 			static function ( $metadata, $id ) {
@@ -134,6 +173,7 @@ final class Plugin {
 		Viewport::boot();
 		Rightsize::boot();
 		Delivery::boot();
+		Styles::watch();
 		/*
 		 * These inspect the main query to decide whether to optimise, so they
 		 * must wait until it exists. Booting them at plugins_loaded made
@@ -180,6 +220,104 @@ final class Plugin {
 				wp_schedule_event( time() + 60, 'smao_minute', 'smao_worker' ); } else {
 				wp_schedule_single_event( time() + 60, 'smao_worker' ); }
 		}
+	}
+
+	/**
+	 * Whether a value could contain a reference to a media file.
+	 *
+	 * @param mixed  $value Raw value.
+	 * @param string $key   Field name, used to recognise bare attachment IDs.
+	 * @return bool
+	 */
+	public static function references_media( $value, string $key = '' ): bool {
+		if ( is_array( $value ) || is_object( $value ) ) {
+			$value = maybe_serialize( $value );
+		}
+		$text = (string) $value;
+		if ( '' === $text ) {
+			return false;
+		}
+		// A number stored under an image-like name is an attachment ID.
+		if ( '' !== $key && preg_match( '/image|photo|picture|logo|icon|gallery|thumb|banner|background|(?:^|_)bg(?:_|$)|media|attachment|avatar|video|audio|poster|cover|document|pdf|download/i', $key ) && preg_match( '/\d/', $text ) ) {
+			return true;
+		}
+		// Slashes may be JSON-escaped, which is how page builders store URLs.
+		return (bool) preg_match( '~wp-image-\d|/uploads\\\\?/[^"\'\s<>()]+?\.(?:jpe?g|png|gif|webp|avif|svg|bmp|tiff?|ico|heic|mp4|m4v|mov|webm|ogv|mp3|m4a|wav|ogg|flac|pdf|docx?|xlsx?|pptx?|odt|ods|csv|zip|rtf|txt)\b~i', $text );
+	}
+
+	/**
+	 * Whether saving this post could add a media reference.
+	 *
+	 * @param \WP_Post $post Post.
+	 * @return bool
+	 */
+	public static function relevant_post( \WP_Post $post ): bool {
+		if ( in_array( $post->post_type, array( 'revision', 'attachment', 'oembed_cache', 'customize_changeset', 'user_request', 'wp_navigation', 'nav_menu_item', 'scheduled-action' ), true ) ) {
+			return false;
+		}
+		if ( in_array( $post->post_status, array( 'auto-draft', 'inherit', 'trash' ), true ) ) {
+			return false;
+		}
+		return self::references_media( $post->post_content . ' ' . $post->post_excerpt );
+	}
+
+	/**
+	 * Whether a metadata write could add a media reference.
+	 *
+	 * @param string $key   Meta key.
+	 * @param mixed  $value New value.
+	 * @return bool
+	 */
+	public static function relevant_meta( string $key, $value ): bool {
+		if ( str_starts_with( $key, '_smao_' ) || str_starts_with( $key, '_oembed_' ) || str_starts_with( $key, '_wp_attachment' ) || str_starts_with( $key, '_transient' ) ) {
+			return false;
+		}
+		// Derived caches that page builders and WordPress rebuild on their own.
+		$derived = array(
+			'_wp_attached_file',
+			'_edit_lock',
+			'_edit_last',
+			'_wp_old_slug',
+			'_wp_old_date',
+			'_encloseme',
+			'_pingme',
+			'_wp_desired_post_slug',
+			'_wp_trash_meta_status',
+			'_wp_trash_meta_time',
+			'_elementor_css',
+			'_elementor_element_cache',
+			'_elementor_page_assets',
+			'_elementor_controls_usage',
+			'_elementor_screenshot',
+			'_elementor_screenshot_failed',
+			'_elementor_inline_svg',
+			'session_tokens',
+		);
+		if ( in_array( $key, $derived, true ) || preg_match( '/(?:^|_)user-settings(?:-time)?$/', $key ) ) {
+			return false;
+		}
+		return self::references_media( $value, $key );
+	}
+
+	/**
+	 * Whether an option write could add a media reference.
+	 *
+	 * @param string $name  Option name.
+	 * @param mixed  $value New value.
+	 * @return bool
+	 */
+	public static function relevant_option( string $name, $value ): bool {
+		if ( str_starts_with( $name, 'smao_' ) || str_starts_with( $name, '_transient_' ) || str_starts_with( $name, '_site_transient_' ) || 'cron' === $name ) {
+			return false;
+		}
+		if ( in_array( $name, Scanner::ignored_options(), true ) ) {
+			return false;
+		}
+		// Options that hold bare attachment IDs under generic names.
+		if ( in_array( $name, array( 'site_icon', 'site_logo' ), true ) || str_starts_with( $name, 'theme_mods_' ) || str_starts_with( $name, 'widget_' ) ) {
+			return true;
+		}
+		return self::references_media( $value, $name );
 	}
 
 	/**

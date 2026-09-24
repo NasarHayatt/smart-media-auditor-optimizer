@@ -249,6 +249,31 @@ final class Scripts {
 	}
 
 	/**
+	 * Whether a script will still hold up the first paint after optimisation.
+	 *
+	 * @param string $handle Registered handle.
+	 * @param string $src    Script URL.
+	 * @param array  $extra  The registration's extra data.
+	 * @return bool
+	 */
+	public static function stays_blocking( string $handle, string $src, array $extra ): bool {
+		if ( in_array( $extra['strategy'] ?? '', array( 'defer', 'async' ), true ) ) {
+			return false;
+		}
+		if ( self::skip() ) {
+			return true;
+		}
+		$settings = Settings::get();
+		if ( $settings['delay_js'] && self::is_delayed( $handle, $src ) ) {
+			return false;
+		}
+		if ( $settings['defer_js'] && ! self::excluded( $handle, $src ) ) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
 	 * Whether a script is protected from any change.
 	 *
 	 * @param string $handle Registered handle.

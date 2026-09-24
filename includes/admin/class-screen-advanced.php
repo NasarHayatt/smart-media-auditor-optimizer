@@ -355,7 +355,7 @@ final class Screen_Advanced {
 		<label>
 			<?php echo esc_html( $label ); ?>
 			<input type="number" name="<?php echo esc_attr( $key ); ?>" min="<?php echo esc_attr( (string) $min ); ?>" max="<?php echo esc_attr( (string) $max ); ?>" step="1" value="<?php echo esc_attr( (string) $settings[ $key ] ); ?>" required>
-			<small><?php echo esc_html( sprintf( '%s – %s', number_format_i18n( $min ), number_format_i18n( $max ) ) ); ?></small>
+			<small><?php echo esc_html( sprintf( '%s - %s', number_format_i18n( $min ), number_format_i18n( $max ) ) ); ?></small>
 		</label>
 		<?php
 	}

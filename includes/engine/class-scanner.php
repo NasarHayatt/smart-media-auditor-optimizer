@@ -13,6 +13,18 @@ defined( 'ABSPATH' ) || exit;
  * Scanner workflow and safety policy.
  */
 final class Scanner {
+
+	/**
+	 * Largest slice of one value read at a time.
+	 */
+	private const CHUNK = 262144;
+
+	/**
+	 * Overlap between slices, so a reference cut by a slice boundary is still
+	 * seen whole in the next slice.
+	 */
+	private const OVERLAP = 4096;
+
 	/**
 	 * Return the fixed map of source tables and primary-key cursors.
 	 *
@@ -232,14 +244,17 @@ final class Scanner {
 					}
 					$s     = $sources[ $state['source'] ];
 					$field = $s[6] ?? "'{$s[3]}'";
-					$sql   = "SELECT {$s[1]} AS cursor_id, {$s[2]} AS owner_id, $field AS field, LEFT({$s[3]},262144) AS value, LENGTH({$s[3]}) AS length FROM {$s[0]} WHERE {$s[1]}>%d AND ({$s[4]}) ORDER BY {$s[1]} LIMIT %d";
+					$sql   = "SELECT {$s[1]} AS cursor_id, {$s[2]} AS owner_id, $field AS field, LEFT({$s[3]}," . self::CHUNK . ") AS value, CHAR_LENGTH({$s[3]}) AS length FROM {$s[0]} WHERE {$s[1]}>%d AND ({$s[4]}) ORDER BY {$s[1]} LIMIT %d";
 					// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Source identifiers are fixed and cursor/limit are prepared.
 					$rows = $wpdb->get_results( $wpdb->prepare( $sql, $state['cursor'], Settings::get()['source_batch'] ) );
 					Database::check( $rows );
 					foreach ( $rows as $row ) {
-						if ( (int) $row->length > 262144 ) {
-							$state['incomplete'] = true; }
 						self::match( (string) $row->value, $s[5], (int) $row->owner_id, (string) $row->field );
+						if ( (int) $row->length > self::CHUNK ) {
+							// Page builders store whole pages in one value. Read the
+							// rest in overlapping slices instead of giving up on it.
+							self::match_rest( $s, (int) $row->cursor_id, (int) $row->length, (int) $row->owner_id, (string) $row->field );
+						}
 						$state['cursor'] = (int) $row->cursor_id;
 						++$state['records'];
 						$state['source_processed'] = (int) ( $state['source_processed'] ?? 0 ) + 1;
@@ -257,6 +272,39 @@ final class Scanner {
 						$state['cursor'] = 0;
 					}
 				}
+			} elseif ( 'recheck' === $state['phase'] ) {
+				$table = Database::table( 'media' );
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Identifiers/predicates come from fixed internal maps; all request values use prepared placeholders.
+				$rows = $wpdb->get_results( $wpdb->prepare( "SELECT attachment_id,filename FROM $table WHERE scan_id=%s AND status='unused' AND attachment_id>%d ORDER BY attachment_id LIMIT %d", $state['id'], $state['cursor'], $limit ), ARRAY_A );
+				Database::check( $rows );
+				foreach ( $rows as $row ) {
+					$id = (int) $row['attachment_id'];
+					try {
+						self::assert_no_references( $id, Media::group( $id ) );
+					} catch ( \RuntimeException $e ) {
+						Database::check(
+							$wpdb->update(
+								$table,
+								array(
+									'status' => 'possible',
+									'reason' => 'A change made during the scan may reference this file.',
+								),
+								array( 'attachment_id' => $id )
+							)
+						);
+					}
+					$state['cursor'] = $id;
+					self::checkpoint( $state, 'rechecked', $id, (string) $row['filename'] );
+					if ( self::budget( $deadline ) ) {
+						break; }
+				}
+				if ( ! $rows ) {
+					// Every candidate was verified against the data as it stood
+					// when this pass began.
+					$state['epoch'] = (string) ( $state['recheck_epoch'] ?? $state['epoch'] );
+					unset( $state['recheck_epoch'] );
+					self::finish( $state );
+				}
 			} else {
 				$table = Database::table( 'media' );
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Identifiers/predicates come from fixed internal maps; all request values use prepared placeholders.
@@ -272,15 +320,17 @@ final class Scanner {
 				}
 				if ( ! $rows ) {
 					if ( get_option( 'smao_epoch', '' ) !== $state['epoch'] ) {
-						$state['incomplete'] = true;
-						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Identifiers/predicates come from fixed internal maps; all request values use prepared placeholders.
-						Database::check( $wpdb->query( $wpdb->prepare( "UPDATE $table SET status='possible',reason=%s WHERE scan_id=%s AND status='unused'", 'Site changed during scan. Rescan during a quiet period.', $state['id'] ) ) );
+						/*
+						 * Something that could add a media reference changed while
+						 * the scan ran. Rather than distrust every result, check
+						 * each unused candidate again against the live data.
+						 */
+						$state['phase']         = 'recheck';
+						$state['cursor']        = 0;
+						$state['recheck_epoch'] = get_option( 'smao_epoch', '' );
+					} else {
+						self::finish( $state );
 					}
-					$state['state']    = 'complete';
-					$state['finished'] = time();
-					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Identifiers/predicates come from fixed internal maps; all request values use prepared placeholders.
-					Database::check( $wpdb->query( $wpdb->prepare( "DELETE FROM $table WHERE scan_id<>%s", $state['id'] ) ) );
-					Database::log( 'scan_complete', 0, 'Read-only scan completed.' );
 				}
 			}
 			$state['updated'] = time();
@@ -290,6 +340,46 @@ final class Scanner {
 			$state['message'] = $e->getMessage();
 			Database::save_state( $state );
 			throw $e;
+		}
+	}
+
+	/**
+	 * Mark a scan complete and drop rows from earlier scans.
+	 *
+	 * @param array $state Mutable checkpoint.
+	 * @return void
+	 */
+	private static function finish( array &$state ): void {
+		global $wpdb;
+		$table             = Database::table( 'media' );
+		$state['state']    = 'complete';
+		$state['phase']    = 'done';
+		$state['finished'] = time();
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Identifiers/predicates come from fixed internal maps; all request values use prepared placeholders.
+		Database::check( $wpdb->query( $wpdb->prepare( "DELETE FROM $table WHERE scan_id<>%s", $state['id'] ) ) );
+		Database::log( 'scan_complete', 0, 'Read-only scan completed.' );
+	}
+
+	/**
+	 * Match the remainder of a value longer than one slice.
+	 *
+	 * @param array  $source Source definition from sources().
+	 * @param int    $key    Row key.
+	 * @param int    $length Value length in characters.
+	 * @param int    $owner  Owning object.
+	 * @param string $field  Field name.
+	 * @return void
+	 */
+	private static function match_rest( array $source, int $key, int $length, int $owner, string $field ): void {
+		global $wpdb;
+		$step = self::CHUNK - self::OVERLAP;
+		for ( $offset = $step; $offset < $length; $offset += $step ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Source identifiers are the fixed sources() map.
+			$slice = $wpdb->get_var( $wpdb->prepare( "SELECT SUBSTRING({$source[3]}, %d, %d) FROM {$source[0]} WHERE {$source[1]}=%d", $offset + 1, self::CHUNK, $key ) );
+			if ( null === $slice || '' === $slice ) {
+				return; // The row changed or went away; the recheck covers it.
+			}
+			self::match( (string) $slice, $source[5], $owner, $field );
 		}
 	}
 
@@ -493,7 +583,7 @@ final class Scanner {
 		if ( $best ) {
 			$status = (int) $best['strength'] >= 2 ? ( 'download' === $best['kind'] ? 'download' : 'used' ) : 'possible';
 			$reason = 'Indexed reference locations are available in Details. Ambiguous IDs/filenames are treated as possible use.';
-		} elseif ( Settings::get()['coverage_reviewed'] && ! $state['incomplete'] && get_option( 'smao_epoch', '' ) === $state['epoch'] ) {
+		} elseif ( Settings::get()['coverage_reviewed'] && ! $state['incomplete'] ) {
 			$status = 'unused';
 			$reason = 'No reference found in reviewed scope. Unused candidate; manual review is required.';
 		}

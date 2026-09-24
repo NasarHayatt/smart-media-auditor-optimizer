@@ -93,7 +93,7 @@ final class Next_Step {
 				'warning',
 				__( 'Out of date', 'smart-media-auditor-optimizer' ),
 				__( 'Your site changed since the last check', 'smart-media-auditor-optimizer' ),
-				__( 'Something was added or edited while we were looking, so these results may be wrong. Check again before removing anything.', 'smart-media-auditor-optimizer' ),
+				__( 'Content that may use a media file was added or edited since the last check, so these results may be out of date. Check again before removing anything.', 'smart-media-auditor-optimizer' ),
 				'command',
 				__( 'Check again', 'smart-media-auditor-optimizer' ),
 				'',

@@ -203,6 +203,80 @@ if ( ! function_exists( 'smao_cache_root' ) ) {
 	}
 
 	/**
+	 * Answer the current request from the cache, if a valid copy exists.
+	 *
+	 * Shared by the advanced-cache drop-in and the in-plugin fallback, so both
+	 * paths make the same decision and send the same headers.
+	 *
+	 * @param string $root   Cache root.
+	 * @param array  $config Keys: separate_mobile (bool), ttl (seconds).
+	 * @param string $label  Value for the X-SMAO-Cache header on a hit.
+	 * @return bool True when a response was sent and the caller should exit.
+	 */
+	function smao_cache_serve( string $root, array $config, string $label ): bool {
+		// Something already printed output, so headers cannot be set and the
+		// page would arrive corrupted. Let WordPress handle it normally.
+		if ( headers_sent() ) {
+			return false;
+		}
+		if ( '' !== smao_cache_bypass_reason( $_SERVER, $_COOKIE ) ) {
+			return false;
+		}
+
+		$key  = smao_cache_key( $_SERVER, ! empty( $config['separate_mobile'] ) );
+		$file = smao_cache_path( $root, $key, 'html' );
+		if ( '' === $file || ! is_readable( $file ) ) {
+			return false;
+		}
+
+		$mtime = (int) filemtime( $file );
+		$age   = time() - $mtime;
+		$ttl   = (int) ( $config['ttl'] ?? 0 );
+		if ( $ttl > 0 && $age > $ttl ) {
+			return false;
+		}
+
+		$modified = gmdate( 'D, d M Y H:i:s', $mtime ) . ' GMT';
+		$etag     = '"' . substr( $key, 0, 32 ) . '-' . $mtime . '"';
+
+		// Answer a conditional request without sending the body at all.
+		$match = (string) ( $_SERVER['HTTP_IF_NONE_MATCH'] ?? '' );
+		$since = (string) ( $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? '' );
+		if ( ( '' !== $match && trim( $match ) === $etag ) || ( '' !== $since && strtotime( $since ) >= $mtime ) ) {
+			header( 'HTTP/1.1 304 Not Modified' );
+			header( 'X-SMAO-Cache: ' . $label . '-304' );
+			return true;
+		}
+
+		header( 'Content-Type: text/html; charset=UTF-8' );
+		header( 'X-SMAO-Cache: ' . $label );
+		header( 'X-SMAO-Cache-Age: ' . $age );
+		header( 'Last-Modified: ' . $modified );
+		header( 'ETag: ' . $etag );
+		header( 'Cache-Control: public, max-age=0, s-maxage=0, must-revalidate' );
+		header( 'Vary: Accept-Encoding' );
+
+		$encodings = strtolower( (string) ( $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '' ) );
+		$gzip      = smao_cache_path( $root, $key, 'gz' );
+		// Do not double-compress when the server already applies gzip itself.
+		$server_compresses = (bool) ini_get( 'zlib.output_compression' );
+		if ( ! $server_compresses && str_contains( $encodings, 'gzip' ) && '' !== $gzip && is_readable( $gzip ) ) {
+			header( 'Content-Encoding: gzip' );
+			header( 'Content-Length: ' . filesize( $gzip ) );
+			if ( 'HEAD' !== strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) ) ) {
+				readfile( $gzip );
+			}
+			return true;
+		}
+
+		header( 'Content-Length: ' . filesize( $file ) );
+		if ( 'HEAD' !== strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) ) ) {
+			readfile( $file );
+		}
+		return true;
+	}
+
+	/**
 	 * Absolute path to the cached file for a key.
 	 *
 	 * The key is always a hex digest produced above, so it can never contain a

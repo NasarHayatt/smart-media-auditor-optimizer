@@ -34,8 +34,11 @@ define( 'SMAO_CACHE_BOOTSTRAP', true );
 		return;
 	}
 	require_once $rules;
+	if ( ! function_exists( 'smao_cache_serve' ) ) {
+		return;
+	}
 
-	$root = smao_cache_root( WP_CONTENT_DIR );
+	$root   = smao_cache_root( WP_CONTENT_DIR );
 	$config = $root . '/config.json';
 	if ( ! is_readable( $config ) ) {
 		return;
@@ -45,53 +48,7 @@ define( 'SMAO_CACHE_BOOTSTRAP', true );
 		return;
 	}
 
-	if ( '' !== smao_cache_bypass_reason( $_SERVER, $_COOKIE ) ) {
-		return;
-	}
-
-	$key  = smao_cache_key( $_SERVER, ! empty( $settings['separate_mobile'] ) );
-	$file = smao_cache_path( $root, $key, 'html' );
-	if ( '' === $file || ! is_readable( $file ) ) {
-		return;
-	}
-
-	$age = time() - (int) filemtime( $file );
-	$ttl = (int) ( $settings['ttl'] ?? 0 );
-	if ( $ttl > 0 && $age > $ttl ) {
-		return;
-	}
-
-	// Honour a conditional request without sending the body at all.
-	$modified = gmdate( 'D, d M Y H:i:s', (int) filemtime( $file ) ) . ' GMT';
-	$etag     = '"' . substr( $key, 0, 32 ) . '-' . filemtime( $file ) . '"';
-
-	$since = $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? '';
-	$match = $_SERVER['HTTP_IF_NONE_MATCH'] ?? '';
-	if ( ( '' !== $match && trim( (string) $match ) === $etag ) || ( '' !== $since && strtotime( (string) $since ) >= (int) filemtime( $file ) ) ) {
-		header( 'HTTP/1.1 304 Not Modified' );
-		header( 'X-SMAO-Cache: HIT-304' );
+	if ( smao_cache_serve( $root, $settings, 'HIT' ) ) {
 		exit;
 	}
-
-	header( 'Content-Type: text/html; charset=UTF-8' );
-	header( 'X-SMAO-Cache: HIT' );
-	header( 'X-SMAO-Cache-Age: ' . $age );
-	header( 'Last-Modified: ' . $modified );
-	header( 'ETag: ' . $etag );
-	header( 'Cache-Control: public, max-age=0, s-maxage=0, must-revalidate' );
-	header( 'Vary: Accept-Encoding' );
-
-	// Serve the pre-compressed copy when the browser accepts it.
-	$encodings = strtolower( (string) ( $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '' ) );
-	$gzip      = smao_cache_path( $root, $key, 'gz' );
-	if ( str_contains( $encodings, 'gzip' ) && '' !== $gzip && is_readable( $gzip ) ) {
-		header( 'Content-Encoding: gzip' );
-		header( 'Content-Length: ' . filesize( $gzip ) );
-		readfile( $gzip );
-		exit;
-	}
-
-	header( 'Content-Length: ' . filesize( $file ) );
-	readfile( $file );
-	exit;
 } )();

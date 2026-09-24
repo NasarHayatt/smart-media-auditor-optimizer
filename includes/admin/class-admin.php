@@ -99,7 +99,8 @@ final class Admin {
 		wp_enqueue_script( 'smao-admin', plugins_url( 'assets/admin.js', SMAO_FILE ), array( 'smao-model', 'wp-i18n' ), SMAO_VERSION, true );
 		wp_set_script_translations( 'smao-admin', 'smart-media-auditor-optimizer' );
 		if ( str_contains( $hook, 'smao-speed' ) ) {
-			wp_enqueue_script( 'smao-measure', plugins_url( 'assets/measure.js', SMAO_FILE ), array( 'smao-admin', 'wp-i18n' ), SMAO_VERSION, true );
+			wp_register_script( 'smao-critical', plugins_url( 'assets/critical.js', SMAO_FILE ), array(), SMAO_VERSION, true );
+			wp_enqueue_script( 'smao-measure', plugins_url( 'assets/measure.js', SMAO_FILE ), array( 'smao-admin', 'smao-critical', 'wp-i18n' ), SMAO_VERSION, true );
 			wp_set_script_translations( 'smao-measure', 'smart-media-auditor-optimizer' );
 			wp_localize_script(
 				'smao-measure',
@@ -205,16 +206,12 @@ final class Admin {
 				Database::lock(
 					static function () use ( $request, $route ) {
 						if ( 'critical' === $route ) {
-							$payload  = (array) $request->get_json_params();
-							$template = sanitize_key( (string) ( $payload['template'] ?? '' ) );
-							$css      = (string) ( $payload['css'] ?? '' );
-							if ( '' === $template || strlen( $css ) < 50 ) {
-								throw new \RuntimeException( __( 'No usable critical CSS was produced.', 'smart-media-auditor-optimizer' ) );
-							}
-							Styles::store_critical( $template, $css );
-							return array(
-								'template' => $template,
-								'bytes'    => strlen( $css ),
+							$payload = (array) $request->get_json_params();
+							return Styles::store_page(
+								(string) ( $payload['url'] ?? '' ),
+								(string) ( $payload['css'] ?? '' ),
+								(array) ( $payload['handles'] ?? array() ),
+								isset( $payload['shift'] ) && is_numeric( $payload['shift'] ) ? (float) $payload['shift'] : -1.0
 							);
 						}
 						if ( 'measure' === $route ) {

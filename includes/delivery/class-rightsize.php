@@ -43,6 +43,9 @@ final class Rightsize {
 		// During a measurement run, label every image so the runner can
 		// identify it even when the theme omits the wp-image-<id> class.
 		if ( self::measuring() ) {
+			// The admin bar is not on the page visitors see, and its styles
+			// would otherwise be captured as if the page depended on them.
+			add_filter( 'show_admin_bar', '__return_false' );
 			add_filter( 'wp_get_attachment_image_attributes', array( self::class, 'label' ), 20, 2 );
 			add_filter( 'wp_content_img_tag', array( self::class, 'label_content' ), 5, 3 );
 			// Tell the measurement frame which template it is looking at, so
@@ -70,7 +73,7 @@ final class Rightsize {
 	 *
 	 * @return bool
 	 */
-	private static function measuring(): bool {
+	public static function measuring(): bool {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only marker; capability is checked too.
 		return isset( $_GET['smao-measure'] ) && current_user_can( 'manage_options' );
 	}

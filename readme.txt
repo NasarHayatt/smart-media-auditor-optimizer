@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.3.1
+Stable tag: 2.3.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,26 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.3.2 =
+* Fixed: on some sites, "Stop stylesheets blocking the first paint" made the
+  page appear unstyled and then jump into place, lowering the PageSpeed score.
+  Stylesheets could be switched to background loading even when the styles for
+  the top of the page had not been added.
+* Styles for the top of the page are now captured per page, at phone and
+  desktop widths, without the admin bar, and with image and font addresses
+  kept intact. Each page is then laid out again using only those styles and
+  compared with the real layout. Only pages where nothing moves load their
+  stylesheets in the background; every other page is left exactly as it was.
+  Styles captured by earlier versions are discarded on update.
+* Fixed: the scan reported "could not finish properly" on most live sites.
+  Long page-builder content is now read in full, and only changes that could
+  add a media reference count as the site changing. If one happens during a
+  scan, each unused file is checked again against live data instead of the
+  whole result being thrown away.
+* Page cache now serves stored pages even when the host does not allow
+  WP_CACHE to be switched on. The Speed screen shows which serving mode is
+  active and the one line that makes it faster.
 
 = 2.3.1 =
 * Fixed two fatal errors that took down the front end while leaving the admin
@@ -217,6 +237,11 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.3.2 =
+Fixes layout jumping and a lower PageSpeed score on some sites with background
+stylesheet loading switched on, and the scan reporting that it could not finish.
+Run the page measurement under Speed again after updating.
 
 = 2.3.1 =
 Fixes a fatal error on Apache and LiteSpeed hosts in 2.3.0. Update immediately.

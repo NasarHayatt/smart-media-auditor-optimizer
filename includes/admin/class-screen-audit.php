@@ -170,7 +170,7 @@ final class Screen_Audit {
 						<label>
 							<?php echo esc_html( $label ); ?>
 							<input type="number" name="<?php echo esc_attr( $key ); ?>" min="<?php echo esc_attr( (string) $min ); ?>" max="<?php echo esc_attr( (string) $max ); ?>" step="1" value="<?php echo esc_attr( (string) $settings[ $key ] ); ?>" required>
-							<small><?php echo esc_html( sprintf( '%d – %d', $min, $max ) ); ?></small>
+							<small><?php echo esc_html( sprintf( '%d - %d', $min, $max ) ); ?></small>
 						</label>
 					<?php endforeach; ?>
 				</div>

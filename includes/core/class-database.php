@@ -148,6 +148,8 @@ final class Database {
 				throw new \RuntimeException( __( 'Could not install plugin tables.', 'smart-media-auditor-optimizer' ) );
 			}
 		}
+		// Captures from before 2.3.2 were never verified and must not be used.
+		delete_option( 'smao_critical_css' );
 		update_option( 'smao_schema', SMAO_VERSION, false );
 	}
 

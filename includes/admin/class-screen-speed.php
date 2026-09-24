@@ -146,24 +146,46 @@ final class Screen_Speed {
 					'async_css',
 					$settings['async_css'],
 					__( 'Stop stylesheets blocking the first paint', 'smart-media-auditor-optimizer' ),
-					__( 'Only takes effect once your pages have been measured above, because it needs to know which styles the top of the page depends on. Until then your stylesheets are left exactly as they are.', 'smart-media-auditor-optimizer' ),
+					__( 'Only takes effect on pages that have been measured above. Each page is then checked: it is laid out again using only the styles for the top of the page, and if anything moves, that page keeps its stylesheets exactly as they are. A page whose scripts hold up the first paint more than its stylesheets also keeps them, because loading them in the background would not help it.', 'smart-media-auditor-optimizer' ),
 					__( 'The page paints before the full stylesheet arrives', 'smart-media-auditor-optimizer' )
 				);
 				?>
-				<?php $critical = Styles::critical_coverage(); ?>
+				<?php $coverage = Styles::coverage(); ?>
 				<p class="smao-muted">
-					<?php if ( $critical ) : ?>
+					<?php if ( ! $coverage['total'] ) : ?>
+						<?php esc_html_e( 'No pages measured yet, so every stylesheet still loads normally. Run the measurement above.', 'smart-media-auditor-optimizer' ); ?>
+					<?php else : ?>
 						<?php
 						printf(
-							/* translators: %s is a list of template names. */
-							esc_html__( 'Above-the-fold styles recorded for: %s', 'smart-media-auditor-optimizer' ),
-							esc_html( implode( ', ', $critical ) )
+							/* translators: 1: pages that passed the check, 2: pages measured. */
+							esc_html__( 'Stylesheets load in the background on %1$d of %2$d measured pages.', 'smart-media-auditor-optimizer' ),
+							(int) $coverage['ready'],
+							(int) $coverage['total']
 						);
 						?>
-					<?php else : ?>
-						<?php esc_html_e( 'No above-the-fold styles recorded yet. Run the measurement above.', 'smart-media-auditor-optimizer' ); ?>
 					<?php endif; ?>
 				</p>
+				<?php if ( $coverage['total'] > $coverage['ready'] ) : ?>
+					<ul class="smao-muted">
+						<?php
+						foreach ( $coverage['pages'] as $entry ) {
+							if ( Styles::usable( $entry ) ) {
+								continue;
+							}
+							$reasons = array(
+								'shifted'   => __( 'kept as it is, because the layout moved when tested', 'smart-media-auditor-optimizer' ),
+								'too_large' => __( 'kept as it is, because the top of the page needs too much styling to inline', 'smart-media-auditor-optimizer' ),
+								'empty'     => __( 'kept as it is, because its stylesheets could not be read', 'smart-media-auditor-optimizer' ),
+							);
+							printf(
+								'<li>%1$s: %2$s</li>',
+								esc_html( (string) wp_parse_url( (string) $entry['url'], PHP_URL_PATH ) ),
+								esc_html( $reasons[ $entry['status'] ] ?? $reasons['empty'] )
+							);
+						}
+						?>
+					</ul>
+				<?php endif; ?>
 			</section>
 
 			<section class="smao-panel">
@@ -381,10 +403,29 @@ final class Screen_Speed {
 			<?php else : ?>
 				<p><?php esc_html_e( 'Saves the finished page so the next visitor gets a file instead of waiting for WordPress to build it again. Logged-in visitors, carts, checkouts and account pages are never cached.', 'smart-media-auditor-optimizer' ); ?></p>
 
-				<?php if ( Cache::active() && ! Cache::wp_cache_defined() ) : ?>
+				<?php $diagnosis = Cache::diagnose(); ?>
+				<?php if ( 'dropin' === $diagnosis['mode'] ) : ?>
+					<p class="smao-muted"><?php esc_html_e( 'Serving mode: fastest. Stored pages are sent before WordPress starts.', 'smart-media-auditor-optimizer' ); ?></p>
+				<?php elseif ( 'php' === $diagnosis['mode'] ) : ?>
+					<div class="smao-inline-note">
+						<p><?php esc_html_e( 'Serving mode: standard. Stored pages are sent as soon as the plugin loads, skipping your theme and page builder. One more step makes it faster still:', 'smart-media-auditor-optimizer' ); ?></p>
+						<ul>
+							<?php foreach ( $diagnosis['problems'] as $problem ) : ?>
+								<li><?php echo esc_html( $problem ); ?></li>
+							<?php endforeach; ?>
+						</ul>
+						<?php if ( '' !== $diagnosis['fix'] ) : ?>
+							<p>
+								<?php esc_html_e( 'Add this line to wp-config.php, above the line that says "stop editing":', 'smart-media-auditor-optimizer' ); ?>
+								<code><?php echo esc_html( $diagnosis['fix'] ); ?></code>
+							</p>
+						<?php endif; ?>
+					</div>
+				<?php elseif ( 'unwritable' === $diagnosis['mode'] ) : ?>
 					<p class="smao-inline-note">
-						<?php esc_html_e( 'Caching is working, but the fastest path needs one line in wp-config.php. Add this above the line that says "stop editing":', 'smart-media-auditor-optimizer' ); ?>
-						<code>define( 'WP_CACHE', true );</code>
+						<?php foreach ( $diagnosis['problems'] as $problem ) : ?>
+							<?php echo esc_html( $problem ); ?>
+						<?php endforeach; ?>
 					</p>
 				<?php endif; ?>
 

@@ -40,7 +40,87 @@ final class Cache {
 		if ( is_admin() || ! self::active() ) {
 			return;
 		}
+
+		self::serve_fallback();
+
 		add_action( 'template_redirect', array( self::class, 'start' ), 1 );
+	}
+
+	/**
+	 * Serve a stored page from inside the plugin when the drop-in is not active.
+	 *
+	 * The drop-in is the fastest path, but it needs WP_CACHE in wp-config.php,
+	 * which many hosts do not let a plugin write. Without this fallback such a
+	 * site stored pages and never served them. Answering here, at
+	 * plugins_loaded, still skips the theme, the page builder and the query,
+	 * which is where most of the time goes.
+	 *
+	 * @return void
+	 */
+	private static function serve_fallback(): void {
+		if ( defined( 'SMAO_CACHE_BOOTSTRAP' ) ) {
+			return; // The drop-in already looked and found nothing valid.
+		}
+		if ( 'cli' === PHP_SAPI || wp_doing_ajax() || wp_doing_cron() || defined( 'REST_REQUEST' ) || defined( 'XMLRPC_REQUEST' ) ) {
+			return;
+		}
+		if ( empty( $_SERVER['REQUEST_METHOD'] ) || empty( $_SERVER['HTTP_HOST'] ) ) {
+			return;
+		}
+		$settings = Settings::get();
+		$config   = array(
+			'separate_mobile' => (bool) $settings['separate_mobile'],
+			'ttl'             => (int) $settings['cache_ttl'] * HOUR_IN_SECONDS,
+		);
+		if ( smao_cache_serve( self::root(), $config, 'HIT-PHP' ) ) {
+			exit;
+		}
+	}
+
+	/**
+	 * Explain which serving path is active and, if it is not the fastest, why.
+	 *
+	 * Modes: off, unwritable, php (served by the plugin), dropin (fastest).
+	 *
+	 * @return array{mode:string,problems:array<int,string>,fix:string}
+	 */
+	public static function diagnose(): array {
+		if ( ! self::active() ) {
+			return array(
+				'mode'     => 'off',
+				'problems' => array(),
+				'fix'      => '',
+			);
+		}
+
+		$problems = array();
+		$fix      = '';
+		$dropin   = WP_CONTENT_DIR . '/advanced-cache.php';
+
+		if ( file_exists( $dropin ) && ! self::owns_dropin( $dropin ) ) {
+			$problems[] = __( 'Another caching system already owns wp-content/advanced-cache.php, probably your host. Pages are served from the plugin instead, which is slower but still much faster than no cache.', 'smart-media-auditor-optimizer' );
+		} elseif ( ! file_exists( $dropin ) ) {
+			$problems[] = __( 'The fast-path file wp-content/advanced-cache.php could not be created. Check that wp-content is writable.', 'smart-media-auditor-optimizer' );
+		}
+		if ( ! self::wp_cache_defined() ) {
+			$problems[] = __( 'WP_CACHE is not switched on in wp-config.php, so WordPress never loads the fast path.', 'smart-media-auditor-optimizer' );
+			$fix        = "define( 'WP_CACHE', true );";
+		}
+		$root     = self::root();
+		$storable = is_dir( $root ) ? wp_is_writable( $root ) : wp_is_writable( WP_CONTENT_DIR );
+		if ( ! $storable ) {
+			return array(
+				'mode'     => 'unwritable',
+				'problems' => array( __( 'The cache folder wp-content/cache/smao is not writable, so no page can be stored. Ask your host to make wp-content writable by WordPress.', 'smart-media-auditor-optimizer' ) ),
+				'fix'      => '',
+			);
+		}
+
+		return array(
+			'mode'     => $problems ? 'php' : 'dropin',
+			'problems' => $problems,
+			'fix'      => $fix,
+		);
 	}
 
 	/**
@@ -322,6 +402,9 @@ final class Cache {
 			return false;
 		}
 		$contents = str_replace( '%%RULES%%', str_replace( '\\', '/', __DIR__ ) . '/cache-rules.php', $template );
+		if ( file_exists( $target ) && (string) file_get_contents( $target ) === $contents ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
+			return true; // Already current; no write on every admin page load.
+		}
 		return self::write( $target, $contents );
 	}
 

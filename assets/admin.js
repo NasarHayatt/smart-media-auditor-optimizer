@@ -592,12 +592,13 @@
 				bar.value = percent || 0;
 			}
 		}
-		put('#smao-percent', percent === null ? '—' : percent + '%');
+		put('#smao-percent', percent === null ? '-' : percent + '%');
 
 		var labels = {
 			inventory: t('Finding your media files'),
 			sources: t('Tracing where each file is used'),
-			classify: t('Classifying results')
+			classify: t('Classifying results'),
+			recheck: t('Double-checking changes made during the scan')
 		};
 		put('#smao-phase-label', scan.state === 'complete'
 			? t('Scan complete. Ready to review.')
@@ -666,7 +667,7 @@
 			jobs.replaceChildren.apply(jobs, (data.jobs && data.jobs.length)
 				? data.jobs.slice(0, 8).map(function (job) {
 					return node('p', '#' + job.attachment_id + ' · ' + job.action + ' · ' + job.state
-						+ (job.message ? ' — ' + job.message : ''));
+						+ (job.message ? ': ' + job.message : ''));
 				})
 				: [node('p', t('Select images below and choose Optimize selected to add jobs.'), 'smao-muted')]);
 		}

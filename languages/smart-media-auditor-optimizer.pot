@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.3.1\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.3.2\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
@@ -106,9 +106,6 @@ msgstr ""
 msgid "AVIF support"
 msgstr ""
 
-msgid "Above-the-fold styles recorded for: %s"
-msgstr ""
-
 msgid "Absolute path to an existing private folder"
 msgstr ""
 
@@ -125,6 +122,9 @@ msgid "Activity"
 msgstr ""
 
 msgid "Activity log"
+msgstr ""
+
+msgid "Add this line to wp-config.php, above the line that says \"stop editing\":"
 msgstr ""
 
 msgid "Adjusted"
@@ -182,6 +182,9 @@ msgid "Analytics, chat widgets, pixels and social embeds do nothing for the firs
 msgstr ""
 
 msgid "Animated/multi-frame and CMYK images require specialist processing."
+msgstr ""
+
+msgid "Another caching system already owns wp-content/advanced-cache.php, probably your host. Pages are served from the plugin instead, which is slower but still much faster than no cache."
 msgstr ""
 
 msgid "Another media operation is running. Retry shortly."
@@ -248,9 +251,6 @@ msgid "CSS and fonts"
 msgstr ""
 
 msgid "Cache my pages"
-msgstr ""
-
-msgid "Caching is working, but the fastest path needs one line in wp-config.php. Add this above the line that says \"stop editing\":"
 msgstr ""
 
 msgid "Cancel"
@@ -376,6 +376,9 @@ msgstr ""
 msgid "Connection lost. Retrying."
 msgstr ""
 
+msgid "Content that may use a media file was added or edited since the last check, so these results may be out of date. Check again before removing anything."
+msgstr ""
+
 msgid "Could not atomically replace optimized image."
 msgstr ""
 
@@ -422,6 +425,9 @@ msgid "Done."
 msgstr ""
 
 msgid "Done. Reloading the results."
+msgstr ""
+
+msgid "Double-checking changes made during the scan"
 msgstr ""
 
 msgid "Download"
@@ -775,9 +781,6 @@ msgstr ""
 msgid "No"
 msgstr ""
 
-msgid "No above-the-fold styles recorded yet. Run the measurement above."
-msgstr ""
-
 msgid "No files selected"
 msgstr ""
 
@@ -785,6 +788,9 @@ msgid "No indexed reference. This scan cannot detect references from outside you
 msgstr ""
 
 msgid "No media matches these filters. Try resetting them, or run a fresh scan."
+msgstr ""
+
+msgid "No pages measured yet, so every stylesheet still loads normally. Run the measurement above."
 msgstr ""
 
 msgid "No preview"
@@ -800,9 +806,6 @@ msgid "No scan has run yet. Start a scan from the Audit screen to build your med
 msgstr ""
 
 msgid "No source image exceeds your maximum dimensions. If you have not scanned yet, run a scan from the Audit screen first."
-msgstr ""
-
-msgid "No usable critical CSS was produced."
 msgstr ""
 
 msgid "None of the selected files were"
@@ -901,7 +904,7 @@ msgstr ""
 msgid "Only reviewed unused candidates can be quarantined."
 msgstr ""
 
-msgid "Only takes effect once your pages have been measured above, because it needs to know which styles the top of the page depends on. Until then your stylesheets are left exactly as they are."
+msgid "Only takes effect on pages that have been measured above. Each page is then checked: it is laid out again using only the styles for the top of the page, and if anything moves, that page keeps its stylesheets exactly as they are. A page whose scripts hold up the first paint more than its stylesheets also keeps them, because loading them in the background would not help it."
 msgstr ""
 
 msgid "Optimization"
@@ -1222,6 +1225,12 @@ msgstr ""
 msgid "Serves a stored copy of each public page instead of rebuilding it for every visitor."
 msgstr ""
 
+msgid "Serving mode: fastest. Stored pages are sent before WordPress starts."
+msgstr ""
+
+msgid "Serving mode: standard. Stored pages are sent as soon as the plugin loads, skipping your theme and page builder. One more step makes it faster still:"
+msgstr ""
+
 msgid "Set up private recovery storage before removal: %s"
 msgstr ""
 
@@ -1256,9 +1265,6 @@ msgid "Smallest first"
 msgstr ""
 
 msgid "Smart Media Auditor"
-msgstr ""
-
-msgid "Something was added or edited while we were looking, so these results may be wrong. Check again before removing anything."
 msgstr ""
 
 msgid "Sort by"
@@ -1309,6 +1315,9 @@ msgstr ""
 msgid "Store a compressed copy as well"
 msgstr ""
 
+msgid "Stylesheets load in the background on %1$d of %2$d measured pages."
+msgstr ""
+
 msgid "Summary of your media"
 msgstr ""
 
@@ -1345,7 +1354,13 @@ msgstr ""
 msgid "That took too long. The server may still be working, so check the latest checkpoint before retrying."
 msgstr ""
 
+msgid "The cache folder wp-content/cache/smao is not writable, so no page can be stored. Ask your host to make wp-content writable by WordPress."
+msgstr ""
+
 msgid "The check could not finish properly"
+msgstr ""
+
+msgid "The fast-path file wp-content/advanced-cache.php could not be created. Check that wp-content is writable."
 msgstr ""
 
 msgid "The page becomes readable sooner"
@@ -1510,6 +1525,9 @@ msgstr ""
 msgid "WP-Cron disabled"
 msgstr ""
 
+msgid "WP_CACHE is not switched on in wp-config.php, so WordPress never loads the fast path."
+msgstr ""
+
 msgid "Waiting for the first batch"
 msgstr ""
 
@@ -1666,6 +1684,9 @@ msgstr ""
 msgid "cache"
 msgstr ""
 
+msgid "checking the layout"
+msgstr ""
+
 msgid "control"
 msgstr ""
 
@@ -1700,6 +1721,15 @@ msgid "images below the fold wait their turn"
 msgstr ""
 
 msgid "input"
+msgstr ""
+
+msgid "kept as it is, because its stylesheets could not be read"
+msgstr ""
+
+msgid "kept as it is, because the layout moved when tested"
+msgstr ""
+
+msgid "kept as it is, because the top of the page needs too much styling to inline"
 msgstr ""
 
 msgid "kept until at least %s"
@@ -1765,6 +1795,9 @@ msgstr ""
 msgid "smao-admin"
 msgstr ""
 
+msgid "smao-critical"
+msgstr ""
+
 msgid "smao-inspector"
 msgstr ""
 
@@ -1789,6 +1822,9 @@ msgstr ""
 msgid "strong"
 msgstr ""
 
+msgid "style"
+msgstr ""
+
 msgid "token"
 msgstr ""
 
@@ -1796,5 +1832,8 @@ msgid "tone"
 msgstr ""
 
 msgid "unused candidates"
+msgstr ""
+
+msgid "zlib.output_compression"
 msgstr ""
 
