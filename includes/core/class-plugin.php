@@ -130,6 +130,13 @@ final class Plugin {
 		Viewport::boot();
 		Rightsize::boot();
 		Delivery::boot();
+		/*
+		 * These inspect the main query to decide whether to optimise, so they
+		 * must wait until it exists. Booting them at plugins_loaded made
+		 * is_feed() and friends fire before the query was run.
+		 */
+		add_action( 'template_redirect', array( Scripts::class, 'boot' ), 0 );
+		add_action( 'template_redirect', array( Styles::class, 'boot' ), 0 );
 		add_action(
 			'wp_enqueue_scripts',
 			static function (): void {

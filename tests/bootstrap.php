@@ -52,7 +52,7 @@ spl_autoload_register(
 			return;
 		}
 		$file = 'class-' . str_replace( '_', '-', strtolower( substr( $class, 5 ) ) ) . '.php';
-		foreach ( array( 'core', 'engine', 'admin', 'delivery' ) as $module ) {
+		foreach ( array( 'core', 'engine', 'admin', 'delivery', 'speed' ) as $module ) {
 			$path = dirname( __DIR__ ) . '/includes/' . $module . '/' . $file;
 			if ( is_file( $path ) ) {
 				require_once $path;

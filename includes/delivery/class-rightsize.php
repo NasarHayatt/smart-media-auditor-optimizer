@@ -45,6 +45,15 @@ final class Rightsize {
 		if ( self::measuring() ) {
 			add_filter( 'wp_get_attachment_image_attributes', array( self::class, 'label' ), 20, 2 );
 			add_filter( 'wp_content_img_tag', array( self::class, 'label_content' ), 5, 3 );
+			// Tell the measurement frame which template it is looking at, so
+			// critical CSS is stored against the right one.
+			add_action(
+				'wp_head',
+				static function (): void {
+					echo '<meta name="smao-template" content="' . esc_attr( Styles::template() ) . '">' . "\n";
+				},
+				1
+			);
 			return;
 		}
 

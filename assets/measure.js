@@ -9,6 +9,7 @@
 	'use strict';
 
 	var t = function (text) { return wp.i18n.__(text, 'smart-media-auditor-optimizer'); };
+	var NL = String.fromCharCode(10);
 
 	var button = document.getElementById('smao-measure');
 	if (!button || !window.smaoMeasure) { return; }
@@ -69,6 +70,96 @@
 		});
 	}
 
+	/**
+	 * Collect the CSS rules that style what appears in the first screenful.
+	 *
+	 * Everything else can load asynchronously, which is what stops the
+	 * stylesheet blocking the first paint.
+	 */
+	function extractCritical(doc, viewportHeight) {
+		var css = [];
+		var sheets = doc.styleSheets;
+
+		for (var i = 0; i < sheets.length; i++) {
+			var rules;
+			try {
+				rules = sheets[i].cssRules;
+			} catch (error) {
+				continue; // Cross-origin stylesheet, unreadable by design.
+			}
+			if (!rules) { continue; }
+			collect(rules, css, doc, viewportHeight);
+		}
+		return css.join(NL);
+	}
+
+	function collect(rules, out, doc, fold) {
+		for (var i = 0; i < rules.length; i++) {
+			var rule = rules[i];
+
+			// Keep at-rules the first paint depends on, in full.
+			if (rule.type === 5 || rule.type === 6) { out.push(rule.cssText); continue; }
+
+			if (rule.type === 4) { // @media
+				var inner = [];
+				collect(rule.cssRules || [], inner, doc, fold);
+				if (inner.length) {
+					out.push('@media ' + rule.conditionText + '{' + inner.join(NL) + '}');
+				}
+				continue;
+			}
+			if (rule.type === 12) { // @supports
+				var supported = [];
+				collect(rule.cssRules || [], supported, doc, fold);
+				if (supported.length) {
+					out.push('@supports ' + rule.conditionText + '{' + supported.join(NL) + '}');
+				}
+				continue;
+			}
+			if (rule.type !== 1 || !rule.selectorText) { continue; }
+
+			if (matchesAboveFold(rule.selectorText, doc, fold)) {
+				out.push(rule.cssText);
+			}
+		}
+	}
+
+	function matchesAboveFold(selectorText, doc, fold) {
+		var parts = selectorText.split(',');
+		for (var i = 0; i < parts.length; i++) {
+			// Pseudo-states cannot be matched now; keep their base selector.
+			var selector = parts[i].replace(/::?(hover|focus|active|visited|focus-within|focus-visible|before|after|placeholder|selection|first-line|first-letter|marker|backdrop)[^\s,>+~]*/g, '').trim();
+			if (!selector || selector === '*') { continue; }
+			var found;
+			try {
+				found = doc.querySelectorAll(selector);
+			} catch (error) {
+				continue; // Selector we cannot evaluate; skip rather than guess.
+			}
+			for (var j = 0; j < found.length && j < 60; j++) {
+				var box = found[j].getBoundingClientRect();
+				if (box.top < fold && box.bottom > -1 && box.width > 0 && box.height > 0) {
+					return true;
+				}
+			}
+			// html and body always matter.
+			if (selector === 'html' || selector === 'body' || selector === ':root') { return true; }
+		}
+		return false;
+	}
+
+	async function sendCritical(template, css) {
+		if (!template || css.length < 50) { return 0; }
+		var response = await fetch(smaoConfig.root + 'critical', {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': smaoConfig.nonce },
+			body: JSON.stringify({ template: template, css: css })
+		});
+		var data = await response.json();
+		return response.ok ? (data.bytes || 0) : 0;
+	}
+
 	async function send(url, viewport, observations) {
 		if (!observations.length) { return 0; }
 		var response = await fetch(smaoConfig.root + 'measure', {
@@ -110,6 +201,21 @@
 					say(targets[i].label + ' — ' + viewports[j] + 'px');
 					var observations = await measure(targets[i].url, viewports[j]);
 					stored += await send(targets[i].url, viewports[j], observations);
+
+					// Critical CSS is per template, so capture it once per page
+					// at the widest viewport, where the most is visible.
+					if (viewports[j] === viewports[viewports.length - 1]) {
+						try {
+							var doc = frame.contentDocument;
+							var meta = doc && doc.querySelector('meta[name="smao-template"]');
+							if (meta) {
+								var css = extractCritical(doc, 1000);
+								await sendCritical(meta.getAttribute('content'), css);
+							}
+						} catch (error) {
+							// A page we cannot read simply contributes nothing.
+						}
+					}
 					progress(++done, total);
 				}
 			}

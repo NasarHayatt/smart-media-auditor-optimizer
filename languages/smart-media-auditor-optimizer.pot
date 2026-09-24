@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.1.1\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.2.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
@@ -46,6 +46,9 @@ msgstr ""
 msgid "%s image is not used anywhere"
 msgstr ""
 
+msgid "%s is already handling scripts on this site, so these are switched off to avoid two plugins rewriting the same page. Turn that plugin off if you would rather this one did the work."
+msgstr ""
+
 msgid "%s matching file"
 msgstr ""
 
@@ -59,6 +62,9 @@ msgid ".smao-panel"
 msgstr ""
 
 msgid ".smao-tile"
+msgstr ""
+
+msgid "/[\\r\\n]+/"
 msgstr ""
 
 msgid "/[\\s,]+/"
@@ -89,6 +95,9 @@ msgid "AVIF (server dependent)"
 msgstr ""
 
 msgid "AVIF support"
+msgstr ""
+
+msgid "Above-the-fold styles recorded for: %s"
 msgstr ""
 
 msgid "Absolute path to an existing private folder"
@@ -151,10 +160,16 @@ msgstr ""
 msgid "Already removed"
 msgstr ""
 
+msgid "Also hold these back"
+msgstr ""
+
 msgid "Alternate filename already exists; refusing to overwrite."
 msgstr ""
 
 msgid "An original path has newer content; refusing to overwrite it."
+msgstr ""
+
+msgid "Analytics, chat widgets, pixels and social embeds do nothing for the first view of a page, so they wait until a visitor scrolls, taps or moves the mouse. If nobody interacts they run anyway after a few seconds, so nothing is lost."
 msgstr ""
 
 msgid "Animated/multi-frame and CMYK images require specialist processing."
@@ -212,6 +227,9 @@ msgid "Before you remove anything"
 msgstr ""
 
 msgid "Broken"
+msgstr ""
+
+msgid "CSS and fonts"
 msgstr ""
 
 msgid "Cancel"
@@ -397,6 +415,9 @@ msgstr ""
 msgid "Evidence"
 msgstr ""
 
+msgid "Exclusions"
+msgstr ""
+
 msgid "Existing recovery journals depend on the current folder. Keep that folder configured."
 msgstr ""
 
@@ -475,6 +496,9 @@ msgstr ""
 msgid "Help my pages load faster"
 msgstr ""
 
+msgid "Hold back third-party scripts until someone interacts"
+msgstr ""
+
 msgid "I reviewed these files and I have an independent backup."
 msgstr ""
 
@@ -536,6 +560,9 @@ msgid "Inventoried storage"
 msgstr ""
 
 msgid "JPEG support"
+msgstr ""
+
+msgid "JavaScript"
 msgstr ""
 
 msgid "Keep all of these"
@@ -664,6 +691,9 @@ msgstr ""
 msgid "Multisite is report-only. Removal is unavailable on this network."
 msgstr ""
 
+msgid "Name"
+msgstr ""
+
 msgid "Needs another look"
 msgstr ""
 
@@ -671,6 +701,9 @@ msgid "Never"
 msgstr ""
 
 msgid "Never touch these files"
+msgstr ""
+
+msgid "Never touch these scripts"
 msgstr ""
 
 msgid "New scan results are available."
@@ -683,6 +716,9 @@ msgid "Next step"
 msgstr ""
 
 msgid "No"
+msgstr ""
+
+msgid "No above-the-fold styles recorded yet. Run the measurement above."
 msgstr ""
 
 msgid "No files selected"
@@ -707,6 +743,9 @@ msgid "No scan has run yet. Start a scan from the Audit screen to build your med
 msgstr ""
 
 msgid "No source image exceeds your maximum dimensions. If you have not scanned yet, run a scan from the Audit screen first."
+msgstr ""
+
+msgid "No usable critical CSS was produced."
 msgstr ""
 
 msgid "None of the selected files were"
@@ -772,6 +811,12 @@ msgstr ""
 msgid "On"
 msgstr ""
 
+msgid "One per line. A script handle, or any part of its URL. Add something here if a feature stops working."
+msgstr ""
+
+msgid "One per line. Anything here waits for interaction as well."
+msgstr ""
+
 msgid "One question first"
 msgstr ""
 
@@ -791,6 +836,9 @@ msgid "Only retained quarantine groups can be permanently deleted after the rete
 msgstr ""
 
 msgid "Only reviewed unused candidates can be quarantined."
+msgstr ""
+
+msgid "Only takes effect once your pages have been measured above, because it needs to know which styles the top of the page depends on. Until then your stylesheets are left exactly as they are."
 msgstr ""
 
 msgid "Optimization"
@@ -931,6 +979,9 @@ msgstr ""
 msgid "Refresh the table"
 msgstr ""
 
+msgid "Remaining scripts still run, but they no longer hold up the text and images while the browser fetches them. jQuery and anything that depends on it are left alone."
+msgstr ""
+
 msgid "Remove %s"
 msgstr ""
 
@@ -983,6 +1034,9 @@ msgid "Review %s image"
 msgstr ""
 
 msgid "Right now, on every page:"
+msgstr ""
+
+msgid "Run held-back scripts anyway after (seconds)"
 msgstr ""
 
 msgid "Safe to leave on"
@@ -1039,6 +1093,9 @@ msgstr ""
 msgid "Scope confirmed. A fresh scan has started."
 msgstr ""
 
+msgid "Scripts are the single largest cause of a slow score. Most of them are not needed for the page to appear."
+msgstr ""
+
 msgid "Search"
 msgstr ""
 
@@ -1085,6 +1142,9 @@ msgid "Setup needed"
 msgstr ""
 
 msgid "Show"
+msgstr ""
+
+msgid "Show text while webfonts load"
 msgstr ""
 
 msgid "Shown at"
@@ -1138,7 +1198,16 @@ msgstr ""
 msgid "Stop generating these image sizes. Existing files are kept."
 msgstr ""
 
+msgid "Stop other scripts blocking the page"
+msgstr ""
+
 msgid "Stop pages jumping about"
+msgstr ""
+
+msgid "Stop stylesheets blocking the first paint"
+msgstr ""
+
+msgid "Stops the browser hiding your text until a font arrives, and opens the connection to the font host early."
 msgstr ""
 
 msgid "Summary of your media"
@@ -1151,6 +1220,9 @@ msgid "System"
 msgstr ""
 
 msgid "System status"
+msgstr ""
+
+msgid "Text appears immediately instead of after the font"
 msgstr ""
 
 msgid "That does not match."
@@ -1169,6 +1241,12 @@ msgid "That took too long. The server may still be working, so check the latest 
 msgstr ""
 
 msgid "The check could not finish properly"
+msgstr ""
+
+msgid "The page becomes readable sooner"
+msgstr ""
+
+msgid "The page paints before the full stylesheet arrives"
 msgstr ""
 
 msgid "There are no published pages to measure yet."
@@ -1303,6 +1381,9 @@ msgstr ""
 msgid "Usually takes a minute or two"
 msgstr ""
 
+msgid "Usually the single biggest improvement to a performance score"
+msgstr ""
+
 msgid "Usually the single biggest saving on an image-heavy page"
 msgstr ""
 
@@ -1432,6 +1513,9 @@ msgstr ""
 msgid "Your site has probably changed since then. Run it again so you are working from something current."
 msgstr ""
 
+msgid "Zero waits for interaction only."
+msgstr ""
+
 msgid "[data-phase-count=\""
 msgstr ""
 
@@ -1451,6 +1535,9 @@ msgid "allowed"
 msgstr ""
 
 msgid "and"
+msgstr ""
+
+msgid "assets"
 msgstr ""
 
 msgid "audit"

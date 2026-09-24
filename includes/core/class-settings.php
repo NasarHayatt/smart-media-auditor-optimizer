@@ -33,6 +33,7 @@ final class Settings {
 		'max_width'      => array( 320, 12000 ),
 		'max_height'     => array( 320, 12000 ),
 		'preload_id'     => array( 0, PHP_INT_MAX ),
+		'delay_timeout'  => array( 0, 30 ),
 	);
 
 	/**
@@ -45,6 +46,10 @@ final class Settings {
 		'lazy_correct',
 		'delivery',
 		'rightsize',
+		'defer_js',
+		'delay_js',
+		'async_css',
+		'optimize_fonts',
 		'coverage_reviewed',
 		'resize',
 		'strip_exif',
@@ -87,6 +92,14 @@ final class Settings {
 			'lazy_correct'      => true,
 			'delivery'          => false,
 			'rightsize'         => true,
+			'defer_js'          => true,
+			'delay_js'          => true,
+			'delay_timeout'     => 6,
+			'delay_extra'       => '',
+			'script_exclusions' => '',
+			'style_exclusions'  => '',
+			'async_css'         => true,
+			'optimize_fonts'    => true,
 			'preload_id'        => 0,
 			'batch'             => 50,
 			'source_batch'      => 100,
@@ -185,6 +198,11 @@ final class Settings {
 			}
 		}
 
+		foreach ( array( 'delay_extra', 'script_exclusions', 'style_exclusions' ) as $key ) {
+			if ( array_key_exists( $key, $input ) ) {
+				$out[ $key ] = sanitize_textarea_field( substr( (string) $input[ $key ], 0, 8000 ) );
+			}
+		}
 		if ( array_key_exists( 'exclusions', $input ) ) {
 			$out['exclusions'] = sanitize_textarea_field( substr( (string) $input['exclusions'], 0, 12000 ) );
 		}

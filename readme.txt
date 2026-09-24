@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.1.1
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -110,6 +110,25 @@ builders reference are reported conservatively rather than as unused.
 
 == Changelog ==
 
+= 2.2.0 =
+* New: holds third-party scripts until a visitor interacts. Analytics, chat
+  widgets, pixels and social embeds contribute nothing to the first view of a
+  page, and they are the largest single cause of a poor performance score. They
+  now run on the first scroll, tap or key press, and after a few seconds
+  regardless, so nothing is lost for visitors who never interact.
+* New: remaining scripts are deferred so they stop holding up text and images.
+  jQuery and its dependants are left alone.
+* New: detects the site it is installed on, including the theme, page builders,
+  WooCommerce, sliders that keep media in private tables, and other performance
+  plugins. When another plugin already handles an area, this one stands down
+  rather than rewriting the same page twice.
+* New: records the styles the top of each template needs, so stylesheets can
+  load without blocking the first paint. Only applies where it would actually
+  help; a theme that already inlines its CSS is left alone.
+* New: asks webfonts to show text immediately, and connects to font hosts early.
+* New: per-script and per-stylesheet exclusions for anything that needs to be
+  left untouched.
+
 = 2.1.1 =
 * Fixed: when no main image had been identified, the first image on the page was
   given high loading priority. On sites that begin with a tracking pixel, a
@@ -172,6 +191,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.2.0 =
+Adds JavaScript and CSS optimisation. Check a few pages after updating, and use
+the exclusion boxes under Speed if anything needs to be left alone.
 
 = 2.1.0 =
 Adds measured right-sizing. Open Speed and run "Measure my pages" to switch it on.

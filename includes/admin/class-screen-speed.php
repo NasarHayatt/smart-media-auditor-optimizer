@@ -25,7 +25,7 @@ final class Screen_Speed {
 		self::right_size();
 		?>
 		<form class="smao-settings" data-settings="speed">
-			<input type="hidden" name="_flags" value="speed_enabled,dimensions,lcp_preload,lazy_correct,delivery,rightsize">
+			<input type="hidden" name="_flags" value="speed_enabled,dimensions,lcp_preload,lazy_correct,delivery,rightsize,defer_js,delay_js,async_css,optimize_fonts">
 
 			<section class="smao-panel smao-master-panel">
 				<label class="smao-switch">
@@ -73,6 +73,95 @@ final class Screen_Speed {
 					__( 'Less to download before the page is usable', 'smart-media-auditor-optimizer' )
 				);
 				?>
+			</section>
+
+			<section class="smao-panel">
+				<div class="smao-panel-head">
+					<h2><?php esc_html_e( 'JavaScript', 'smart-media-auditor-optimizer' ); ?></h2>
+					<?php $owner = Environment::conflict( 'assets' ); ?>
+					<?php if ( $owner ) : ?>
+						<span class="smao-chip"><?php echo esc_html( Environment::label( $owner ) ); ?></span>
+					<?php endif; ?>
+				</div>
+				<?php if ( $owner ) : ?>
+					<p class="smao-inline-note">
+						<?php
+						printf(
+							/* translators: %s is the name of another optimisation plugin. */
+							esc_html__( '%s is already handling scripts on this site, so these are switched off to avoid two plugins rewriting the same page. Turn that plugin off if you would rather this one did the work.', 'smart-media-auditor-optimizer' ),
+							esc_html( Environment::label( $owner ) )
+						);
+						?>
+					</p>
+				<?php else : ?>
+					<p><?php esc_html_e( 'Scripts are the single largest cause of a slow score. Most of them are not needed for the page to appear.', 'smart-media-auditor-optimizer' ); ?></p>
+				<?php endif; ?>
+				<?php
+				self::switch_row(
+					'delay_js',
+					$settings['delay_js'],
+					__( 'Hold back third-party scripts until someone interacts', 'smart-media-auditor-optimizer' ),
+					__( 'Analytics, chat widgets, pixels and social embeds do nothing for the first view of a page, so they wait until a visitor scrolls, taps or moves the mouse. If nobody interacts they run anyway after a few seconds, so nothing is lost.', 'smart-media-auditor-optimizer' ),
+					__( 'Usually the single biggest improvement to a performance score', 'smart-media-auditor-optimizer' )
+				);
+				self::switch_row(
+					'defer_js',
+					$settings['defer_js'],
+					__( 'Stop other scripts blocking the page', 'smart-media-auditor-optimizer' ),
+					__( 'Remaining scripts still run, but they no longer hold up the text and images while the browser fetches them. jQuery and anything that depends on it are left alone.', 'smart-media-auditor-optimizer' ),
+					__( 'The page becomes readable sooner', 'smart-media-auditor-optimizer' )
+				);
+				?>
+				<details class="smao-filters-more">
+					<summary><?php esc_html_e( 'Exclusions', 'smart-media-auditor-optimizer' ); ?></summary>
+					<label>
+						<?php esc_html_e( 'Never touch these scripts', 'smart-media-auditor-optimizer' ); ?>
+						<textarea rows="4" name="script_exclusions" spellcheck="false"><?php echo esc_textarea( $settings['script_exclusions'] ); ?></textarea>
+						<small><?php esc_html_e( 'One per line. A script handle, or any part of its URL. Add something here if a feature stops working.', 'smart-media-auditor-optimizer' ); ?></small>
+					</label>
+					<label>
+						<?php esc_html_e( 'Also hold these back', 'smart-media-auditor-optimizer' ); ?>
+						<textarea rows="3" name="delay_extra" spellcheck="false"><?php echo esc_textarea( $settings['delay_extra'] ); ?></textarea>
+						<small><?php esc_html_e( 'One per line. Anything here waits for interaction as well.', 'smart-media-auditor-optimizer' ); ?></small>
+					</label>
+					<?php self::number_row( 'delay_timeout', __( 'Run held-back scripts anyway after (seconds)', 'smart-media-auditor-optimizer' ), $settings ); ?>
+				</details>
+			</section>
+
+			<section class="smao-panel">
+				<div class="smao-panel-head">
+					<h2><?php esc_html_e( 'CSS and fonts', 'smart-media-auditor-optimizer' ); ?></h2>
+				</div>
+				<?php
+				self::switch_row(
+					'optimize_fonts',
+					$settings['optimize_fonts'],
+					__( 'Show text while webfonts load', 'smart-media-auditor-optimizer' ),
+					__( 'Stops the browser hiding your text until a font arrives, and opens the connection to the font host early.', 'smart-media-auditor-optimizer' ),
+					__( 'Text appears immediately instead of after the font', 'smart-media-auditor-optimizer' )
+				);
+				self::switch_row(
+					'async_css',
+					$settings['async_css'],
+					__( 'Stop stylesheets blocking the first paint', 'smart-media-auditor-optimizer' ),
+					__( 'Only takes effect once your pages have been measured above, because it needs to know which styles the top of the page depends on. Until then your stylesheets are left exactly as they are.', 'smart-media-auditor-optimizer' ),
+					__( 'The page paints before the full stylesheet arrives', 'smart-media-auditor-optimizer' )
+				);
+				?>
+				<?php $critical = Styles::critical_coverage(); ?>
+				<p class="smao-muted">
+					<?php if ( $critical ) : ?>
+						<?php
+						printf(
+							/* translators: %s is a list of template names. */
+							esc_html__( 'Above-the-fold styles recorded for: %s', 'smart-media-auditor-optimizer' ),
+							esc_html( implode( ', ', $critical ) )
+						);
+						?>
+					<?php else : ?>
+						<?php esc_html_e( 'No above-the-fold styles recorded yet. Run the measurement above.', 'smart-media-auditor-optimizer' ); ?>
+					<?php endif; ?>
+				</p>
 			</section>
 
 			<section class="smao-panel">
@@ -214,6 +303,25 @@ final class Screen_Speed {
 				<small><?php echo esc_html( $detail ); ?></small>
 				<em><?php echo esc_html( $benefit ); ?></em>
 			</span>
+		</label>
+		<?php
+	}
+
+	/**
+	 * Render a bounded number field.
+	 *
+	 * @param string $key      Setting name.
+	 * @param string $label    Field label.
+	 * @param array  $settings Current settings.
+	 * @return void
+	 */
+	private static function number_row( string $key, string $label, array $settings ): void {
+		list( $min, $max ) = Settings::bounds( $key );
+		?>
+		<label>
+			<?php echo esc_html( $label ); ?>
+			<input type="number" name="<?php echo esc_attr( $key ); ?>" min="<?php echo esc_attr( (string) $min ); ?>" max="<?php echo esc_attr( (string) $max ); ?>" step="1" value="<?php echo esc_attr( (string) $settings[ $key ] ); ?>">
+			<small><?php esc_html_e( 'Zero waits for interaction only.', 'smart-media-auditor-optimizer' ); ?></small>
 		</label>
 		<?php
 	}
