@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.1.0
+Stable tag: 2.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,12 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.1.1 =
+* Fixed: when no main image had been identified, the first image on the page was
+  given high loading priority. On sites that begin with a tracking pixel, a
+  spacer, or a placeholder left by a JavaScript lazy loader, that was the wrong
+  element. Only a visible image of a credible size is chosen now.
 
 = 2.1.0 =
 * New: measures how large each image is actually displayed, by loading your own

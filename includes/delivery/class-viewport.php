@@ -127,7 +127,14 @@ final class Viewport {
 	 */
 	private static function loading( string $html, int $id ): string {
 		$lcp = self::lcp_id();
-		$is_lcp = ( $id && $id === $lcp ) || ( ! $lcp && 1 === self::$seen );
+		/*
+		 * Falling back to "the first image on the page" is only safe when that
+		 * image could plausibly be the largest one. Tracking pixels, spacers
+		 * and the placeholders used by JavaScript lazy loaders all appear first
+		 * and would otherwise be given high priority.
+		 */
+		$is_lcp = ( $id && $id === $lcp )
+			|| ( ! $lcp && 1 === self::$seen && self::plausible_lcp( $html ) );
 		if ( $is_lcp ) {
 			$html = preg_replace( '/\sloading\s*=\s*(["\'])lazy\1/i', '', $html );
 			if ( ! preg_match( '/\sfetchpriority\s*=/i', $html ) ) {
@@ -143,6 +150,32 @@ final class Viewport {
 		}
 		// Never let a non-LCP image claim high priority.
 		return preg_replace( '/\sfetchpriority\s*=\s*(["\'])high\1/i', '', $html );
+	}
+
+	/**
+	 * Whether an image tag could credibly be the largest one on the page.
+	 *
+	 * @param string $html Image tag.
+	 * @return bool
+	 */
+	private static function plausible_lcp( string $html ): bool {
+		$src = self::attribute( $html, 'src' );
+
+		// A placeholder left by a JavaScript lazy loader is not the real image.
+		if ( '' === $src || str_starts_with( $src, 'data:' ) ) {
+			return false;
+		}
+		// Hidden elements never paint.
+		if ( preg_match( '/\sstyle\s*=\s*(["\'])[^"\']*display\s*:\s*none/i', $html ) ) {
+			return false;
+		}
+		// Tracking pixels and spacers.
+		$width  = (int) self::attribute( $html, 'width' );
+		$height = (int) self::attribute( $html, 'height' );
+		if ( ( $width > 0 && $width < 150 ) || ( $height > 0 && $height < 150 ) ) {
+			return false;
+		}
+		return true;
 	}
 
 	/**
