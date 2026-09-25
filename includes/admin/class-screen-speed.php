@@ -175,7 +175,7 @@ final class Screen_Speed {
 					'delay_all',
 					$settings['delay_all'],
 					__( 'Hold back all scripts until the page has appeared', 'smart-media-auditor-optimizer' ),
-					__( 'Every script except jQuery waits until the visitor scrolls, taps or moves the mouse, or a few seconds pass, so the page is drawn first. Sliders, forms and other interactive parts start a moment later. The Google check above tests this for you.', 'smart-media-auditor-optimizer' ),
+					__( 'Every script except jQuery waits until the visitor scrolls, taps or moves the mouse. Until then, anything a script builds, such as carousels and sliders, is not built yet, so on many themes the page looks broken at first. Only switch this on if your pages look right before you interact with them. The Google check never switches it on when it changes how the page looks.', 'smart-media-auditor-optimizer' ),
 					__( 'Often the biggest gain on script-heavy pages', 'smart-media-auditor-optimizer' )
 				);
 				self::switch_row(

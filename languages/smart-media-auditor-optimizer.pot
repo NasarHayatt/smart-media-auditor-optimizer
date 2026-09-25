@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.3.9\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.4.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
@@ -484,7 +484,7 @@ msgstr ""
 msgid "Every minute (media jobs)"
 msgstr ""
 
-msgid "Every script except jQuery waits until the visitor scrolls, taps or moves the mouse, or a few seconds pass, so the page is drawn first. Sliders, forms and other interactive parts start a moment later. The Google check above tests this for you."
+msgid "Every script except jQuery waits until the visitor scrolls, taps or moves the mouse. Until then, anything a script builds, such as carousels and sliders, is not built yet, so on many themes the page looks broken at first. Only switch this on if your pages look right before you interact with them. The Google check never switches it on when it changes how the page looks."
 msgstr ""
 
 msgid "Everything you have removed can still be put back."
@@ -1124,6 +1124,9 @@ msgid "Refresh interval (seconds)"
 msgstr ""
 
 msgid "Refresh the table"
+msgstr ""
+
+msgid "Rejected: changed the page layout"
 msgstr ""
 
 msgid "Remaining scripts still run, but they no longer hold up the text and images while the browser fetches them. jQuery and anything that depends on it are left alone."
@@ -1883,6 +1886,9 @@ msgid "processed"
 msgstr ""
 
 msgid "psi"
+msgstr ""
+
+msgid "rejected: changed the page layout"
 msgstr ""
 
 msgid "removed"

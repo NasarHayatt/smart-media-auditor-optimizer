@@ -140,13 +140,54 @@ final class Scripts {
 	 * @return string
 	 */
 	public static function defer( string $tag, string $handle, string $src ): string {
-		if ( self::excluded( $handle, $src ) || self::is_delayed( $handle, $src ) ) {
+		if ( self::excluded( $handle, $src ) || self::is_delayed( $handle, $src ) || isset( self::must_run_in_order()[ $handle ] ) ) {
 			return $tag;
 		}
 		if ( str_contains( $tag, ' defer' ) || str_contains( $tag, ' async' ) || str_contains( $tag, 'type="module"' ) ) {
 			return $tag;
 		}
 		return str_replace( '<script ', '<script defer ', $tag );
+	}
+
+	/**
+	 * Scripts that must run exactly where they are printed.
+	 *
+	 * An inline snippet added after a script runs the moment it is parsed; it
+	 * cannot wait. If its script were deferred, the snippet would run first
+	 * and fail, as moment.updateLocale() did before moment existed, breaking
+	 * the WordPress packages GiveWP uses. So a script with such a snippet
+	 * stays in place, and so does everything any in-place script depends on.
+	 * This is the rule WordPress applies to its own defer strategy.
+	 *
+	 * @return array<string,bool>
+	 */
+	private static function must_run_in_order(): array {
+		static $set = null;
+		if ( null !== $set ) {
+			return $set;
+		}
+		$set     = array();
+		$scripts = wp_scripts();
+		if ( ! $scripts instanceof \WP_Scripts ) {
+			return $set;
+		}
+		$mark = static function ( string $handle ) use ( &$mark, &$set, $scripts ): void {
+			if ( isset( $set[ $handle ] ) || ! isset( $scripts->registered[ $handle ] ) ) {
+				return;
+			}
+			$set[ $handle ] = true;
+			foreach ( (array) $scripts->registered[ $handle ]->deps as $dependency ) {
+				$mark( (string) $dependency );
+			}
+		};
+		foreach ( $scripts->registered as $handle => $item ) {
+			$after = $scripts->get_data( $handle, 'after' );
+			$blank = empty( $after ) || ( is_array( $after ) && ! array_filter( $after ) );
+			if ( ! $blank || self::excluded( (string) $handle, (string) $item->src ) ) {
+				$mark( (string) $handle );
+			}
+		}
+		return $set;
 	}
 
 	/**
@@ -297,7 +338,7 @@ final class Scripts {
 		if ( $settings['delay_js'] && self::is_delayed( $handle, $src ) ) {
 			return false;
 		}
-		if ( $settings['defer_js'] && ! self::excluded( $handle, $src ) ) {
+		if ( $settings['defer_js'] && ! self::excluded( $handle, $src ) && ! isset( self::must_run_in_order()[ $handle ] ) ) {
 			return false;
 		}
 		return true;

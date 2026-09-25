@@ -60,7 +60,9 @@
 			throw new Error((data.error && data.error.message) || t('Google did not return a result.'));
 		}
 		var audits = data.lighthouseResult.audits;
+		var full = data.lighthouseResult.fullPageScreenshot;
 		return {
+			height: full && full.screenshot ? full.screenshot.height : 0,
 			score: Math.round((data.lighthouseResult.categories.performance.score || 0) * 100),
 			lcp: audits['largest-contentful-paint'].numericValue,
 			fcp: audits['first-contentful-paint'].numericValue,
@@ -84,7 +86,7 @@
 			[row.label, row.runs.length ? String(Math.round(average(row.runs, 'score'))) : '-',
 				row.runs.length ? seconds(average(row.runs, 'lcp')) : '-',
 				row.runs.length ? Math.round(average(row.runs, 'tbt')) + ' ms' : '-',
-				row.runs.length ? average(row.runs, 'cls').toFixed(3) : '-'
+				row.broken ? t('Rejected: changed the page layout') : (row.runs.length ? average(row.runs, 'cls').toFixed(3) : '-')
 			].forEach(function (text) {
 				var td = document.createElement('td');
 				td.textContent = text;
@@ -153,9 +155,17 @@
 			return;
 		}
 		var baseline = average(current.runs, 'score');
+		var pageHeight = average(current.runs, 'height');
 		var best = null;
 		list.forEach(function (row) {
 			if (row.reference || row.key === 'current' || row.runs.length < RUNS) { return; }
+			// A setting that changes how long the page is changed the layout:
+			// a carousel left unbuilt, a section stacked or hidden. A higher
+			// score for a broken page is not a result, so it is never applied.
+			if (pageHeight > 0 && Math.abs(average(row.runs, 'height') - pageHeight) / pageHeight > 0.03) {
+				row.broken = true;
+				return;
+			}
 			var score = average(row.runs, 'score');
 			if (score >= baseline + MARGIN && (!best || score > average(best.runs, 'score'))) { best = row; }
 		});
@@ -180,7 +190,7 @@
 				toast(t('Your current settings scored best. Nothing was changed.'), false);
 			}
 			await post('psi', { results: list.map(function (row) {
-				return { label: row.label, score: row.runs.length ? Math.round(average(row.runs, 'score')) : null, lcp: row.runs.length ? Math.round(average(row.runs, 'lcp')) : null, best: !!row.best };
+				return { label: row.broken ? row.label + ' (' + t('rejected: changed the page layout') + ')' : row.label, score: row.runs.length ? Math.round(average(row.runs, 'score')) : null, lcp: row.runs.length ? Math.round(average(row.runs, 'lcp')) : null, best: !!row.best };
 			}) });
 		} catch (error) {
 			toast(error.message, true);

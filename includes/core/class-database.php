@@ -155,6 +155,15 @@ final class Database {
 		 * image-heavy Elementor site it lowered the PageSpeed score from 65 to
 		 * 47, so it is switched off once on update and left to the owner.
 		 */
+		// "Hold back all scripts" left carousels unbuilt on many themes, and an
+		// earlier Google check could switch it on. Switch it off once.
+		if ( version_compare( (string) get_option( 'smao_schema', '0' ), '2.4.0', '<' ) ) {
+			$stored = get_option( 'smao_settings' );
+			if ( is_array( $stored ) && ! empty( $stored['delay_all'] ) ) {
+				$stored['delay_all'] = false;
+				update_option( 'smao_settings', $stored );
+			}
+		}
 		// Scans before 2.3.9 never read plugin-owned tables such as Slider
 		// Revolution's, so their "unused" results cannot be trusted. Mark them
 		// out of date; nothing can be removed until a new scan has run.

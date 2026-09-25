@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.3.9
+Stable tag: 2.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,20 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.4.0 =
+* Fixed: "Stop other scripts blocking the page" deferred WordPress scripts
+  that have inline code straight after them, such as moment and the editor
+  packages GiveWP loads. That code then ran first and failed ("moment is not
+  defined"). Such scripts, and everything they depend on, now stay in place,
+  the rule WordPress itself uses.
+* Fixed: the Google check could switch on a setting that scored higher while
+  leaving the page broken, such as carousels left unbuilt. It now compares the
+  length of the whole page as Google renders it and never applies a setting
+  that changes the layout.
+* "Hold back all scripts" is switched off on update and its description now
+  says plainly that it can leave carousels and sliders unbuilt until the
+  visitor interacts.
 
 = 2.3.9 =
 * Fixed: images used only by plugins that keep their own database tables,
@@ -324,6 +338,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.4.0 =
+Fixes script errors caused by "Stop other scripts blocking the page" and stops
+the Google check choosing settings that change how the page looks.
 
 = 2.3.9 =
 Important if you use Slider Revolution or another plugin with its own tables:
