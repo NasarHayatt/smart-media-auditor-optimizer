@@ -1273,3 +1273,41 @@
 
 .smao-where p { margin: 0 0 6px; }
 .smao-where ul { margin: 0; padding-left: 16px; }
+
+.smao-toast {
+	position: fixed;
+	right: 24px;
+	bottom: 24px;
+	z-index: 100000;
+	display: flex;
+	gap: 16px;
+	align-items: flex-start;
+	max-width: 420px;
+	padding: 14px 16px;
+	border-radius: var(--smao-radius);
+	background: #fff;
+	border-left: 4px solid var(--smao-accent);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+	white-space: pre-wrap;
+}
+
+.smao-toast.is-error {
+	border-left-color: var(--smao-danger);
+}
+
+.smao-toast-close {
+	margin-left: auto;
+	border: 0;
+	background: none;
+	color: inherit;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+@media (max-width: 600px) {
+	.smao-toast {
+		right: 16px;
+		left: 16px;
+		max-width: none;
+	}
+}

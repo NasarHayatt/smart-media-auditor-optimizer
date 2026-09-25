@@ -23,6 +23,7 @@
 	var workerFailures = 0;
 	var scanId;
 	var digest = '';
+	var lastNext;
 	var pendingRefresh = false;
 	var lastStage;
 
@@ -44,7 +45,30 @@
 	 * Show a message next to the control that caused it, and move focus there
 	 * so it is never missed at the bottom of a long table.
 	 */
+	function toast(message, isError) {
+		if (!message) { return; }
+		var box = $('#smao-toast');
+		if (!box) {
+			box = node('div', undefined, 'smao-toast');
+			box.id = 'smao-toast';
+			box.setAttribute('role', isError ? 'alert' : 'status');
+			document.body.append(box);
+		}
+		box.className = 'smao-toast' + (isError ? ' is-error' : ' is-ok');
+		box.textContent = '';
+		box.append(node('span', (isError ? '\u2716 ' : '\u2714 ') + message));
+		var close = node('button', t('Close'), 'smao-toast-close');
+		close.type = 'button';
+		close.onclick = function () { box.remove(); };
+		box.append(close);
+		window.clearTimeout(box._timer);
+		if (!isError) {
+			box._timer = window.setTimeout(function () { box.remove(); }, 7000);
+		}
+	}
+
 	function notice(message, isError, anchor) {
+		toast(message, isError);
 		var host = $('#smao-notice');
 		if (!host) { return; }
 		host.className = isError ? 'is-error' : '';
@@ -561,6 +585,14 @@
 			window.location.reload();
 			return;
 		}
+		// Anything that changes the next step (an image deleted in the Media
+		// Library, a job finishing) updates this page without a manual reload.
+		if (lastNext !== undefined && data.next && lastNext !== data.next && $('#smao-next')) {
+			try { window.sessionStorage.setItem('smaoNotice', t('Updated to reflect the latest changes on your site.')); } catch (error) { /* Optional. */ }
+			window.location.reload();
+			return;
+		}
+		lastNext = data.next;
 		lastStage = stage(scan);
 		scanId = scan.id;
 
@@ -805,5 +837,14 @@
 	if ($('#smao-progress') || $('#smao-jobs') || $('#smao-report')) {
 		poll();
 		workLoop();
+		// Coming back to this tab, for example after deleting an image in the
+		// Media Library, checks straight away instead of at the next poll.
+		var checkNow = async function () {
+			if (document.hidden || polling || stopped) { return; }
+			polling = true;
+			try { render(await request('status')); } catch (error) { /* The regular poll retries. */ } finally { polling = false; }
+		};
+		if (typeof document.addEventListener === 'function') { document.addEventListener('visibilitychange', checkNow); }
+		if (typeof window.addEventListener === 'function') { window.addEventListener('focus', checkNow); }
 	}
 })();

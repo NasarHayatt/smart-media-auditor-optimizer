@@ -1,10 +1,13 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.3.5\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.3.6\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid " "
+msgstr ""
+
+msgid "#(<link\\b[^>]*>)#i"
 msgstr ""
 
 msgid "#smao-cleanup-title"
@@ -338,6 +341,9 @@ msgid "Cleared %s cached file. The most important pages are being rebuilt."
 msgstr ""
 
 msgid "Cleared. That page will be rebuilt on the next visit."
+msgstr ""
+
+msgid "Close"
 msgstr ""
 
 msgid "Color-profiled or animated media requires ImageMagick."
@@ -688,7 +694,7 @@ msgstr ""
 msgid "Make images smaller"
 msgstr ""
 
-msgid "Make smaller copies"
+msgid "Makes a WebP copy of every JPG and PNG in the background, usually a fraction of the size, and sends it instead. This covers every image in the page, including sliders and page-builder backgrounds. Your original files are never changed, and a browser that does not support WebP gets the originals."
 msgstr ""
 
 msgid "Maximum height"
@@ -725,9 +731,6 @@ msgid "Memory limit"
 msgstr ""
 
 msgid "Missing or broken"
-msgstr ""
-
-msgid "Modern browsers understand newer image formats that are often much smaller. Older ones still get the original, so nobody sees a broken image. This does change the code your pages send, so have a look at a few pages afterwards."
 msgstr ""
 
 msgid "More"
@@ -871,7 +874,7 @@ msgstr ""
 msgid "Off"
 msgstr ""
 
-msgid "Often the single biggest saving, once smaller copies exist"
+msgid "Often the single biggest saving on an image-heavy page"
 msgstr ""
 
 msgid "On"
@@ -1216,7 +1219,7 @@ msgstr ""
 msgid "Send images at the size they are shown"
 msgstr ""
 
-msgid "Send smaller image files where possible"
+msgid "Send smaller WebP images"
 msgstr ""
 
 msgid "Sent at"
@@ -1420,6 +1423,9 @@ msgstr ""
 msgid "This scan transition is not available."
 msgstr ""
 
+msgid "This server cannot write WebP images."
+msgstr ""
+
 msgid "This server does not read .htaccess, so paste the following into your server configuration. Everything else works without it."
 msgstr ""
 
@@ -1484,6 +1490,9 @@ msgid "Unused candidates"
 msgstr ""
 
 msgid "Unusually large media group requires manual review."
+msgstr ""
+
+msgid "Updated to reflect the latest changes on your site."
 msgstr ""
 
 msgid "Upload date"
@@ -1564,6 +1573,9 @@ msgstr ""
 msgid "WebP"
 msgstr ""
 
+msgid "WebP copies checked for %1$d of %2$d images. The rest are made in the background."
+msgstr ""
+
 msgid "WebP support"
 msgstr ""
 
@@ -1610,9 +1622,6 @@ msgid "Yes"
 msgstr ""
 
 msgid "You can leave this page. It carries on in the background, and you can come back whenever you like."
-msgstr ""
-
-msgid "You do not have any smaller copies yet, so this will not do anything on its own."
 msgstr ""
 
 msgid "You do not have permission to change one of the selected files."
@@ -1720,6 +1729,9 @@ msgstr ""
 msgid "iframe"
 msgstr ""
 
+msgid "images"
+msgstr ""
+
 msgid "images below the fold wait their turn"
 msgstr ""
 
@@ -1811,6 +1823,9 @@ msgid "smao-model"
 msgstr ""
 
 msgid "smao_warm_lock"
+msgstr ""
+
+msgid "smao_webp_backfill"
 msgstr ""
 
 msgid "source records"

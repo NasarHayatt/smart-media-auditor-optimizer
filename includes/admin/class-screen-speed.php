@@ -74,7 +74,27 @@ final class Screen_Speed {
 					__( 'Images further down the page wait until someone scrolls near them, and the main image never waits.', 'smart-media-auditor-optimizer' ),
 					__( 'Less to download before the page is usable', 'smart-media-auditor-optimizer' )
 				);
+				self::switch_row(
+					'delivery',
+					$settings['delivery'],
+					__( 'Send smaller WebP images', 'smart-media-auditor-optimizer' ),
+					__( 'Makes a WebP copy of every JPG and PNG in the background, usually a fraction of the size, and sends it instead. This covers every image in the page, including sliders and page-builder backgrounds. Your original files are never changed, and a browser that does not support WebP gets the originals.', 'smart-media-auditor-optimizer' ),
+					__( 'Often the single biggest saving on an image-heavy page', 'smart-media-auditor-optimizer' )
+				);
 				?>
+				<?php $webp = Delivery::progress(); ?>
+				<?php if ( $settings['delivery'] && $webp['total'] ) : ?>
+					<p class="smao-muted">
+						<?php
+						printf(
+							/* translators: 1: images done, 2: all images. */
+							esc_html__( 'WebP copies checked for %1$d of %2$d images. The rest are made in the background.', 'smart-media-auditor-optimizer' ),
+							(int) $webp['done'],
+							(int) $webp['total']
+						);
+						?>
+					</p>
+				<?php endif; ?>
 			</section>
 
 			<section class="smao-panel">
@@ -149,21 +169,6 @@ final class Screen_Speed {
 				<div class="smao-panel-head">
 					<h2><?php esc_html_e( 'Worth testing first', 'smart-media-auditor-optimizer' ); ?></h2>
 				</div>
-				<?php
-				self::switch_row(
-					'delivery',
-					$settings['delivery'],
-					__( 'Send smaller image files where possible', 'smart-media-auditor-optimizer' ),
-					__( 'Modern browsers understand newer image formats that are often much smaller. Older ones still get the original, so nobody sees a broken image. This does change the code your pages send, so have a look at a few pages afterwards.', 'smart-media-auditor-optimizer' ),
-					__( 'Often the single biggest saving, once smaller copies exist', 'smart-media-auditor-optimizer' )
-				);
-				?>
-				<?php if ( ! self::has_alternates() ) : ?>
-					<p class="smao-inline-note">
-						<?php esc_html_e( 'You do not have any smaller copies yet, so this will not do anything on its own.', 'smart-media-auditor-optimizer' ); ?>
-						<a class="smao-link" href="<?php echo esc_url( admin_url( 'admin.php?page=smao-advanced&tab=images' ) ); ?>"><?php esc_html_e( 'Make smaller copies', 'smart-media-auditor-optimizer' ); ?></a>
-					</p>
-				<?php endif; ?>
 				<?php
 				self::switch_row(
 					'async_css',

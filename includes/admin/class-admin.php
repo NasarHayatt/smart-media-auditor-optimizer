@@ -449,6 +449,7 @@ final class Admin {
 			'jobs'        => $jobs,
 			'jobs_paused' => (bool) get_option( 'smao_jobs_paused', false ),
 			'live'        => Live::snapshot(),
+			'next'        => md5( (string) wp_json_encode( Next_Step::get() ) ),
 		);
 	}
 

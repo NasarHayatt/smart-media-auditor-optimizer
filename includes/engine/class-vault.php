@@ -319,6 +319,19 @@ final class Vault {
 	 * @return void
 	 * @throws \RuntimeException When validation, storage or processing cannot safely continue.
 	 */
+	/**
+	 * Remove the recovery copy of an attachment that WordPress is deleting.
+	 *
+	 * @param int $id Attachment ID.
+	 * @return void
+	 */
+	public static function forget( int $id ): void {
+		$record = self::record( $id );
+		if ( $record ) {
+			self::discard( $record );
+		}
+	}
+
 	private static function discard( array $record ): void {
 		foreach ( $record['manifest']['files'] as $entry ) {
 			$path = self::backup_path( $record, $entry['backup'] );

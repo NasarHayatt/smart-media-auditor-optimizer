@@ -50,7 +50,20 @@ final class Plugin {
 	 */
 	public static function boot(): void {
 		if ( get_option( 'smao_schema' ) !== SMAO_VERSION ) {
-			Database::install(); }
+			Database::install();
+			// The cache drop-in reads its settings from a file. Refresh it now,
+			// not at the next admin visit, so an update takes effect at once.
+			add_action(
+				'init',
+				static function (): void {
+					if ( Cache::active() ) {
+						Cache::prepare_directory();
+						Cache::write_config();
+						Cache::flush();
+					}
+				}
+			);
+		}
 		add_filter(
 			'cron_schedules',
 			static function ( array $schedules ): array {
@@ -145,6 +158,13 @@ final class Plugin {
 			static function ( $metadata, $id ) {
 				if ( Settings::get()['auto_optimize'] && self::allowed() ) {
 					self::enqueue( 'optimize', array( (int) $id ) ); }
+				if ( Delivery::active() && self::allowed() ) {
+					try {
+						self::enqueue( 'webp', array( (int) $id ) );
+					} catch ( \Throwable $e ) {
+						Database::log( 'webp', (int) $id, $e->getMessage() );
+					}
+				}
 				return $metadata;
 			},
 			20,
@@ -158,14 +178,14 @@ final class Plugin {
 				return $sizes;
 			}
 		);
-		add_filter(
-			'pre_delete_attachment',
-			static function ( $delete, $post ) {
-				return Vault::record( (int) $post->ID ) ? false : $delete;
-			},
-			10,
-			2
-		);
+		/*
+		 * Deleting an image in the Media Library is the owner's decision. It
+		 * used to be refused silently whenever the plugin held a recovery copy,
+		 * which looked like a broken delete button. Now the deletion goes
+		 * ahead and the plugin forgets the image straight away, so its counts
+		 * and next step update without a new scan.
+		 */
+		add_action( 'delete_attachment', array( self::class, 'forget_attachment' ) );
 		Cache::boot();
 		Purge::boot();
 		Warm::boot();
@@ -321,6 +341,26 @@ final class Plugin {
 	}
 
 	/**
+	 * Drop everything the plugin knows about an attachment being deleted.
+	 *
+	 * @param int $id Attachment ID.
+	 * @return void
+	 */
+	public static function forget_attachment( $id ): void {
+		global $wpdb;
+		$id = (int) $id;
+		try {
+			Vault::forget( $id );
+		} catch ( \Throwable $e ) {
+			Database::log( 'forget', $id, 'Recovery copy could not be removed: ' . $e->getMessage() );
+		}
+		foreach ( array( 'media', 'evidence', 'tokens', 'render', 'jobs' ) as $name ) {
+			$wpdb->delete( Database::table( $name ), array( 'attachment_id' => $id ) );
+		}
+		Database::log( 'forget', $id, 'Image deleted in WordPress; removed from results.' );
+	}
+
+	/**
 	 * Invalidate previous usage conclusions after relevant site changes.
 	 *
 	 * @return void
@@ -358,7 +398,7 @@ final class Plugin {
 	 */
 	public static function enqueue( string $action, array $ids ): void {
 		global $wpdb;
-		if ( ! in_array( $action, array( 'optimize', 'thumbnails' ), true ) ) {
+		if ( ! in_array( $action, array( 'optimize', 'thumbnails', 'webp' ), true ) ) {
 			throw new \RuntimeException( __( 'Unsupported background action.', 'smart-media-auditor-optimizer' ) ); }
 		$table = Database::table( 'jobs' );
 		foreach ( array_unique( array_map( 'absint', $ids ) ) as $id ) {
@@ -431,8 +471,12 @@ final class Plugin {
 			if ( ! self::allowed() || ! current_user_can( 'edit_post', (int) $job['attachment_id'] ) ) {
 				throw new \RuntimeException( __( 'Requesting administrator no longer has permission.', 'smart-media-auditor-optimizer' ) ); }
 			if ( 'optimize' === $job['action'] ) {
-				Optimizer::optimize( (int) $job['attachment_id'] ); } else {
-				Optimizer::thumbnails( (int) $job['attachment_id'] ); }
+				Optimizer::optimize( (int) $job['attachment_id'] );
+			} elseif ( 'webp' === $job['action'] ) {
+				Optimizer::webp( (int) $job['attachment_id'] );
+			} else {
+				Optimizer::thumbnails( (int) $job['attachment_id'] );
+			}
 				Database::check(
 					$wpdb->update(
 						$table,
@@ -457,6 +501,15 @@ final class Plugin {
 			Database::log( 'job_failed', (int) $job['attachment_id'], $e->getMessage() );
 		} finally {
 			wp_set_current_user( $previous ); }
+		// WebP copies are quick and independent: keep going while time allows,
+		// so a whole library is done in minutes rather than one per visit.
+		if ( 'webp' === $job['action'] ) {
+			static $started = null;
+			$started = $started ?? microtime( true );
+			if ( microtime( true ) - $started < 12 ) {
+				self::tick();
+			}
+		}
 	}
 
 }

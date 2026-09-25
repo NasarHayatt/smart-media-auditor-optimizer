@@ -332,6 +332,8 @@
 	function hero(doc, width) {
 		var height = screen(width);
 		var best = null;
+		var top = null;
+		var above = [];
 		var all = doc.body ? doc.body.getElementsByTagName('*') : [];
 		for (var i = 0; i < all.length; i++) {
 			var el = all[i];
@@ -358,6 +360,12 @@
 			if (!url || /^data:/i.test(url)) { continue; }
 			var visible = Math.max(0, Math.min(box.right, width) - Math.max(box.left, 0)) *
 				Math.max(0, Math.min(box.bottom, height) - Math.max(box.top, 0));
+			if (visible <= 0) { continue; }
+			if (kind === 'img') {
+				// Every image drawn in the first screen: none may wait its turn.
+				above.push({ id: id, url: url });
+				if (!top || visible > top.area) { top = { id: id, url: url, area: visible }; }
+			}
 			if (!best || visible > best.area) {
 				best = { kind: kind, url: url, id: id, area: visible };
 			}
@@ -365,6 +373,12 @@
 		if (!best) { return null; }
 		best.share = Math.round(best.area / (width * height) * 1000) / 1000;
 		delete best.area;
+		if (top) {
+			top.share = Math.round(top.area / (width * height) * 1000) / 1000;
+			delete top.area;
+		}
+		best.top = top;
+		best.above = above.slice(0, 40);
 		return best;
 	}
 

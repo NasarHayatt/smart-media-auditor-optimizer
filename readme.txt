@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.3.5
+Stable tag: 2.3.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,25 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.3.6 =
+* Fixed: on measured pages the main image was lazy loaded and lost its high
+  priority, so phones fetched it last (largest paint 20s on a live site).
+  The measurement now records every image in the first screen; none of them
+  is ever lazy loaded, and the largest one is preloaded and fetched first,
+  even when the biggest visual is a CSS background.
+* New: WebP images, automatically. A WebP copy of every JPG and PNG is made in
+  the background, new uploads included, and every image in the page is
+  switched to its copy: image tags, sliders, page-builder data and inline
+  backgrounds. Originals are never changed. Browsers that do not accept WebP
+  get the originals from their own cached copy of the page.
+* Fixed: deleting an image in the Media Library was silently refused when the
+  plugin held a recovery copy of it, and deleted images stayed in the results.
+  Deleting now works, the image leaves the results at once, and its recovery
+  copy is removed.
+* The overview follows changes as they happen and every action shows a
+  confirmation that stays on screen.
+* The page cache settings file is refreshed as soon as the plugin updates.
 
 = 2.3.5 =
 * Changed: "Stop stylesheets blocking the first paint" is now off by default
@@ -271,6 +290,11 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.3.6 =
+Fixes the main image loading last on measured pages, adds automatic WebP
+images, and fixes deleting images. Run the page measurement under Speed again
+after updating.
 
 = 2.3.5 =
 Switches off background stylesheet loading, which lowered PageSpeed scores on

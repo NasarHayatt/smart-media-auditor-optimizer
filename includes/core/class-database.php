@@ -155,6 +155,14 @@ final class Database {
 		 * image-heavy Elementor site it lowered the PageSpeed score from 65 to
 		 * 47, so it is switched off once on update and left to the owner.
 		 */
+		// 2.3.6 makes WebP copies and serves them automatically.
+		if ( version_compare( (string) get_option( 'smao_schema', '0' ), '2.3.6', '<' ) ) {
+			$stored = get_option( 'smao_settings' );
+			if ( is_array( $stored ) && empty( $stored['delivery'] ) ) {
+				$stored['delivery'] = true;
+				update_option( 'smao_settings', $stored );
+			}
+		}
 		if ( version_compare( (string) get_option( 'smao_schema', '0' ), '2.3.5', '<' ) ) {
 			$stored = get_option( 'smao_settings' );
 			if ( is_array( $stored ) && ! empty( $stored['async_css'] ) ) {

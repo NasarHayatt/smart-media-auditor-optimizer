@@ -264,6 +264,90 @@ final class Optimizer {
 	}
 
 	/**
+	 * Make a WebP copy of every JPEG and PNG file of an attachment.
+	 *
+	 * The originals are never touched, so nothing needs a recovery copy: the
+	 * WebP files are new files next to them, and deleting them loses nothing.
+	 * A copy is only kept when it is at least a tenth smaller.
+	 *
+	 * @param int $id Attachment ID.
+	 * @return int Copies made.
+	 */
+	public static function webp( int $id ): int {
+		$mime = (string) get_post_mime_type( $id );
+		if ( ! in_array( $mime, array( 'image/jpeg', 'image/png' ), true ) || Media::remote( $id ) ) {
+			update_post_meta( $id, '_smao_webp_checked', time() );
+			return 0;
+		}
+		if ( ! wp_image_editor_supports( array( 'mime_type' => 'image/webp' ) ) ) {
+			throw new \RuntimeException( __( 'This server cannot write WebP images.', 'smart-media-auditor-optimizer' ) );
+		}
+		$group      = Media::group( $id );
+		$alternates = get_post_meta( $id, '_smao_alternates', true );
+		$alternates = is_array( $alternates ) ? $alternates : array();
+		$settings   = array_merge(
+			Settings::get(),
+			array(
+				'compression' => 'lossy',
+				'quality'     => 80,
+				'strip_exif'  => true,
+			)
+		);
+		$made = 0;
+		foreach ( $group['files'] as $relative ) {
+			if ( isset( $alternates[ $relative ] ) || str_contains( $relative, '.smao-' ) ) {
+				continue;
+			}
+			try {
+				$path = Media::path( $relative );
+			} catch ( \Throwable $e ) {
+				continue; // A size WordPress listed but never wrote.
+			}
+			$info = wp_getimagesize( $path );
+			if ( ! $info || ! in_array( $info['mime'], array( 'image/jpeg', 'image/png' ), true ) ) {
+				continue;
+			}
+			$alternate = $relative . '.smao-' . substr( hash_file( 'sha256', $path ), 0, 12 ) . '.webp';
+			$alt_path  = Media::path( $alternate, false );
+			$temp      = dirname( $alt_path ) . '/.smao-' . bin2hex( random_bytes( 12 ) ) . '.webp';
+			try {
+				if ( ! file_exists( $alt_path ) ) {
+					self::encode( $path, $temp, 'image/webp', $settings );
+					clearstatcache( true, $temp );
+					if ( filesize( $temp ) > filesize( $path ) * 0.9 ) {
+						continue; // Not worth sending instead of the original.
+					}
+					if ( ! rename( $temp, $alt_path ) ) {
+						continue;
+					}
+				}
+				$size                    = wp_getimagesize( $alt_path );
+				$alternates[ $relative ] = array(
+					'file'   => $alternate,
+					'width'  => (int) ( $size[0] ?? 0 ),
+					'height' => (int) ( $size[1] ?? 0 ),
+					'mime'   => 'image/webp',
+				);
+				++$made;
+			} catch ( \Throwable $e ) {
+				// Animated, CMYK or profiled files stay as they are.
+				continue;
+			} finally {
+				if ( is_file( $temp ) ) {
+					unlink( $temp );
+				}
+			}
+		}
+		update_post_meta( $id, '_smao_alternates', $alternates );
+		update_post_meta( $id, '_smao_webp_checked', time() );
+		if ( $made ) {
+			Delivery::flush_map();
+			Database::log( 'webp', $id, sprintf( 'Made %d WebP copies.', $made ) );
+		}
+		return $made;
+	}
+
+	/**
 	 * Generate missing registered image sizes without removing existing files.
 	 *
 	 * @param int $id Id.

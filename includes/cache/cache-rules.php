@@ -178,13 +178,28 @@ if ( ! function_exists( 'smao_cache_root' ) ) {
 	}
 
 	/**
+	 * Whether the browser says it accepts WebP images.
+	 *
+	 * Chrome, Edge and Firefox say so on every page request. A browser that
+	 * does not is given the page with original images, from its own cache
+	 * entry, so it never receives an image it cannot show.
+	 *
+	 * @param array $server The $_SERVER superglobal.
+	 * @return bool
+	 */
+	function smao_cache_wants_webp( array $server ): bool {
+		return str_contains( strtolower( (string) ( $server['HTTP_ACCEPT'] ?? '' ) ), 'image/webp' );
+	}
+
+	/**
 	 * Build the cache key for a request.
 	 *
-	 * @param array $server         The $_SERVER superglobal.
+	 * @param array $server          The $_SERVER superglobal.
 	 * @param bool  $separate_mobile Whether mobile gets its own entry.
+	 * @param bool  $webp            Whether pages differ by WebP support.
 	 * @return string 64 character hex digest.
 	 */
-	function smao_cache_key( array $server, bool $separate_mobile ): string {
+	function smao_cache_key( array $server, bool $separate_mobile, bool $webp = false ): string {
 		$host = strtolower( (string) ( $server['HTTP_HOST'] ?? 'localhost' ) );
 		$host = preg_replace( '/[^a-z0-9.\-:]/', '', $host );
 
@@ -199,7 +214,9 @@ if ( ! function_exists( 'smao_cache_root' ) ) {
 
 		$device = $separate_mobile && smao_cache_is_mobile( $server ) ? 'mobile' : 'desktop';
 
-		return hash( 'sha256', ( $https ? 'https://' : 'http://' ) . $host . $path . '|' . $device );
+		$variant = $webp && smao_cache_wants_webp( $server ) ? '|webp' : '';
+
+		return hash( 'sha256', ( $https ? 'https://' : 'http://' ) . $host . $path . '|' . $device . $variant );
 	}
 
 	/**
@@ -223,7 +240,7 @@ if ( ! function_exists( 'smao_cache_root' ) ) {
 			return false;
 		}
 
-		$key  = smao_cache_key( $_SERVER, ! empty( $config['separate_mobile'] ) );
+		$key  = smao_cache_key( $_SERVER, ! empty( $config['separate_mobile'] ), ! empty( $config['webp'] ) );
 		$file = smao_cache_path( $root, $key, 'html' );
 		if ( '' === $file || ! is_readable( $file ) ) {
 			return false;
@@ -254,7 +271,7 @@ if ( ! function_exists( 'smao_cache_root' ) ) {
 		header( 'Last-Modified: ' . $modified );
 		header( 'ETag: ' . $etag );
 		header( 'Cache-Control: public, max-age=0, s-maxage=0, must-revalidate' );
-		header( 'Vary: Accept-Encoding' );
+		header( 'Vary: ' . ( empty( $config['webp'] ) ? 'Accept-Encoding' : 'Accept-Encoding, Accept' ) );
 
 		$encodings = strtolower( (string) ( $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '' ) );
 		$gzip      = smao_cache_path( $root, $key, 'gz' );

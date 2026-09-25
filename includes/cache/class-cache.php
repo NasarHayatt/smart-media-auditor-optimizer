@@ -77,6 +77,7 @@ final class Cache {
 		$config   = array(
 			'separate_mobile' => (bool) $settings['separate_mobile'],
 			'ttl'             => (int) $settings['cache_ttl'] * HOUR_IN_SECONDS,
+			'webp'            => Delivery::active(),
 		);
 		if ( smao_cache_serve( self::root(), $config, 'HIT-PHP' ) ) {
 			exit;
@@ -280,7 +281,7 @@ final class Cache {
 			return $html;
 		}
 
-		$key  = smao_cache_key( $_SERVER, (bool) Settings::get()['separate_mobile'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only.
+		$key  = smao_cache_key( $_SERVER, (bool) Settings::get()['separate_mobile'], Delivery::active() ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only.
 		$file = smao_cache_path( self::root(), $key, 'html' );
 		if ( '' === $file ) {
 			return $html;
@@ -387,6 +388,7 @@ final class Cache {
 					'enabled'         => self::active(),
 					'ttl'             => (int) $settings['cache_ttl'] * HOUR_IN_SECONDS,
 					'separate_mobile' => (bool) $settings['separate_mobile'],
+					'webp'            => Delivery::active(),
 					'version'         => SMAO_VERSION,
 				)
 			)
@@ -577,17 +579,21 @@ final class Cache {
 
 		$removed = false;
 		foreach ( array( true, false ) as $mobile ) {
-			$server = array(
-				'HTTP_HOST'       => $host,
-				'REQUEST_URI'     => ( $parts['path'] ?? '/' ),
-				'HTTPS'           => ( 'https' === ( $parts['scheme'] ?? 'http' ) ) ? 'on' : 'off',
-				'HTTP_USER_AGENT' => $mobile ? 'Mobile' : 'Desktop',
-			);
-			$key = smao_cache_key( $server, (bool) Settings::get()['separate_mobile'] );
-			foreach ( array( 'html', 'gz', 'meta' ) as $extension ) {
-				$file = smao_cache_path( self::root(), $key, $extension );
-				if ( '' !== $file && file_exists( $file ) && @unlink( $file ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-					$removed = true;
+			// Both the WebP and the original-image copy of the page.
+			foreach ( array( 'image/webp,*/*', '*/*' ) as $accept ) {
+				$server = array(
+					'HTTP_HOST'       => $host,
+					'REQUEST_URI'     => ( $parts['path'] ?? '/' ),
+					'HTTPS'           => ( 'https' === ( $parts['scheme'] ?? 'http' ) ) ? 'on' : 'off',
+					'HTTP_USER_AGENT' => $mobile ? 'Mobile' : 'Desktop',
+					'HTTP_ACCEPT'     => $accept,
+				);
+				$key = smao_cache_key( $server, (bool) Settings::get()['separate_mobile'], true );
+				foreach ( array( 'html', 'gz', 'meta' ) as $extension ) {
+					$file = smao_cache_path( self::root(), $key, $extension );
+					if ( '' !== $file && file_exists( $file ) && @unlink( $file ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+						$removed = true;
+					}
 				}
 			}
 			if ( ! Settings::get()['separate_mobile'] ) {

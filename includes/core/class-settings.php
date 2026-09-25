@@ -96,7 +96,7 @@ final class Settings {
 			'dimensions'        => true,
 			'lcp_preload'       => true,
 			'lazy_correct'      => true,
-			'delivery'          => false,
+			'delivery'          => true,
 			'rightsize'         => true,
 			'defer_js'          => true,
 			'delay_js'          => true,

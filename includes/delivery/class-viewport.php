@@ -152,11 +152,41 @@ final class Viewport {
 			}
 			return $html;
 		}
-		if ( ! preg_match( '/\sloading\s*=/i', $html ) ) {
+		if ( self::above_fold( $html, $id ) ) {
+			// Drawn in the first screen when measured: load it straight away.
+			$html = (string) preg_replace( '/\sloading\s*=\s*(["\'])lazy\1/i', '', $html );
+		} elseif ( ! preg_match( '/\sloading\s*=/i', $html ) ) {
 			$html = preg_replace( '/<img\s/', '<img loading="lazy" ', $html, 1 );
 		}
 		// Never let a non-LCP image claim high priority.
 		return preg_replace( '/\sfetchpriority\s*=\s*(["\'])high\1/i', '', $html );
+	}
+
+	/**
+	 * Whether the measurement saw this image in the first screen.
+	 *
+	 * Lazy loading an image that is visible on arrival delays it until after
+	 * layout, behind everything else. 2.3.4 did exactly that to the main
+	 * image of a measured page and the largest paint went from 7s to 20s.
+	 *
+	 * @param string $html Image tag.
+	 * @param int    $id   Attachment ID, zero when unknown.
+	 * @return bool
+	 */
+	private static function above_fold( string $html, int $id ): bool {
+		$heroes = Styles::heroes();
+		if ( null === $heroes ) {
+			return false;
+		}
+		$name = strtolower( wp_basename( (string) wp_parse_url( self::attribute( $html, 'src' ), PHP_URL_PATH ) ) );
+		foreach ( $heroes as $hero ) {
+			foreach ( (array) ( $hero['above'] ?? array() ) as $image ) {
+				if ( ( $id && (int) $image['id'] === $id ) || ( '' !== $name && $image['name'] === $name ) ) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -220,15 +250,42 @@ final class Viewport {
 			$url   = esc_url_raw( (string) ( $hero['url'] ?? '' ), array( 'http', 'https' ) );
 			$kind  = in_array( $hero['kind'] ?? '', array( 'img', 'bg' ), true ) ? $hero['kind'] : '';
 			$share = (float) ( $hero['share'] ?? 0 );
-			if ( '' === $url || '' === $kind || $share < 0.16 ) {
-				continue;
+
+			// Images drawn in the first screen, whatever their size.
+			$above = array();
+			foreach ( array_slice( (array) ( $hero['above'] ?? array() ), 0, 40 ) as $image ) {
+				$name = is_array( $image ) ? strtolower( wp_basename( (string) wp_parse_url( (string) ( $image['url'] ?? '' ), PHP_URL_PATH ) ) ) : '';
+				$id   = is_array( $image ) ? absint( $image['id'] ?? 0 ) : 0;
+				if ( $id || '' !== $name ) {
+					$above[] = array(
+						'id'   => $id,
+						'name' => $name,
+					);
+				}
 			}
-			$clean[ $device ] = array(
-				'kind'  => $kind,
-				'url'   => $url,
-				'id'    => absint( $hero['id'] ?? 0 ),
-				'share' => min( 1.0, $share ),
+			$top = null;
+			if ( is_array( $hero['top'] ?? null ) && absint( $hero['top']['id'] ?? 0 ) && (float) ( $hero['top']['share'] ?? 0 ) >= 0.05 ) {
+				$top = array(
+					'id'    => absint( $hero['top']['id'] ),
+					'share' => min( 1.0, (float) $hero['top']['share'] ),
+				);
+			}
+
+			$entry = array(
+				'above' => $above,
+				'top'   => $top,
 			);
+			if ( '' !== $url && '' !== $kind && $share >= 0.16 ) {
+				$entry += array(
+					'kind'  => $kind,
+					'url'   => $url,
+					'id'    => absint( $hero['id'] ?? 0 ),
+					'share' => min( 1.0, $share ),
+				);
+			}
+			if ( $above || $top || isset( $entry['kind'] ) ) {
+				$clean[ $device ] = $entry;
+			}
 		}
 		return $clean;
 	}
@@ -244,26 +301,45 @@ final class Viewport {
 			'mobile'  => '(max-width: 480px)',
 			'desktop' => '(min-width: 481px)',
 		);
-		$mobile  = $heroes['mobile'] ?? null;
-		$desktop = $heroes['desktop'] ?? null;
-		if ( $mobile && $desktop && $mobile['url'] === $desktop['url'] && $mobile['kind'] === $desktop['kind'] ) {
-			$media = array( 'mobile' => '' );
-			$heroes = array( 'mobile' => $mobile );
-		}
+		// The largest <img> in the first screen always loads first, even when
+		// the biggest visual is a CSS background: the browser may well report
+		// the image as the largest paint, and it must never wait behind it.
+		$tops = array();
 		foreach ( $heroes as $device => $hero ) {
-			if ( 'img' === $hero['kind'] && $hero['id'] ) {
-				self::preload_image( (int) $hero['id'], $media[ $device ] ?? '' );
-				continue;
+			$id = (int) ( $hero['top']['id'] ?? 0 );
+			if ( ! $id && 'img' === ( $hero['kind'] ?? '' ) ) {
+				$id = (int) ( $hero['id'] ?? 0 );
 			}
-			if ( 'bg' === $hero['kind'] ) {
-				// A background is fetched by the exact URL in the stylesheet.
-				printf(
-					'<link rel="preload" as="image" href="%s" fetchpriority="high"%s>%s',
-					esc_url( $hero['url'] ),
-					'' !== ( $media[ $device ] ?? '' ) ? ' media="' . esc_attr( $media[ $device ] ) . '"' : '',
-					"\n"
-				);
+			if ( $id ) {
+				$tops[ $device ] = $id;
 			}
+		}
+		if ( 2 === count( $tops ) && $tops['mobile'] === $tops['desktop'] ) {
+			self::preload_image( $tops['mobile'], '' );
+		} else {
+			foreach ( $tops as $device => $id ) {
+				self::preload_image( $id, $media[ $device ] );
+			}
+		}
+
+		$backgrounds = array();
+		foreach ( $heroes as $device => $hero ) {
+			if ( 'bg' === ( $hero['kind'] ?? '' ) ) {
+				$backgrounds[ $device ] = $hero;
+			}
+		}
+		if ( 2 === count( $backgrounds ) && $backgrounds['mobile']['url'] === $backgrounds['desktop']['url'] ) {
+			$media       = array( 'mobile' => '' );
+			$backgrounds = array( 'mobile' => $backgrounds['mobile'] );
+		}
+		foreach ( $backgrounds as $device => $hero ) {
+			// A background is fetched by the exact URL in the stylesheet.
+			printf(
+				'<link rel="preload" as="image" href="%s" fetchpriority="high"%s>%s',
+				esc_url( $hero['url'] ),
+				'' !== ( $media[ $device ] ?? '' ) ? ' media="' . esc_attr( $media[ $device ] ) . '"' : '',
+				"\n"
+			);
 		}
 	}
 
@@ -368,8 +444,13 @@ final class Viewport {
 		if ( null !== $heroes ) {
 			self::$measured = true;
 			foreach ( array( 'mobile', 'desktop' ) as $device ) {
-				if ( isset( $heroes[ $device ] ) && 'img' === $heroes[ $device ]['kind'] && $heroes[ $device ]['id'] ) {
-					self::$lcp = (int) $heroes[ $device ]['id'];
+				$hero = $heroes[ $device ] ?? array();
+				$id   = (int) ( $hero['top']['id'] ?? 0 );
+				if ( ! $id && 'img' === ( $hero['kind'] ?? '' ) ) {
+					$id = (int) ( $hero['id'] ?? 0 );
+				}
+				if ( $id ) {
+					self::$lcp = $id;
 					break;
 				}
 			}
