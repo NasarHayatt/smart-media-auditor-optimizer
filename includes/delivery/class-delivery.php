@@ -209,8 +209,8 @@ final class Delivery {
 		if ( get_transient( 'smao_webp_backfill' ) ) {
 			return;
 		}
-		set_transient( 'smao_webp_backfill', 1, 5 * MINUTE_IN_SECONDS );
-		$ids = self::pending( 40 );
+		set_transient( 'smao_webp_backfill', 1, MINUTE_IN_SECONDS );
+		$ids = self::pending( 500 );
 		if ( $ids ) {
 			try {
 				Plugin::enqueue( 'webp', $ids );

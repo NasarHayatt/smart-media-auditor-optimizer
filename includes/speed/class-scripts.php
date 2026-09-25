@@ -93,7 +93,7 @@ final class Scripts {
 		if ( $settings['defer_js'] ) {
 			add_filter( 'script_loader_tag', array( self::class, 'defer' ), 20, 3 );
 		}
-		if ( $settings['delay_js'] ) {
+		if ( $settings['delay_js'] || $settings['delay_all'] ) {
 			add_filter( 'script_loader_tag', array( self::class, 'delay_tag' ), 21, 3 );
 			add_action( 'wp_head', array( self::class, 'runtime' ), 1 );
 			add_filter( 'wp_resource_hints', array( self::class, 'drop_preconnect' ), 20, 2 );
@@ -188,10 +188,11 @@ final class Scripts {
 				$body       = $match[2];
 
 				// Leave structured data and templates alone.
-				if ( preg_match( '#type=["\'](application/ld\+json|text/template|text/html|application/json)#i', $attributes ) ) {
+				if ( preg_match( '#type=["\'](application/ld\+json|text/template|text/html|application/json|module|importmap|speculationrules)#i', $attributes ) ) {
 					return $match[0];
 				}
-				if ( ! self::inline_is_third_party( $attributes . ' ' . $body ) ) {
+				$all = Settings::get()['delay_all'];
+				if ( $all ? self::keep_running( $attributes, $body ) : ! self::inline_is_third_party( $attributes . ' ' . $body ) ) {
 					return $match[0];
 				}
 				$attributes = preg_replace( '/\stype=(["\'])[^"\']*\1/i', '', $attributes );
@@ -207,6 +208,32 @@ final class Scripts {
 	 * @param string $text Attributes plus body.
 	 * @return bool
 	 */
+	/**
+	 * Scripts that still run immediately when every other script waits.
+	 *
+	 * The delay runtime itself, jQuery (inline code everywhere calls it), and
+	 * tiny scripts that size or label the page before it is drawn, such as
+	 * a slider reserving its height, which would otherwise make it jump.
+	 *
+	 * @param string $attributes Tag attributes.
+	 * @param string $body       Inline code.
+	 * @return bool
+	 */
+	private static function keep_running( string $attributes, string $body ): bool {
+		if ( str_contains( $attributes, 'smao-delay' ) ) {
+			return true;
+		}
+		if ( preg_match( '#\ssrc\s*=\s*["\'][^"\']*/jquery(?:-migrate)?(?:\.min)?\.js#i', $attributes ) ) {
+			return true;
+		}
+		foreach ( array( 'setREVStartSize', 'document.documentElement.className', 'document.documentElement.classList', 'no-js' ) as $needle ) {
+			if ( str_contains( $body, $needle ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private static function inline_is_third_party( string $text ): bool {
 		foreach ( self::THIRD_PARTY as $needle ) {
 			if ( str_contains( $text, $needle ) ) {
@@ -234,6 +261,9 @@ final class Scripts {
 			return false;
 		}
 		$settings = Settings::get();
+		if ( $settings['delay_all'] ) {
+			return true; // Everything that is not protected waits.
+		}
 
 		foreach ( self::THIRD_PARTY as $needle ) {
 			if ( str_contains( $src, $needle ) ) {

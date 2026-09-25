@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.3.6\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.3.7\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
@@ -77,6 +77,9 @@ msgid ".smao-panel"
 msgstr ""
 
 msgid ".smao-tile"
+msgstr ""
+
+msgid "/[:.]/"
 msgstr ""
 
 msgid "/[\\r\\n]+/"
@@ -202,6 +205,9 @@ msgstr ""
 msgid "Anything you remove can be restored later."
 msgstr ""
 
+msgid "Applied the best result. Your stored pages were cleared so visitors get it now."
+msgstr ""
+
 msgid "Applies the right expiry to images, CSS, JavaScript and fonts."
 msgstr ""
 
@@ -209,6 +215,9 @@ msgid "Apply"
 msgstr ""
 
 msgid "Apply processing options"
+msgstr ""
+
+msgid "Asking Google to test your home page. This takes a few minutes."
 msgstr ""
 
 msgid "Atomic restore failed; backup retained."
@@ -245,6 +254,9 @@ msgid "Backup verification failed; originals retained."
 msgstr ""
 
 msgid "Before you remove anything"
+msgstr ""
+
+msgid "Blocking time"
 msgstr ""
 
 msgid "Broken"
@@ -293,6 +305,9 @@ msgid "Check and save folder"
 msgstr ""
 
 msgid "Check my media"
+msgstr ""
+
+msgid "Check with Google PageSpeed"
 msgstr ""
 
 msgid "Checking"
@@ -409,6 +424,9 @@ msgstr ""
 msgid "Could not save the measurements."
 msgstr ""
 
+msgid "Could not save the result."
+msgstr ""
+
 msgid "Could not verify updated image metadata; restoring originals."
 msgstr ""
 
@@ -464,6 +482,9 @@ msgid "Every image on your site is being used somewhere. There is nothing to cle
 msgstr ""
 
 msgid "Every minute (media jobs)"
+msgstr ""
+
+msgid "Every script except jQuery waits until the visitor scrolls, taps or moves the mouse, or a few seconds pass, so the page is drawn first. Sliders, forms and other interactive parts start a moment later. The Google check above tests this for you."
 msgstr ""
 
 msgid "Everything you have removed can still be put back."
@@ -526,7 +547,13 @@ msgstr ""
 msgid "Finish the scan first. Unused results stay provisional until every source has been checked."
 msgstr ""
 
+msgid "For comparison: all speed features off"
+msgstr ""
+
 msgid "Forbidden."
+msgstr ""
+
+msgid "Free from Google Cloud: enable the PageSpeed Insights API and create an API key. Paste it here and click Save at the bottom of the page."
 msgstr ""
 
 msgid "Front page"
@@ -550,7 +577,25 @@ msgstr ""
 msgid "Getting started"
 msgstr ""
 
+msgid "Google API key"
+msgstr ""
+
+msgid "Google could not test your page:"
+msgstr ""
+
+msgid "Google did not return a result."
+msgstr ""
+
+msgid "Google score"
+msgstr ""
+
+msgid "Google tests finished:"
+msgstr ""
+
 msgid "Help my pages load faster"
+msgstr ""
+
+msgid "Hold back all scripts until the page has appeared"
 msgstr ""
 
 msgid "Hold back third-party scripts until someone interacts"
@@ -646,6 +691,9 @@ msgstr ""
 msgid "Last checked"
 msgstr ""
 
+msgid "Last checked %s ago."
+msgstr ""
+
 msgid "Last cleared"
 msgstr ""
 
@@ -653,6 +701,9 @@ msgid "Last measured %s ago. Measure again after a theme or layout change."
 msgstr ""
 
 msgid "Latest checkpoint"
+msgstr ""
+
+msgid "Layout shift"
 msgstr ""
 
 msgid "Less to download before the page is usable"
@@ -689,6 +740,9 @@ msgid "Lossy mode only. This changes the stored pixels."
 msgstr ""
 
 msgid "Lossy quality"
+msgstr ""
+
+msgid "Main content shown"
 msgstr ""
 
 msgid "Make images smaller"
@@ -874,6 +928,9 @@ msgstr ""
 msgid "Off"
 msgstr ""
 
+msgid "Often the biggest gain on script-heavy pages"
+msgstr ""
+
 msgid "Often the single biggest saving on an image-heavy page"
 msgstr ""
 
@@ -974,6 +1031,9 @@ msgid "Pages stored"
 msgstr ""
 
 msgid "Part of your site could not be read, so these results are not complete enough to act on. Running it again usually sorts it out."
+msgstr ""
+
+msgid "Paste your Google API key into the box above and click Save first."
 msgstr ""
 
 msgid "Pause"
@@ -1132,7 +1192,13 @@ msgstr ""
 msgid "Rules will be added to your .htaccess file when this is saved."
 msgstr ""
 
+msgid "Run Google check"
+msgstr ""
+
 msgid "Run held-back scripts anyway after (seconds)"
+msgstr ""
+
+msgid "Runs Google's own PageSpeed test on your home page with your current settings, and again with each setting that can go either way, then keeps whichever Google scores highest. It takes a few minutes, and visitors are not affected while it runs."
 msgstr ""
 
 msgid "Safe to leave on"
@@ -1327,6 +1393,12 @@ msgstr ""
 msgid "Summary of your media"
 msgstr ""
 
+msgid "Switch off:"
+msgstr ""
+
+msgid "Switch on:"
+msgstr ""
+
 msgid "Symlinked media is protected."
 msgstr ""
 
@@ -1337,6 +1409,9 @@ msgid "System status"
 msgstr ""
 
 msgid "Tells browsers to keep images, stylesheets, scripts and fonts rather than downloading them again on every visit. Addresses change when a file changes, so visitors always get the current version."
+msgstr ""
+
+msgid "Tested"
 msgstr ""
 
 msgid "Text appears immediately instead of after the font"
@@ -1633,6 +1708,15 @@ msgstr ""
 msgid "You do not have permission to remove one of the selected files."
 msgstr ""
 
+msgid "Your current settings"
+msgstr ""
+
+msgid "Your current settings scored best, so nothing was changed."
+msgstr ""
+
+msgid "Your current settings scored best. Nothing was changed."
+msgstr ""
+
 msgid "Your media is tidy"
 msgstr ""
 
@@ -1684,6 +1768,9 @@ msgstr ""
 msgid "and"
 msgstr ""
 
+msgid "applied, Google scored it higher by"
+msgstr ""
+
 msgid "assets"
 msgstr ""
 
@@ -1706,6 +1793,9 @@ msgid "could not be"
 msgstr ""
 
 msgid "digest?"
+msgstr ""
+
+msgid "div"
 msgstr ""
 
 msgid "evidence?id="
@@ -1780,10 +1870,16 @@ msgstr ""
 msgid "permanently deleted"
 msgstr ""
 
+msgid "points."
+msgstr ""
+
 msgid "possible"
 msgstr ""
 
 msgid "processed"
+msgstr ""
+
+msgid "psi"
 msgstr ""
 
 msgid "removed"
@@ -1822,6 +1918,12 @@ msgstr ""
 msgid "smao-model"
 msgstr ""
 
+msgid "smao-psi"
+msgstr ""
+
+msgid "smao_forget_missing"
+msgstr ""
+
 msgid "smao_warm_lock"
 msgstr ""
 
@@ -1843,10 +1945,16 @@ msgstr ""
 msgid "style"
 msgstr ""
 
+msgid "td"
+msgstr ""
+
 msgid "token"
 msgstr ""
 
 msgid "tone"
+msgstr ""
+
+msgid "tr"
 msgstr ""
 
 msgid "unused candidates"

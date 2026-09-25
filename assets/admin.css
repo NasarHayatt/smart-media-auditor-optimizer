@@ -1311,3 +1311,17 @@
 		max-width: none;
 	}
 }
+
+.smao-psi-table {
+	margin-top: 12px;
+}
+
+.smao-psi-table tr.is-best td {
+	font-weight: 600;
+	background: var(--smao-accent-soft);
+}
+
+#smao-google .smao-field input {
+	width: 100%;
+	max-width: 420px;
+}

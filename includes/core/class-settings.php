@@ -49,6 +49,7 @@ final class Settings {
 		'rightsize',
 		'defer_js',
 		'delay_js',
+		'delay_all',
 		'async_css',
 		'optimize_fonts',
 		'page_cache',
@@ -97,6 +98,8 @@ final class Settings {
 			'lcp_preload'       => true,
 			'lazy_correct'      => true,
 			'delivery'          => true,
+			'delay_all'         => false,
+			'psi_key'           => '',
 			'rightsize'         => true,
 			'defer_js'          => true,
 			'delay_js'          => true,
@@ -142,7 +145,60 @@ final class Settings {
 	 * @return array
 	 */
 	public static function get(): array {
-		return array_merge( self::defaults(), (array) get_option( 'smao_settings', array() ) );
+		return array_merge( self::defaults(), (array) get_option( 'smao_settings', array() ), self::test() );
+	}
+
+	/**
+	 * Settings a page test may switch for one request.
+	 */
+	public const TESTABLE = array(
+		'speed_enabled',
+		'dimensions',
+		'lcp_preload',
+		'lazy_correct',
+		'delivery',
+		'rightsize',
+		'defer_js',
+		'delay_js',
+		'delay_all',
+		'async_css',
+		'optimize_fonts',
+	);
+
+	/**
+	 * One-request overrides from ?smao-test=flag.on,flag.off.
+	 *
+	 * This is how a setting is measured before it is kept: PageSpeed is run
+	 * on the same page with and without it. Only speed switches can change,
+	 * only for that one response, never in the admin, and the page cache
+	 * never stores or serves such a request because its query is unknown.
+	 * "off" switches every speed feature off, to measure the site without
+	 * the plugin.
+	 *
+	 * @return array<string,bool>
+	 */
+	public static function test(): array {
+		static $test = null;
+		if ( null !== $test ) {
+			return $test;
+		}
+		$test = array();
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only, public, and limited to speed switches.
+		if ( ! isset( $_GET['smao-test'] ) || ( function_exists( 'is_admin' ) && is_admin() ) ) {
+			return $test;
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Parsed against an allowlist below.
+		$raw = strtolower( substr( (string) wp_unslash( $_GET['smao-test'] ), 0, 300 ) );
+		if ( 'off' === $raw ) {
+			return $test = array_fill_keys( self::TESTABLE, false );
+		}
+		foreach ( explode( ',', $raw ) as $pair ) {
+			$parts = preg_split( '/[:.]/', trim( $pair ), 2 );
+			if ( 2 === count( $parts ) && in_array( $parts[0], self::TESTABLE, true ) && in_array( $parts[1], array( 'on', 'off' ), true ) ) {
+				$test[ $parts[0] ] = 'on' === $parts[1];
+			}
+		}
+		return $test;
 	}
 
 	/**
@@ -215,6 +271,9 @@ final class Settings {
 			if ( array_key_exists( $key, $input ) ) {
 				$out[ $key ] = sanitize_textarea_field( substr( (string) $input[ $key ], 0, 8000 ) );
 			}
+		}
+		if ( array_key_exists( 'psi_key', $input ) ) {
+			$out['psi_key'] = (string) preg_replace( '/[^A-Za-z0-9_\-]/', '', substr( (string) $input['psi_key'], 0, 100 ) );
 		}
 		if ( array_key_exists( 'exclusions', $input ) ) {
 			$out['exclusions'] = sanitize_textarea_field( substr( (string) $input['exclusions'], 0, 12000 ) );

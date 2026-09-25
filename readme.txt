@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.3.6
+Stable tag: 2.3.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,21 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.3.7 =
+* New: Check with Google PageSpeed. With a free Google API key, the plugin
+  runs Google's own test on your home page with your current settings and with
+  each setting that can go either way, and keeps whichever Google scores
+  highest. The last result is shown on the Speed screen.
+* New: "Hold back all scripts until the page has appeared", under Worth
+  testing first, for script-heavy pages. The Google check tests it for you.
+* New: pages can be loaded once with speed settings switched, by adding
+  ?smao-test=setting.on or setting.off to the address. Only speed settings can
+  change, only for that one page view, and such pages are never cached.
+* Fixed: "Measure again" failed with "another media operation is running"
+  while WebP copies were being made.
+* WebP copies for the whole library are queued at once.
+* Images deleted before 2.3.6 are now removed from the results as well.
 
 = 2.3.6 =
 * Fixed: on measured pages the main image was lazy loaded and lost its high
@@ -290,6 +305,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.3.7 =
+Adds the Google PageSpeed check and fixes page measurement while WebP copies
+are being made.
 
 = 2.3.6 =
 Fixes the main image loading last on measured pages, adds automatic WebP

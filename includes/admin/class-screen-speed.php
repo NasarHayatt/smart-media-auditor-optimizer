@@ -25,9 +25,10 @@ final class Screen_Speed {
 		self::right_size();
 		?>
 		<form class="smao-settings" data-settings="speed">
+			<?php self::google_panel( $settings ); ?>
 			<?php self::cache_panel(); ?>
 
-			<input type="hidden" name="_flags" value="speed_enabled,dimensions,lcp_preload,lazy_correct,delivery,rightsize,defer_js,delay_js,async_css,optimize_fonts,page_cache,browser_cache,cache_gzip,cache_warm,separate_mobile">
+			<input type="hidden" name="_flags" value="speed_enabled,dimensions,lcp_preload,lazy_correct,delivery,rightsize,defer_js,delay_js,delay_all,async_css,optimize_fonts,page_cache,browser_cache,cache_gzip,cache_warm,separate_mobile">
 
 			<section class="smao-panel smao-master-panel">
 				<label class="smao-switch">
@@ -171,6 +172,13 @@ final class Screen_Speed {
 				</div>
 				<?php
 				self::switch_row(
+					'delay_all',
+					$settings['delay_all'],
+					__( 'Hold back all scripts until the page has appeared', 'smart-media-auditor-optimizer' ),
+					__( 'Every script except jQuery waits until the visitor scrolls, taps or moves the mouse, or a few seconds pass, so the page is drawn first. Sliders, forms and other interactive parts start a moment later. The Google check above tests this for you.', 'smart-media-auditor-optimizer' ),
+					__( 'Often the biggest gain on script-heavy pages', 'smart-media-auditor-optimizer' )
+				);
+				self::switch_row(
 					'async_css',
 					$settings['async_css'],
 					__( 'Stop stylesheets blocking the first paint', 'smart-media-auditor-optimizer' ),
@@ -220,6 +228,67 @@ final class Screen_Speed {
 				<button class="smao-cta"><?php esc_html_e( 'Save', 'smart-media-auditor-optimizer' ); ?></button>
 			</div>
 		</form>
+		<?php
+	}
+
+	/**
+	 * Google PageSpeed check: key, run button and the last result.
+	 *
+	 * @param array $settings Current settings.
+	 * @return void
+	 */
+	private static function google_panel( array $settings ): void {
+		$last = get_option( 'smao_psi_last', array() );
+		?>
+		<section class="smao-panel" id="smao-google">
+			<div class="smao-panel-head">
+				<h2><?php esc_html_e( 'Check with Google PageSpeed', 'smart-media-auditor-optimizer' ); ?></h2>
+			</div>
+			<p><?php esc_html_e( 'Runs Google\'s own PageSpeed test on your home page with your current settings, and again with each setting that can go either way, then keeps whichever Google scores highest. It takes a few minutes, and visitors are not affected while it runs.', 'smart-media-auditor-optimizer' ); ?></p>
+			<label class="smao-field">
+				<span><?php esc_html_e( 'Google API key', 'smart-media-auditor-optimizer' ); ?></span>
+				<input type="password" name="psi_key" value="<?php echo esc_attr( (string) $settings['psi_key'] ); ?>" autocomplete="off" spellcheck="false">
+			</label>
+			<p class="smao-muted"><?php esc_html_e( 'Free from Google Cloud: enable the PageSpeed Insights API and create an API key. Paste it here and click Save at the bottom of the page.', 'smart-media-auditor-optimizer' ); ?></p>
+			<div class="smao-measure-actions">
+				<button type="button" class="smao-cta" id="smao-psi-run"><?php esc_html_e( 'Run Google check', 'smart-media-auditor-optimizer' ); ?></button>
+				<span id="smao-psi-status" class="smao-muted" role="status"></span>
+			</div>
+			<div class="smao-track"><div class="smao-track-fill" id="smao-psi-bar"></div></div>
+			<table class="widefat striped smao-psi-table" id="smao-psi-results" <?php echo empty( $last['rows'] ) ? 'hidden' : ''; ?>>
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Tested', 'smart-media-auditor-optimizer' ); ?></th>
+						<th><?php esc_html_e( 'Google score', 'smart-media-auditor-optimizer' ); ?></th>
+						<th><?php esc_html_e( 'Main content shown', 'smart-media-auditor-optimizer' ); ?></th>
+						<th><?php esc_html_e( 'Blocking time', 'smart-media-auditor-optimizer' ); ?></th>
+						<th><?php esc_html_e( 'Layout shift', 'smart-media-auditor-optimizer' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( (array) ( $last['rows'] ?? array() ) as $row ) : ?>
+						<tr class="<?php echo ! empty( $row['best'] ) ? 'is-best' : ''; ?>">
+							<td><?php echo esc_html( $row['label'] ); ?></td>
+							<td><?php echo null === $row['score'] ? '-' : esc_html( (string) $row['score'] ); ?></td>
+							<td><?php echo null === $row['lcp'] ? '-' : esc_html( number_format_i18n( $row['lcp'] / 1000, 1 ) . ' s' ); ?></td>
+							<td>-</td>
+							<td>-</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<?php if ( ! empty( $last['time'] ) ) : ?>
+				<p class="smao-muted">
+					<?php
+					printf(
+						/* translators: %s: how long ago. */
+						esc_html__( 'Last checked %s ago.', 'smart-media-auditor-optimizer' ),
+						esc_html( human_time_diff( (int) $last['time'] ) )
+					);
+					?>
+				</p>
+			<?php endif; ?>
+		</section>
 		<?php
 	}
 

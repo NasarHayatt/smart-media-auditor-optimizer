@@ -186,6 +186,7 @@ final class Plugin {
 		 * and next step update without a new scan.
 		 */
 		add_action( 'delete_attachment', array( self::class, 'forget_attachment' ) );
+		add_action( 'admin_init', array( self::class, 'forget_missing' ) );
 		Cache::boot();
 		Purge::boot();
 		Warm::boot();
@@ -338,6 +339,28 @@ final class Plugin {
 			return true;
 		}
 		return self::references_media( $value, $name );
+	}
+
+	/**
+	 * Drop results for images that no longer exist in WordPress.
+	 *
+	 * Catches deletions that happened while the plugin was inactive or on a
+	 * version without the delete hook, which otherwise stayed listed forever.
+	 *
+	 * @return void
+	 */
+	public static function forget_missing(): void {
+		global $wpdb;
+		if ( get_transient( 'smao_forget_missing' ) ) {
+			return;
+		}
+		set_transient( 'smao_forget_missing', 1, MINUTE_IN_SECONDS );
+		$table = Database::table( 'media' );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Fixed internal table names.
+		$gone = $wpdb->get_col( "SELECT m.attachment_id FROM $table m LEFT JOIN {$wpdb->posts} p ON p.ID = m.attachment_id WHERE p.ID IS NULL LIMIT 500" );
+		foreach ( (array) $gone as $id ) {
+			self::forget_attachment( (int) $id );
+		}
 	}
 
 	/**
@@ -506,7 +529,7 @@ final class Plugin {
 		if ( 'webp' === $job['action'] ) {
 			static $started = null;
 			$started = $started ?? microtime( true );
-			if ( microtime( true ) - $started < 12 ) {
+			if ( microtime( true ) - $started < 8 ) {
 				self::tick();
 			}
 		}

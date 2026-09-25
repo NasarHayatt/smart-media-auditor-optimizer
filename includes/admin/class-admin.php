@@ -99,6 +99,31 @@ final class Admin {
 		wp_enqueue_script( 'smao-admin', plugins_url( 'assets/admin.js', SMAO_FILE ), array( 'smao-model', 'wp-i18n' ), SMAO_VERSION, true );
 		wp_set_script_translations( 'smao-admin', 'smart-media-auditor-optimizer' );
 		if ( str_contains( $hook, 'smao-speed' ) ) {
+			$current = Settings::get();
+			wp_enqueue_script( 'smao-psi', plugins_url( 'assets/psi.js', SMAO_FILE ), array( 'smao-admin', 'wp-i18n' ), SMAO_VERSION, true );
+			wp_set_script_translations( 'smao-psi', 'smart-media-auditor-optimizer' );
+			wp_localize_script(
+				'smao-psi',
+				'smaoPsi',
+				array(
+					'home'       => home_url( '/' ),
+					'current'    => array_intersect_key( $current, array_flip( Settings::TESTABLE ) ),
+					'candidates' => array(
+						array(
+							'flag'  => 'delay_all',
+							'label' => __( 'Hold back all scripts until the page has appeared', 'smart-media-auditor-optimizer' ),
+						),
+						array(
+							'flag'  => 'defer_js',
+							'label' => __( 'Stop other scripts blocking the page', 'smart-media-auditor-optimizer' ),
+						),
+						array(
+							'flag'  => 'async_css',
+							'label' => __( 'Stop stylesheets blocking the first paint', 'smart-media-auditor-optimizer' ),
+						),
+					),
+				)
+			);
 			wp_register_script( 'smao-critical', plugins_url( 'assets/critical.js', SMAO_FILE ), array(), SMAO_VERSION, true );
 			wp_enqueue_script( 'smao-measure', plugins_url( 'assets/measure.js', SMAO_FILE ), array( 'smao-admin', 'smao-critical', 'wp-i18n' ), SMAO_VERSION, true );
 			wp_set_script_translations( 'smao-measure', 'smart-media-auditor-optimizer' );
@@ -156,6 +181,7 @@ final class Admin {
 			'storage'  => 'POST',
 			'measure'  => 'POST',
 			'critical' => 'POST',
+			'psi'      => 'POST',
 		);
 		foreach ( $routes as $route => $method ) {
 			register_rest_route(
@@ -202,29 +228,48 @@ final class Admin {
 				return rest_ensure_response( Live::evidence( absint( $request->get_param( 'id' ) ) ) );
 			}
 
+			if ( 'psi' === $route ) {
+				// The last Google check, for display after a reload.
+				$rows = array();
+				foreach ( array_slice( (array) ( $request->get_json_params()['results'] ?? array() ), 0, 12 ) as $row ) {
+					$rows[] = array(
+						'label' => sanitize_text_field( (string) ( $row['label'] ?? '' ) ),
+						'score' => isset( $row['score'] ) ? (int) $row['score'] : null,
+						'lcp'   => isset( $row['lcp'] ) ? (int) $row['lcp'] : null,
+						'best'  => ! empty( $row['best'] ),
+					);
+				}
+				update_option( 'smao_psi_last', array( 'time' => time(), 'rows' => $rows ), false );
+				return rest_ensure_response( array( 'saved' => count( $rows ) ) );
+			}
+			/*
+			 * Measurement writes only its own records, never media files, so it
+			 * does not wait for the media lock. Holding it back behind a WebP
+			 * job made "Measure again" fail with "another operation is running".
+			 */
+			if ( 'critical' === $route ) {
+				$payload = (array) $request->get_json_params();
+				return rest_ensure_response( Styles::store_page(
+					(string) ( $payload['url'] ?? '' ),
+					(string) ( $payload['css'] ?? '' ),
+					(array) ( $payload['handles'] ?? array() ),
+					isset( $payload['shift'] ) && is_numeric( $payload['shift'] ) ? (float) $payload['shift'] : -1.0,
+					(array) ( $payload['heroes'] ?? array() )
+				) );
+			}
+			if ( 'measure' === $route ) {
+				$payload = (array) $request->get_json_params();
+				return rest_ensure_response( array(
+					'stored' => Measure::store(
+						(string) ( $payload['url'] ?? '' ),
+						(int) ( $payload['viewport'] ?? 0 ),
+						(array) ( $payload['observations'] ?? array() )
+					),
+				) );
+			}
 			return rest_ensure_response(
 				Database::lock(
 					static function () use ( $request, $route ) {
-						if ( 'critical' === $route ) {
-							$payload = (array) $request->get_json_params();
-							return Styles::store_page(
-								(string) ( $payload['url'] ?? '' ),
-								(string) ( $payload['css'] ?? '' ),
-								(array) ( $payload['handles'] ?? array() ),
-								isset( $payload['shift'] ) && is_numeric( $payload['shift'] ) ? (float) $payload['shift'] : -1.0,
-								(array) ( $payload['heroes'] ?? array() )
-							);
-						}
-						if ( 'measure' === $route ) {
-							$payload = (array) $request->get_json_params();
-							return array(
-								'stored' => Measure::store(
-									(string) ( $payload['url'] ?? '' ),
-									(int) ( $payload['viewport'] ?? 0 ),
-									(array) ( $payload['observations'] ?? array() )
-								),
-							);
-						}
 						if ( 'storage' === $route ) {
 							Vault::configure( (string) $request->get_param( 'path' ) );
 							return self::status();
