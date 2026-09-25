@@ -81,3 +81,16 @@ test('background urls are read from computed styles, gradients and data uris ign
   assert.equal(critical.backgroundUrl('none'), '');
   assert.equal(critical.backgroundUrl('url("data:image/png;base64,AAA")'), '');
 });
+
+const prebuild = require('../../assets/prebuild.js');
+
+test('pre-built styles only apply while scripts wait, per width range', () => {
+  const css = prebuild.wrap(412, '#slider{height:275px!important}\n#slider *{visibility:hidden!important}');
+  assert.match(css, /^@media \(max-width: 600px\)\{/);
+  assert.match(css, /html:not\(\.smao-ran\) #slider\{height:275px!important\}/);
+  assert.match(css, /html:not\(\.smao-ran\) #slider \*\{visibility:hidden!important\}/);
+  assert.equal(prebuild.wrap(1350, ''), '');
+  assert.equal(prebuild.range(1920), '(min-width: 1601px)');
+  assert.equal(prebuild.screenFor(412), 823);
+  assert.deepEqual(prebuild.WIDTHS, [412, 768, 1350, 1920]);
+});

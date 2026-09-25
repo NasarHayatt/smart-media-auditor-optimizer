@@ -71,6 +71,18 @@
 		};
 	}
 
+	/**
+	 * What a setting changes in the page a visitor receives. Two settings
+	 * with the same fingerprint send the same page, so testing one against
+	 * the other only measures Google's run-to-run variation.
+	 */
+	async function fingerprint(test) {
+		var target = config.home + (config.home.indexOf('?') === -1 ? '?' : '&') + 'smao-test=' + encodeURIComponent(test) + '&smao-fp=' + Date.now();
+		var html = await fetch(target, { credentials: 'omit', cache: 'no-store' }).then(function (r) { return r.text(); });
+		var count = function (needle) { return html.split(needle).length - 1; };
+		return [count('smao/delayed'), count('<script defer'), count("media='print' onload"), count('id="smao-critical"'), count('id="smao-prebuild"'), count('rel="preload"'), count('smao-delay')].join(',');
+	}
+
 	function average(runs, field) {
 		return runs.reduce(function (sum, run) { return sum + run[field]; }, 0) / runs.length;
 	}
@@ -86,7 +98,7 @@
 			[row.label, row.runs.length ? String(Math.round(average(row.runs, 'score'))) : '-',
 				row.runs.length ? seconds(average(row.runs, 'lcp')) : '-',
 				row.runs.length ? Math.round(average(row.runs, 'tbt')) + ' ms' : '-',
-				row.broken ? t('Rejected: changed the page layout') : (row.runs.length ? average(row.runs, 'cls').toFixed(3) : '-')
+				row.noop ? t('No effect on this page') : (row.broken ? t('Rejected: changed the page layout') : (row.runs.length ? average(row.runs, 'cls').toFixed(3) : '-'))
 			].forEach(function (text) {
 				var td = document.createElement('td');
 				td.textContent = text;
@@ -118,9 +130,20 @@
 		}
 		button.disabled = true;
 		var list = variants();
+		say(t('Checking what each setting changes on your home page.'));
+		try {
+			var base = await fingerprint('current');
+			for (var v = 0; v < list.length; v++) {
+				if (list[v].key === 'current' || list[v].reference) { continue; }
+				list[v].noop = (await fingerprint(list[v].test)) === base;
+			}
+		} catch (error) {
+			/* Without fingerprints every setting is tested, as before. */
+		}
 		var jobs = [];
 		list.forEach(function (row) {
 			row.runs = [];
+			if (row.noop) { return; }
 			var count = row.reference ? 1 : RUNS;
 			for (var i = 0; i < count; i++) { jobs.push(row); }
 		});
@@ -166,8 +189,13 @@
 				row.broken = true;
 				return;
 			}
+			if (row.noop) { return; }
 			var score = average(row.runs, 'score');
-			if (score >= baseline + MARGIN && (!best || score > average(best.runs, 'score'))) { best = row; }
+			// Every run must beat every run of the current settings, and by
+			// enough on average, or the difference is only Google's variation.
+			var worstRun = Math.min.apply(null, row.runs.map(function (r) { return r.score; }));
+			var bestCurrent = Math.max.apply(null, current.runs.map(function (r) { return r.score; }));
+			if (score >= baseline + MARGIN && worstRun > bestCurrent && (!best || score > average(best.runs, 'score'))) { best = row; }
 		});
 
 		try {
@@ -190,7 +218,8 @@
 				toast(t('Your current settings scored best. Nothing was changed.'), false);
 			}
 			await post('psi', { results: list.map(function (row) {
-				return { label: row.broken ? row.label + ' (' + t('rejected: changed the page layout') + ')' : row.label, score: row.runs.length ? Math.round(average(row.runs, 'score')) : null, lcp: row.runs.length ? Math.round(average(row.runs, 'lcp')) : null, best: !!row.best };
+				var note = row.noop ? t('no effect on this page') : (row.broken ? t('rejected: changed the page layout') : '');
+				return { label: note ? row.label + ' (' + note + ')' : row.label, score: row.runs.length ? Math.round(average(row.runs, 'score')) : null, lcp: row.runs.length ? Math.round(average(row.runs, 'lcp')) : null, best: !!row.best };
 			}) });
 		} catch (error) {
 			toast(error.message, true);

@@ -70,12 +70,78 @@
 		});
 	}
 
-	async function sendCritical(url, capture, shift, heroes) {
+	/** Load a page into a frame of a given size and wait for it to settle. */
+	function loadInto(target, url, width, height, settle) {
+		return new Promise(function (resolve) {
+			target.style.width = width + 'px';
+			target.style.height = height + 'px';
+			var finished = false;
+			var finish = function () { if (!finished) { finished = true; resolve(target); } };
+			target.onload = function () { window.setTimeout(finish, settle); };
+			window.setTimeout(finish, 15000);
+			target.src = url;
+		});
+	}
+
+	/**
+	 * Pre-build one page: at each width, load it finished and with scripts
+	 * held, write styles that make the held page look finished, and check
+	 * the result. Returns what the server needs to decide.
+	 */
+	async function prebuildPage(url, label) {
+		var tool = window.SMAOPrebuild;
+		if (!tool) { return null; }
+		var done = document.createElement('iframe');
+		var held = document.createElement('iframe');
+		[done, held].forEach(function (f) {
+			f.setAttribute('aria-hidden', 'true');
+			f.setAttribute('tabindex', '-1');
+			f.style.cssText = 'position:absolute;left:-12000px;top:0;border:0;visibility:hidden;';
+			document.body.appendChild(f);
+		});
+		var sep = url.indexOf('?') === -1 ? '?' : '&';
+		var css = [];
+		var worst = { shift: 0, height: 0, missing: 0, off: 0 };
+		try {
+			for (var i = 0; i < tool.WIDTHS.length; i++) {
+				var width = tool.WIDTHS[i];
+				say(label + ': ' + t('checking how it looks before scripts run') + ' ' + width + 'px');
+				var screen = tool.screenFor(width);
+				await Promise.all([
+					loadInto(done, url + sep + 'smao-measure=1', width, screen, 2000),
+					loadInto(held, url + sep + 'smao-measure=1&smao-held=1', width, screen, 1200)
+				]);
+				var dd = done.contentDocument;
+				var hd = held.contentDocument;
+				if (!dd || !hd || !dd.body || !hd.body) { return null; }
+				var view = done.contentWindow;
+				var perf = function (address) {
+					var entry = view.performance.getEntriesByName(address)[0];
+					return !entry || !entry.responseStatus || entry.responseStatus < 400;
+				};
+				var result = tool.prepare(hd, tool.boxes(dd), tool.pageHeight(dd), width, perf, view);
+				css.push(tool.wrap(width, result.css));
+				worst.shift = Math.max(worst.shift, result.shift);
+				worst.height = Math.max(worst.height, result.height);
+				worst.missing = Math.max(worst.missing, result.missing);
+				worst.off = Math.max(worst.off, result.off);
+			}
+		} catch (error) {
+			return null;
+		} finally {
+			done.parentNode.removeChild(done);
+			held.parentNode.removeChild(held);
+		}
+		worst.css = css.filter(Boolean).join(String.fromCharCode(10));
+		return worst;
+	}
+
+	async function sendCritical(url, capture, shift, heroes, prebuild) {
 		var response = await fetch(smaoConfig.root + 'critical', {
 			method: 'POST',
 			credentials: 'same-origin',
 			headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': smaoConfig.nonce },
-			body: JSON.stringify({ url: url, css: capture.css, handles: capture.handles, shift: shift, heroes: heroes })
+			body: JSON.stringify({ url: url, css: capture.css, handles: capture.handles, shift: shift, heroes: heroes, prebuild: prebuild })
 		});
 		var data = await response.json();
 		return response.ok ? data : null;
@@ -159,7 +225,8 @@
 					}
 					progress(++done, total);
 				}
-				await sendCritical(targets[i].url, capture || { css: '', handles: [] }, capture ? shift : -1, heroes);
+				var prebuild = await prebuildPage(targets[i].url, targets[i].label);
+				await sendCritical(targets[i].url, capture || { css: '', handles: [] }, capture ? shift : -1, heroes, prebuild);
 			}
 			say(t('Done. Reloading the results.'));
 			window.location.reload();

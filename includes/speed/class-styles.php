@@ -524,10 +524,11 @@ final class Styles {
 	 * @param array  $handles Stylesheets the capture covers.
 	 * @param float  $shift   Worst layout movement seen while verifying.
 	 * @param array  $heroes  Largest image in the first screen, per width.
+	 * @param array  $prebuild Pre-built layout for when scripts wait, and its check.
 	 * @return array{status:string,bytes:int}
 	 * @throws \RuntimeException When the URL is not on this site.
 	 */
-	public static function store_page( string $url, string $css, array $handles, float $shift, array $heroes = array() ): array {
+	public static function store_page( string $url, string $css, array $handles, float $shift, array $heroes = array(), array $prebuild = array() ): array {
 		$url = esc_url_raw( $url );
 		if ( ! $url || ! str_starts_with( $url, home_url() ) ) {
 			throw new \RuntimeException( __( 'Only pages on this site can be measured.', 'smart-media-auditor-optimizer' ) );
@@ -559,7 +560,8 @@ final class Styles {
 			'bytes'   => strlen( $css ),
 			'css'     => 'ready' === $status ? $css : '',
 			'handles' => 'ready' === $status ? array_values( array_unique( $clean ) ) : array(),
-			'heroes'  => Viewport::clean_heroes( $heroes ),
+			'heroes'   => Viewport::clean_heroes( $heroes ),
+			'prebuild' => $prebuild ? Prebuild::clean( $prebuild ) : null,
 			'at'      => time(),
 		);
 		if ( count( $pages ) > self::MAX_PAGES ) {

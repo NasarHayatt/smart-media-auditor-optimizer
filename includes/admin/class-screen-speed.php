@@ -175,9 +175,26 @@ final class Screen_Speed {
 					'delay_all',
 					$settings['delay_all'],
 					__( 'Hold back all scripts until the page has appeared', 'smart-media-auditor-optimizer' ),
-					__( 'Every script except jQuery waits until the visitor scrolls, taps or moves the mouse. Until then, anything a script builds, such as carousels and sliders, is not built yet, so on many themes the page looks broken at first. Only switch this on if your pages look right before you interact with them. The Google check never switches it on when it changes how the page looks.', 'smart-media-auditor-optimizer' ),
+					__( 'Every script except jQuery waits until the visitor scrolls, taps or moves the mouse, so the page appears much sooner. The page measurement above rebuilds what scripts would build, such as carousels and sliders, and checks that the waiting page looks the same as the finished one. Only pages that pass hold their scripts; every other page is left exactly as it is.', 'smart-media-auditor-optimizer' ),
 					__( 'Often the biggest gain on script-heavy pages', 'smart-media-auditor-optimizer' )
 				);
+				?>
+				<?php $held = Prebuild::coverage(); ?>
+				<p class="smao-muted">
+					<?php if ( ! $held['total'] ) : ?>
+						<?php esc_html_e( 'Measure your pages above first. Until then no page holds its scripts.', 'smart-media-auditor-optimizer' ); ?>
+					<?php else : ?>
+						<?php
+						printf(
+							/* translators: 1: pages that passed, 2: pages measured. */
+							esc_html__( 'Looks the same with scripts waiting on %1$d of %2$d measured pages. Only those pages hold their scripts.', 'smart-media-auditor-optimizer' ),
+							(int) $held['ready'],
+							(int) $held['total']
+						);
+						?>
+					<?php endif; ?>
+				</p>
+				<?php
 				self::switch_row(
 					'async_css',
 					$settings['async_css'],

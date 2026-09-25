@@ -93,7 +93,7 @@ final class Scripts {
 		if ( $settings['defer_js'] ) {
 			add_filter( 'script_loader_tag', array( self::class, 'defer' ), 20, 3 );
 		}
-		if ( $settings['delay_js'] || $settings['delay_all'] ) {
+		if ( $settings['delay_js'] || self::holding_all() ) {
 			add_filter( 'script_loader_tag', array( self::class, 'delay_tag' ), 21, 3 );
 			add_action( 'wp_head', array( self::class, 'runtime' ), 1 );
 			add_filter( 'wp_resource_hints', array( self::class, 'drop_preconnect' ), 20, 2 );
@@ -107,6 +107,9 @@ final class Scripts {
 	 * @return bool
 	 */
 	private static function skip(): bool {
+		if ( Prebuild::held() ) {
+			return false; // Measuring the held page: show exactly what visitors get.
+		}
 		if ( ! Settings::get()['speed_enabled'] ) {
 			return true;
 		}
@@ -232,7 +235,7 @@ final class Scripts {
 				if ( preg_match( '#type=["\'](application/ld\+json|text/template|text/html|application/json|module|importmap|speculationrules)#i', $attributes ) ) {
 					return $match[0];
 				}
-				$all = Settings::get()['delay_all'];
+				$all = self::holding_all();
 				if ( $all ? self::keep_running( $attributes, $body ) : ! self::inline_is_third_party( $attributes . ' ' . $body ) ) {
 					return $match[0];
 				}
@@ -260,6 +263,22 @@ final class Scripts {
 	 * @param string $body       Inline code.
 	 * @return bool
 	 */
+	/**
+	 * Whether every script on this page waits for the visitor.
+	 *
+	 * Only on pages whose pre-built layout was verified to look like the
+	 * finished page, so holding scripts never leaves a page looking broken.
+	 *
+	 * @return bool
+	 */
+	public static function holding_all(): bool {
+		static $answer = null;
+		if ( null === $answer ) {
+			$answer = ( Prebuild::held() || Settings::get()['delay_all'] ) && Prebuild::allows_holding();
+		}
+		return $answer;
+	}
+
 	private static function keep_running( string $attributes, string $body ): bool {
 		if ( str_contains( $attributes, 'smao-delay' ) ) {
 			return true;
@@ -302,7 +321,7 @@ final class Scripts {
 			return false;
 		}
 		$settings = Settings::get();
-		if ( $settings['delay_all'] ) {
+		if ( self::holding_all() ) {
 			return true; // Everything that is not protected waits.
 		}
 
@@ -425,6 +444,9 @@ final class Scripts {
 	 * @return void
 	 */
 	public static function runtime(): void {
+		if ( Prebuild::held() ) {
+			return; // The measurement wants the page as it is before anyone interacts.
+		}
 		/*
 		 * The page's own load events fired long before a delayed script runs.
 		 * Listeners the delayed scripts register for them are collected and
@@ -439,14 +461,14 @@ final class Scripts {
 		?>
 (function(){var t=<?php echo (int) ( $timeout * 1000 ); ?>,f=!1,E=["keydown","mousemove","touchstart","touchmove","wheel","scroll","pointerdown","mousedown"];
 function run(){if(f)return;f=!0;E.forEach(function(e){window.removeEventListener(e,run,{passive:!0})});
-var s=document.querySelectorAll('script[type="smao/delayed"]'),i=0;if(!s.length)return;
+var s=document.querySelectorAll('script[type="smao/delayed"]'),i=0;if(!s.length){document.documentElement.classList.add("smao-ran");return}
 var L=[],W=["DOMContentLoaded","load","readystatechange"],D=document.addEventListener,X=window.addEventListener;
 function trap(t,o){return function(e,h,p){if(W.indexOf(e)>-1){L.push([t,e,h]);return}return o.call(this,e,h,p)}}
 document.addEventListener=trap(document,D);window.addEventListener=trap(window,X);
 function next(){if(i>=s.length){done();return}var o=s[i++],n=document.createElement("script");
 for(var a=0;a<o.attributes.length;a++){var at=o.attributes[a];if("type"===at.name)continue;n.setAttribute(at.name,at.value)}
 if(o.src){n.onload=n.onerror=next;n.src=o.src;o.parentNode.replaceChild(n,o)}else{n.text=o.text;o.parentNode.replaceChild(n,o);next()}}
-function done(){document.addEventListener=D;window.addEventListener=X;
+function done(){document.addEventListener=D;window.addEventListener=X;document.documentElement.classList.add("smao-ran");
 ["readystatechange","DOMContentLoaded","load"].forEach(function(e){L.forEach(function(l){if(l[1]!==e)return;try{var v=new Event(e);typeof l[2]==="function"?l[2].call(l[0],v):l[2]&&l[2].handleEvent&&l[2].handleEvent(v)}catch(x){}})})}
 next()}
 E.forEach(function(e){window.addEventListener(e,run,{passive:!0})});

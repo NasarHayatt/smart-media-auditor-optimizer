@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.4.0
+Stable tag: 2.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,24 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.5.0 =
+* New: pages look finished while their scripts wait. "Hold back all scripts"
+  gives the fastest first paint, but anything a script builds, such as a
+  carousel or a slider, used to look broken until the visitor interacted. The
+  page measurement now loads each page finished and with scripts held, at
+  phone, tablet, laptop and desktop widths, and writes styles that rebuild what
+  the scripts would build: every text block, button, image and shape in its
+  finished place, and every such area at its finished size. It then lays the
+  held page out again and compares it with the finished page. Only pages where
+  nothing moves, nothing is missing and the page length is the same hold their
+  scripts; every other page runs its scripts normally. When the scripts start,
+  the styles switch off and the real carousel and slider take over. This works
+  from how the page looks, not from knowing any particular theme or plugin.
+* Fixed: the Google check could apply a setting that changed nothing, because
+  the difference was only Google's run-to-run variation. It now skips settings
+  that make no difference to the page, and only applies a setting when every
+  run beats every run of the current settings.
 
 = 2.4.0 =
 * Fixed: "Stop other scripts blocking the page" deferred WordPress scripts
@@ -338,6 +356,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.5.0 =
+Pages can now hold their scripts without looking broken. Run the page
+measurement under Speed again, then the Google check.
 
 = 2.4.0 =
 Fixes script errors caused by "Stop other scripts blocking the page" and stops

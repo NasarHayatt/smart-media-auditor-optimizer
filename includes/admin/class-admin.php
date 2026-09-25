@@ -125,7 +125,8 @@ final class Admin {
 				)
 			);
 			wp_register_script( 'smao-critical', plugins_url( 'assets/critical.js', SMAO_FILE ), array(), SMAO_VERSION, true );
-			wp_enqueue_script( 'smao-measure', plugins_url( 'assets/measure.js', SMAO_FILE ), array( 'smao-admin', 'smao-critical', 'wp-i18n' ), SMAO_VERSION, true );
+			wp_register_script( 'smao-prebuild', plugins_url( 'assets/prebuild.js', SMAO_FILE ), array( 'smao-critical' ), SMAO_VERSION, true );
+			wp_enqueue_script( 'smao-measure', plugins_url( 'assets/measure.js', SMAO_FILE ), array( 'smao-admin', 'smao-critical', 'smao-prebuild', 'wp-i18n' ), SMAO_VERSION, true );
 			wp_set_script_translations( 'smao-measure', 'smart-media-auditor-optimizer' );
 			wp_localize_script(
 				'smao-measure',
@@ -268,7 +269,8 @@ final class Admin {
 					(string) ( $payload['css'] ?? '' ),
 					(array) ( $payload['handles'] ?? array() ),
 					isset( $payload['shift'] ) && is_numeric( $payload['shift'] ) ? (float) $payload['shift'] : -1.0,
-					(array) ( $payload['heroes'] ?? array() )
+					(array) ( $payload['heroes'] ?? array() ),
+					is_array( $payload['prebuild'] ?? null ) ? $payload['prebuild'] : array()
 				) );
 			}
 			if ( 'measure' === $route ) {

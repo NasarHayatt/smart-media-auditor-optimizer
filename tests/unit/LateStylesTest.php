@@ -107,6 +107,7 @@ final class LateStylesTest extends TestCase {
 		$runtime = (string) strstr( $code, 'public static function runtime' );
 		$this->assertStringNotContainsString( 'dispatchEvent', $runtime );
 		$this->assertStringNotContainsString( 'trigger("ready")', $runtime );
-		$this->assertStringContainsString( 'if(!s.length)return;', $runtime, 'with nothing delayed, nothing runs' );
+		$this->assertStringContainsString( 'if(!s.length){document.documentElement.classList.add("smao-ran");return}', $runtime, 'with nothing delayed, nothing runs, and pre-built styles are released' );
+		$this->assertStringContainsString( 'classList.add("smao-ran")', substr( $runtime, (int) strpos( $runtime, 'function done()' ), 200 ), 'finishing releases the pre-built styles' );
 	}
 }

@@ -194,6 +194,7 @@ final class Plugin {
 		Viewport::boot();
 		Rightsize::boot();
 		Delivery::boot();
+		Prebuild::boot();
 		Styles::watch();
 		/*
 		 * These inspect the main query to decide whether to optimise, so they
@@ -202,29 +203,6 @@ final class Plugin {
 		 */
 		add_action( 'template_redirect', array( Scripts::class, 'boot' ), 0 );
 		add_action( 'template_redirect', array( Styles::class, 'boot' ), 0 );
-		add_action(
-			'wp_enqueue_scripts',
-			static function (): void {
-				if ( self::allowed() && is_admin_bar_showing() ) {
-					wp_enqueue_script( 'smao-inspector', plugins_url( 'assets/inspect-images.js', SMAO_FILE ), array( 'wp-i18n' ), SMAO_VERSION, true );
-					wp_set_script_translations( 'smao-inspector', 'smart-media-auditor-optimizer' );
-				}
-			}
-		);
-		add_action(
-			'admin_bar_menu',
-			static function ( $bar ): void {
-				if ( self::allowed() && ! is_admin() ) {
-					$bar->add_node(
-						array(
-							'id'    => 'smao-inspect',
-							'title' => __( 'Inspect image sizing', 'smart-media-auditor-optimizer' ),
-							'href'  => '#smao-image-report',
-						)
-					); }
-			},
-			100
-		);
 		Admin::boot();
 	}
 
