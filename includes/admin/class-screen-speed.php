@@ -57,7 +57,7 @@ final class Screen_Speed {
 					'dimensions',
 					$settings['dimensions'],
 					__( 'Stop pages jumping about', 'smart-media-auditor-optimizer' ),
-					__( 'When an image does not say how big it is, the browser guesses, then shoves everything down the page once the real image arrives. We fill in the missing sizes.', 'smart-media-auditor-optimizer' ),
+					__( 'When an image does not say how big it is, the browser guesses, then shoves everything down the page once the real image arrives. We fill in the missing sizes, and move styles your page builder prints late up to the top, so headers and menus are styled from the first moment.', 'smart-media-auditor-optimizer' ),
 					__( 'Nothing moves under the reader as they start reading', 'smart-media-auditor-optimizer' )
 				);
 				self::switch_row(

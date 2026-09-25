@@ -43,7 +43,13 @@ final class Cache {
 
 		self::serve_fallback();
 
-		add_action( 'template_redirect', array( self::class, 'start' ), 1 );
+		/*
+		 * Start first so this buffer is the outermost one. Buffers started
+		 * later, such as the script and stylesheet rewrites, then finish
+		 * before this one stores the page, and the cached copy carries their
+		 * changes. Started second, the cache stored the page unrewritten.
+		 */
+		add_action( 'template_redirect', array( self::class, 'start' ), -1000 );
 	}
 
 	/**

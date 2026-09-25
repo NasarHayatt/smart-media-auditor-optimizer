@@ -1,8 +1,11 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.3.2\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.3.3\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+msgid " "
+msgstr ""
 
 msgid "#smao-cleanup-title"
 msgstr ""
@@ -1576,7 +1579,7 @@ msgstr ""
 msgid "When (UTC)"
 msgstr ""
 
-msgid "When an image does not say how big it is, the browser guesses, then shoves everything down the page once the real image arrives. We fill in the missing sizes."
+msgid "When an image does not say how big it is, the browser guesses, then shoves everything down the page once the real image arrives. We fill in the missing sizes, and move styles your page builder prints late up to the top, so headers and menus are styled from the first moment."
 msgstr ""
 
 msgid "Where did you look?"

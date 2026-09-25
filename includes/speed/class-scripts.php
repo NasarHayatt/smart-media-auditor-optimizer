@@ -354,6 +354,13 @@ final class Scripts {
 	 * @return void
 	 */
 	public static function runtime(): void {
+		/*
+		 * The page's own load events fired long before a delayed script runs.
+		 * Listeners the delayed scripts register for them are collected and
+		 * called once they have all run. Nothing else hears the events again:
+		 * replaying them to the whole page re-ran every theme and builder
+		 * handler and moved the layout.
+		 */
 		$timeout = (int) Settings::get()['delay_timeout'];
 		?>
 <script id="smao-delay"><?php
@@ -361,12 +368,15 @@ final class Scripts {
 		?>
 (function(){var t=<?php echo (int) ( $timeout * 1000 ); ?>,f=!1,E=["keydown","mousemove","touchstart","touchmove","wheel","scroll","pointerdown","mousedown"];
 function run(){if(f)return;f=!0;E.forEach(function(e){window.removeEventListener(e,run,{passive:!0})});
-var s=document.querySelectorAll('script[type="smao/delayed"]'),i=0;
+var s=document.querySelectorAll('script[type="smao/delayed"]'),i=0;if(!s.length)return;
+var L=[],W=["DOMContentLoaded","load","readystatechange"],D=document.addEventListener,X=window.addEventListener;
+function trap(t,o){return function(e,h,p){if(W.indexOf(e)>-1){L.push([t,e,h]);return}return o.call(this,e,h,p)}}
+document.addEventListener=trap(document,D);window.addEventListener=trap(window,X);
 function next(){if(i>=s.length){done();return}var o=s[i++],n=document.createElement("script");
 for(var a=0;a<o.attributes.length;a++){var at=o.attributes[a];if("type"===at.name)continue;n.setAttribute(at.name,at.value)}
 if(o.src){n.onload=n.onerror=next;n.src=o.src;o.parentNode.replaceChild(n,o)}else{n.text=o.text;o.parentNode.replaceChild(n,o);next()}}
-function done(){try{document.dispatchEvent(new Event("DOMContentLoaded",{bubbles:!0}));window.dispatchEvent(new Event("DOMContentLoaded",{bubbles:!0}));window.dispatchEvent(new Event("load"));
-if(window.jQuery){try{jQuery(document).trigger("ready")}catch(e){}}}catch(e){}}
+function done(){document.addEventListener=D;window.addEventListener=X;
+["readystatechange","DOMContentLoaded","load"].forEach(function(e){L.forEach(function(l){if(l[1]!==e)return;try{var v=new Event(e);typeof l[2]==="function"?l[2].call(l[0],v):l[2]&&l[2].handleEvent&&l[2].handleEvent(v)}catch(x){}})})}
 next()}
 E.forEach(function(e){window.addEventListener(e,run,{passive:!0})});
 if(t>0){window.setTimeout(run,t)}

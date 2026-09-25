@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.3.2
+Stable tag: 2.3.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,21 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.3.3 =
+* Fixed: pages built with Elementor and similar builders jumped on phones.
+  Builders print the styles for headers and widgets at the end of the page,
+  so the header was drawn unstyled and then snapped into shape. Those styles
+  now move to the head, in their original order, so the finished page looks
+  exactly the same but is styled from the first frame. On the site where this
+  was found, layout shift fell from 0.97 to 0.003. Part of "Stop pages jumping
+  about".
+* Fixed: when held-back scripts loaded, the page's own "loaded" events were
+  replayed to every script on the page, re-running theme and builder code and
+  moving the layout. Only the held-back scripts now receive them, and nothing
+  is replayed when no script was held back.
+* Fixed: cached pages were stored before the script and stylesheet changes
+  were applied, so visitors served from the cache missed them.
 
 = 2.3.2 =
 * Fixed: on some sites, "Stop stylesheets blocking the first paint" made the
@@ -237,6 +252,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.3.3 =
+Fixes pages built with Elementor and similar builders jumping on phones, and
+cached pages missing the speed changes. Clear the page cache after updating.
 
 = 2.3.2 =
 Fixes layout jumping and a lower PageSpeed score on some sites with background

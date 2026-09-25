@@ -138,6 +138,10 @@ final class Styles {
 			return;
 		}
 
+		if ( $settings['dimensions'] && ! Environment::conflict( 'assets' ) ) {
+			ob_start( array( self::class, 'hoist' ) );
+		}
+
 		if ( $settings['optimize_fonts'] ) {
 			add_filter( 'style_loader_tag', array( self::class, 'font_display' ), 20, 4 );
 			add_action( 'wp_head', array( self::class, 'preconnect_fonts' ), 2 );
@@ -149,6 +153,63 @@ final class Styles {
 			// wp_print_styles, so we can tell whether inlining is worth it.
 			add_action( 'wp_head', array( self::class, 'critical' ), 7 );
 		}
+	}
+
+	/**
+	 * Move stylesheets printed in the body up into the head.
+	 *
+	 * Page builders print the styles for headers, footers and widgets after
+	 * the page has started, often at the very end. On a slow connection the
+	 * browser draws the header long before it reaches them, so the header
+	 * appears unstyled and then snaps into shape, moving everything below.
+	 *
+	 * Every stylesheet and style block from the first one in the body up to
+	 * the last stylesheet link moves, in its original order, to the end of the
+	 * head. They still come after everything that was in the head and before
+	 * everything left in the body, so the cascade, and the finished look, are
+	 * exactly the same. Only the moment the styles apply changes.
+	 *
+	 * @param string $html Finished page.
+	 * @return string
+	 */
+	public static function hoist( string $html ): string {
+		$head_end = stripos( $html, '</head>' );
+		if ( false === $head_end || preg_match( '/<html[^>]*\s(?:amp|\x{26A1})[\s>=]/iu', substr( $html, 0, 2000 ) ) ) {
+			return $html;
+		}
+		$body = substr( $html, $head_end );
+
+		// Blank out regions whose contents must never move, keeping offsets.
+		$masked = (string) preg_replace_callback(
+			'#<(svg|noscript|template|script|textarea|iframe|xmp)\b.*?</\1\s*>|<!--.*?-->#is',
+			static function ( array $match ): string {
+				return str_repeat( ' ', strlen( $match[0] ) );
+			},
+			$body
+		);
+		if ( ! preg_match_all( '#<link\b[^>]*\brel\s*=\s*["\']?stylesheet\b[^>]*>|<style\b[^>]*>.*?</style\s*>#is', $masked, $found, PREG_OFFSET_CAPTURE ) ) {
+			return $html;
+		}
+
+		$last = -1;
+		foreach ( $found[0] as $index => $match ) {
+			if ( 0 === stripos( $match[0], '<link' ) ) {
+				$last = $index;
+			}
+		}
+		if ( $last < 0 ) {
+			return $html; // Only style blocks: nothing waits on the network.
+		}
+
+		$moved = array();
+		for ( $index = $last; $index >= 0; $index-- ) {
+			list( $text, $offset ) = $found[0][ $index ];
+			$moved[] = substr( $body, $offset, strlen( $text ) );
+			$body    = substr_replace( $body, '', $offset, strlen( $text ) );
+		}
+		$moved = array_reverse( $moved );
+
+		return substr( $html, 0, $head_end ) . implode( "\n", $moved ) . "\n" . $body;
 	}
 
 	/**
