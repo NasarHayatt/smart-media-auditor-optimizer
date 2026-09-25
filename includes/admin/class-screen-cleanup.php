@@ -247,7 +247,7 @@ final class Screen_Cleanup {
 		global $wpdb;
 		$table = Database::table( 'vault' );
 		$rows  = $wpdb->get_results(
-			$wpdb->prepare( "SELECT attachment_id,created FROM %i WHERE operation='quarantine' ORDER BY created DESC LIMIT %d", $table, 12 ),
+			$wpdb->prepare( "SELECT attachment_id,created FROM %i WHERE operation='quarantine' ORDER BY created DESC LIMIT %d", $table, 500 ),
 			ARRAY_A
 		);
 		Database::check( $rows );
@@ -261,6 +261,17 @@ final class Screen_Cleanup {
 				<h2><?php esc_html_e( 'Recently removed', 'smart-media-auditor-optimizer' ); ?></h2>
 			</div>
 			<p><?php esc_html_e( 'These are safe. Put any of them back whenever you like.', 'smart-media-auditor-optimizer' ); ?></p>
+			<p>
+				<button type="button" class="button-link" id="smao-select-removed">
+					<?php
+					printf(
+						/* translators: %s: number of removed images. */
+						esc_html__( 'Select all %s', 'smart-media-auditor-optimizer' ),
+						esc_html( number_format_i18n( count( $rows ) ) )
+					);
+					?>
+				</button>
+			</p>
 			<ul class="smao-removed">
 				<?php foreach ( $rows as $row ) : ?>
 					<?php

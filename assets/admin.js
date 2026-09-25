@@ -409,6 +409,15 @@
 		});
 	});
 
+	var selectRemoved = $('#smao-select-removed');
+	if (selectRemoved) {
+		selectRemoved.addEventListener('click', function () {
+			var scope = scopeOf(selectRemoved);
+			$$('.smao-id', scope).forEach(function (box) { box.checked = true; });
+			refreshSelection(scope);
+		});
+	}
+
 	var forgetButton = $('#smao-forget');
 	if (forgetButton) {
 		forgetButton.addEventListener('click', function () {

@@ -155,6 +155,12 @@ final class Database {
 		 * image-heavy Elementor site it lowered the PageSpeed score from 65 to
 		 * 47, so it is switched off once on update and left to the owner.
 		 */
+		// Scans before 2.3.9 never read plugin-owned tables such as Slider
+		// Revolution's, so their "unused" results cannot be trusted. Mark them
+		// out of date; nothing can be removed until a new scan has run.
+		if ( version_compare( (string) get_option( 'smao_schema', '0' ), '2.3.9', '<' ) && get_option( 'smao_schema' ) ) {
+			update_option( 'smao_epoch', wp_generate_uuid4(), false );
+		}
 		// 2.3.6 makes WebP copies and serves them automatically.
 		if ( version_compare( (string) get_option( 'smao_schema', '0' ), '2.3.6', '<' ) ) {
 			$stored = get_option( 'smao_settings' );

@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.3.8
+Stable tag: 2.3.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,16 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.3.9 =
+* Fixed: images used only by plugins that keep their own database tables,
+  such as Slider Revolution, were reported as not used anywhere and could be
+  removed. The scan and the check made right before any removal now read
+  every table in the site's database that can hold text, apart from logs and
+  sessions. Existing scan results are marked out of date on update, so
+  nothing can be removed until a new scan has run.
+* "Recently removed" under Clean up lists every removed image, with Select all,
+  so everything can be put back in one go.
 
 = 2.3.8 =
 * Fixed: "Save" and "Clear everything" failed with "another media operation
@@ -314,6 +324,11 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.3.9 =
+Important if you use Slider Revolution or another plugin with its own tables:
+images used only there could be reported as unused. Update, put back anything
+recently removed, and run a new scan before removing more.
 
 = 2.3.8 =
 Fixes Save and Clear everything being blocked while WebP copies are made.

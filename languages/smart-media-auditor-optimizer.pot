@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.3.8\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.3.9\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
@@ -1273,6 +1273,9 @@ msgstr ""
 msgid "Select %s"
 msgstr ""
 
+msgid "Select all %s"
+msgstr ""
+
 msgid "Select all rows on this page"
 msgstr ""
 
@@ -1922,6 +1925,9 @@ msgid "smao-psi"
 msgstr ""
 
 msgid "smao_forget_missing"
+msgstr ""
+
+msgid "smao_plugin_sources"
 msgstr ""
 
 msgid "smao_warm_lock"

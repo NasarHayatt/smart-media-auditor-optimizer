@@ -106,6 +106,16 @@ final class Scanner {
 
 	public static function sources(): array {
 		global $wpdb;
+		return array_merge( self::core_sources(), self::plugin_sources() );
+	}
+
+	/**
+	 * Tables WordPress itself defines.
+	 *
+	 * @return array
+	 */
+	private static function core_sources(): array {
+		global $wpdb;
 		return array(
 			array( $wpdb->posts, 'ID', 'ID', 'post_content', '1=1', 'posts' ),
 			array( $wpdb->posts, 'ID', 'ID', 'post_excerpt', '1=1', 'excerpts' ),
@@ -121,6 +131,96 @@ final class Scanner {
 	}
 
 	/**
+	 * Every other table in this site's database that can hold text.
+	 *
+	 * Sliders, form builders, page builders and galleries keep their content
+	 * in tables of their own. Slider Revolution, for one, stores each slide's
+	 * image address in wp_revslider_slides, which a scan of WordPress's own
+	 * tables never sees; images used only there were reported unused. Every
+	 * text column of every table that uses this site's prefix is scanned, and
+	 * the check that runs right before a removal reads the same list.
+	 *
+	 * Only tables with a single whole-number key can be read in resumable
+	 * batches. The rest are listed by skipped_tables() so a scan can say so.
+	 *
+	 * @return array
+	 */
+	public static function plugin_sources(): array {
+		static $sources = null;
+		if ( null !== $sources ) {
+			return $sources;
+		}
+		$cached = get_transient( 'smao_plugin_sources' );
+		if ( is_array( $cached ) && isset( $cached['sources'], $cached['skipped'] ) ) {
+			$sources = $cached['sources'];
+			return $sources;
+		}
+		global $wpdb;
+		$core = array( 'posts', 'postmeta', 'options', 'terms', 'termmeta', 'term_taxonomy', 'term_relationships', 'users', 'usermeta', 'comments', 'commentmeta', 'links', 'blogs', 'blogmeta', 'site', 'sitemeta', 'signups', 'registration_log', 'blog_versions' );
+		// Pure logs, sessions and queues: never content, often huge.
+		$noise   = '/(?:^|_)(?:logs?|sessions?|actionscheduler_(?:logs|claims|groups)|wflogs|wfhits|wfblocks.*|wfcrawlers|wflivetraffic.*|wfstatus|redirection_(?:404|logs)|statistics.*|stats.*|visits?|visitors?|hits|cache|queue|lock)$/i';
+		$sources = array();
+		$skipped = array();
+		$like    = $wpdb->esc_like( $wpdb->prefix ) . '%';
+		foreach ( (array) $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $like ) ) as $table ) {
+			$short = substr( (string) $table, strlen( $wpdb->prefix ) );
+			if ( in_array( $short, $core, true ) || str_starts_with( $short, 'smao_' ) || preg_match( $noise, $short ) || preg_match( '/^\d+_/', $short ) ) {
+				continue;
+			}
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names come from SHOW TABLES for this prefix.
+			$columns = $wpdb->get_results( "SHOW COLUMNS FROM `$table`", ARRAY_A );
+			if ( ! $columns ) {
+				continue;
+			}
+			$keys = array_values( array_filter( $columns, static fn( $c ) => 'PRI' === $c['Key'] ) );
+			$text = array_values(
+				array_filter(
+					$columns,
+					static function ( $c ): bool {
+						$type = strtolower( (string) $c['Type'] );
+						if ( preg_match( '/text|json|blob/', $type ) && ! str_contains( $type, 'tinyblob' ) ) {
+							return true;
+						}
+						return (bool) ( preg_match( '/varchar\((\d+)\)/', $type, $m ) && (int) $m[1] >= 100 );
+					}
+				)
+			);
+			if ( ! $text ) {
+				continue;
+			}
+			if ( 1 !== count( $keys ) || ! preg_match( '/int/i', (string) $keys[0]['Type'] ) ) {
+				$skipped[] = $short;
+				continue;
+			}
+			$key = '`' . str_replace( '`', '', $keys[0]['Field'] ) . '`';
+			foreach ( $text as $column ) {
+				$field     = str_replace( '`', '', $column['Field'] );
+				$sources[] = array( '`' . $table . '`', $key, $key, '`' . $field . '`', '1=1', 'table:' . $short, "'" . esc_sql( $short . '.' . $field ) . "'" );
+			}
+		}
+		set_transient(
+			'smao_plugin_sources',
+			array(
+				'sources' => $sources,
+				'skipped' => $skipped,
+			),
+			HOUR_IN_SECONDS
+		);
+		return $sources;
+	}
+
+	/**
+	 * Tables that could hold content but cannot be scanned in batches.
+	 *
+	 * @return array<int,string>
+	 */
+	public static function skipped_tables(): array {
+		self::plugin_sources();
+		$cached = get_transient( 'smao_plugin_sources' );
+		return is_array( $cached ) ? (array) ( $cached['skipped'] ?? array() ) : array();
+	}
+
+	/**
 	 * Start a read-only scan with a fresh reference index.
 	 *
 	 * @return array
@@ -132,6 +232,7 @@ final class Scanner {
 		if ( in_array( $old['state'], array( 'running', 'paused' ), true ) ) {
 			throw new \RuntimeException( __( 'Finish or cancel the existing scan first.', 'smart-media-auditor-optimizer' ) );
 		}
+		delete_transient( 'smao_plugin_sources' );
 		foreach ( array( 'tokens', 'evidence' ) as $name ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Identifiers/predicates come from fixed internal maps; all request values use prepared placeholders.
 			Database::check( $wpdb->query( 'DELETE FROM ' . Database::table( $name ) ) );
