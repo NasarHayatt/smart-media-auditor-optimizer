@@ -142,11 +142,34 @@ final class Screen_Speed {
 					__( 'Stops the browser hiding your text until a font arrives, and opens the connection to the font host early.', 'smart-media-auditor-optimizer' ),
 					__( 'Text appears immediately instead of after the font', 'smart-media-auditor-optimizer' )
 				);
+				?>
+			</section>
+
+			<section class="smao-panel">
+				<div class="smao-panel-head">
+					<h2><?php esc_html_e( 'Worth testing first', 'smart-media-auditor-optimizer' ); ?></h2>
+				</div>
+				<?php
+				self::switch_row(
+					'delivery',
+					$settings['delivery'],
+					__( 'Send smaller image files where possible', 'smart-media-auditor-optimizer' ),
+					__( 'Modern browsers understand newer image formats that are often much smaller. Older ones still get the original, so nobody sees a broken image. This does change the code your pages send, so have a look at a few pages afterwards.', 'smart-media-auditor-optimizer' ),
+					__( 'Often the single biggest saving, once smaller copies exist', 'smart-media-auditor-optimizer' )
+				);
+				?>
+				<?php if ( ! self::has_alternates() ) : ?>
+					<p class="smao-inline-note">
+						<?php esc_html_e( 'You do not have any smaller copies yet, so this will not do anything on its own.', 'smart-media-auditor-optimizer' ); ?>
+						<a class="smao-link" href="<?php echo esc_url( admin_url( 'admin.php?page=smao-advanced&tab=images' ) ); ?>"><?php esc_html_e( 'Make smaller copies', 'smart-media-auditor-optimizer' ); ?></a>
+					</p>
+				<?php endif; ?>
+				<?php
 				self::switch_row(
 					'async_css',
 					$settings['async_css'],
 					__( 'Stop stylesheets blocking the first paint', 'smart-media-auditor-optimizer' ),
-					__( 'Only takes effect on pages that have been measured above. Each page is then checked: it is laid out again using only the styles for the top of the page, and if anything moves, that page keeps its stylesheets exactly as they are. A page whose scripts hold up the first paint more than its stylesheets also keeps them, because loading them in the background would not help it.', 'smart-media-auditor-optimizer' ),
+					__( 'Inlines the styles for the top of each measured page and loads the rest in the background. Pages are only changed if their layout stays exactly the same. On image-heavy pages it can make the PageSpeed score worse, because images then start downloading sooner and compete with everything else, so run PageSpeed before and after switching it on and keep whichever scores higher.', 'smart-media-auditor-optimizer' ),
 					__( 'The page paints before the full stylesheet arrives', 'smart-media-auditor-optimizer' )
 				);
 				?>
@@ -185,27 +208,6 @@ final class Screen_Speed {
 						}
 						?>
 					</ul>
-				<?php endif; ?>
-			</section>
-
-			<section class="smao-panel">
-				<div class="smao-panel-head">
-					<h2><?php esc_html_e( 'Worth testing first', 'smart-media-auditor-optimizer' ); ?></h2>
-				</div>
-				<?php
-				self::switch_row(
-					'delivery',
-					$settings['delivery'],
-					__( 'Send smaller image files where possible', 'smart-media-auditor-optimizer' ),
-					__( 'Modern browsers understand newer image formats that are often much smaller. Older ones still get the original, so nobody sees a broken image. This does change the code your pages send, so have a look at a few pages afterwards.', 'smart-media-auditor-optimizer' ),
-					__( 'Often the single biggest saving, once smaller copies exist', 'smart-media-auditor-optimizer' )
-				);
-				?>
-				<?php if ( ! self::has_alternates() ) : ?>
-					<p class="smao-inline-note">
-						<?php esc_html_e( 'You do not have any smaller copies yet, so this will not do anything on its own.', 'smart-media-auditor-optimizer' ); ?>
-						<a class="smao-link" href="<?php echo esc_url( admin_url( 'admin.php?page=smao-advanced&tab=images' ) ); ?>"><?php esc_html_e( 'Make smaller copies', 'smart-media-auditor-optimizer' ); ?></a>
-					</p>
 				<?php endif; ?>
 			</section>
 

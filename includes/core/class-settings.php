@@ -104,7 +104,7 @@ final class Settings {
 			'delay_extra'       => '',
 			'script_exclusions' => '',
 			'style_exclusions'  => '',
-			'async_css'         => true,
+			'async_css'         => false,
 			'optimize_fonts'    => true,
 			'page_cache'        => true,
 			'browser_cache'     => true,

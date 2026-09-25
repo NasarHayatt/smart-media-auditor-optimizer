@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.3.4\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.3.5\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
@@ -598,6 +598,9 @@ msgstr ""
 msgid "Incomplete backup and original changed. Manual recovery required."
 msgstr ""
 
+msgid "Inlines the styles for the top of each measured page and loads the rest in the background. Pages are only changed if their layout stays exactly the same. On image-heavy pages it can make the PageSpeed score worse, because images then start downloading sooner and compete with everything else, so run PageSpeed before and after switching it on and keep whichever scores higher."
+msgstr ""
+
 msgid "Inspect image sizing"
 msgstr ""
 
@@ -905,9 +908,6 @@ msgid "Only retained quarantine groups can be permanently deleted after the rete
 msgstr ""
 
 msgid "Only reviewed unused candidates can be quarantined."
-msgstr ""
-
-msgid "Only takes effect on pages that have been measured above. Each page is then checked: it is laid out again using only the styles for the top of the page, and if anything moves, that page keeps its stylesheets exactly as they are. A page whose scripts hold up the first paint more than its stylesheets also keeps them, because loading them in the background would not help it."
 msgstr ""
 
 msgid "Optimization"

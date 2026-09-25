@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.3.4
+Stable tag: 2.3.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,14 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.3.5 =
+* Changed: "Stop stylesheets blocking the first paint" is now off by default
+  and listed under "Worth testing first". On an image-heavy Elementor site it
+  lowered the mobile PageSpeed score from 65 to 47: with no stylesheet holding
+  the page back, large images started downloading at once and delayed the
+  largest paint. Updating switches it off; switch it back on only if
+  PageSpeed scores higher with it.
 
 = 2.3.4 =
 * Fixed: the check behind "Stop stylesheets blocking the first paint" failed
@@ -263,6 +271,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.3.5 =
+Switches off background stylesheet loading, which lowered PageSpeed scores on
+image-heavy pages. Clear the page cache after updating.
 
 = 2.3.4 =
 Lets stylesheets load in the background on themes it previously refused, and

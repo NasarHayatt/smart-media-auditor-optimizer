@@ -150,6 +150,18 @@ final class Database {
 		}
 		// Captures from before 2.3.2 were never verified and must not be used.
 		delete_option( 'smao_critical_css' );
+		/*
+		 * Background stylesheet loading was on by default until 2.3.5. On an
+		 * image-heavy Elementor site it lowered the PageSpeed score from 65 to
+		 * 47, so it is switched off once on update and left to the owner.
+		 */
+		if ( version_compare( (string) get_option( 'smao_schema', '0' ), '2.3.5', '<' ) ) {
+			$stored = get_option( 'smao_settings' );
+			if ( is_array( $stored ) && ! empty( $stored['async_css'] ) ) {
+				$stored['async_css'] = false;
+				update_option( 'smao_settings', $stored );
+			}
+		}
 		update_option( 'smao_schema', SMAO_VERSION, false );
 	}
 
