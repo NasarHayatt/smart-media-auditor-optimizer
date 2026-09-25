@@ -40,6 +40,13 @@ final class Viewport {
 	private static int $seen = 0;
 
 	/**
+	 * Whether this page's main image comes from a measurement, not a guess.
+	 *
+	 * @var bool
+	 */
+	private static bool $measured = false;
+
+	/**
 	 * Register front-end hooks when speed corrections are enabled.
 	 *
 	 * @return void
@@ -134,7 +141,7 @@ final class Viewport {
 		 * and would otherwise be given high priority.
 		 */
 		$is_lcp = ( $id && $id === $lcp )
-			|| ( ! $lcp && 1 === self::$seen && self::plausible_lcp( $html ) );
+			|| ( ! $lcp && ! self::$measured && 1 === self::$seen && self::plausible_lcp( $html ) );
 		if ( $is_lcp ) {
 			$html = preg_replace( '/\sloading\s*=\s*(["\'])lazy\1/i', '', $html );
 			if ( ! preg_match( '/\sfetchpriority\s*=/i', $html ) ) {
@@ -184,7 +191,90 @@ final class Viewport {
 	 * @return void
 	 */
 	public static function preload(): void {
-		$id = self::lcp_id();
+		$heroes = Styles::heroes();
+		if ( null !== $heroes ) {
+			self::preload_measured( $heroes );
+			return;
+		}
+		self::preload_image( self::lcp_id(), '' );
+	}
+
+	/**
+	 * Keep only well-formed measured main images, by device.
+	 *
+	 * Phones are judged at 390px and desktops at 1280px, the widths closest to
+	 * the ones PageSpeed tests. An image covering under a sixth of the first
+	 * screen is not what the browser reports as the largest paint, so it is
+	 * not preloaded.
+	 *
+	 * @param array $raw Heroes keyed by measured width.
+	 * @return array
+	 */
+	public static function clean_heroes( array $raw ): array {
+		$clean = array();
+		foreach ( array( 'mobile' => 390, 'desktop' => 1280 ) as $device => $width ) {
+			$hero = $raw[ $width ] ?? $raw[ (string) $width ] ?? null;
+			if ( ! is_array( $hero ) ) {
+				continue;
+			}
+			$url   = esc_url_raw( (string) ( $hero['url'] ?? '' ), array( 'http', 'https' ) );
+			$kind  = in_array( $hero['kind'] ?? '', array( 'img', 'bg' ), true ) ? $hero['kind'] : '';
+			$share = (float) ( $hero['share'] ?? 0 );
+			if ( '' === $url || '' === $kind || $share < 0.16 ) {
+				continue;
+			}
+			$clean[ $device ] = array(
+				'kind'  => $kind,
+				'url'   => $url,
+				'id'    => absint( $hero['id'] ?? 0 ),
+				'share' => min( 1.0, $share ),
+			);
+		}
+		return $clean;
+	}
+
+	/**
+	 * Preload the images the measurement found, one per device.
+	 *
+	 * @param array $heroes Clean heroes keyed mobile and desktop.
+	 * @return void
+	 */
+	private static function preload_measured( array $heroes ): void {
+		$media = array(
+			'mobile'  => '(max-width: 480px)',
+			'desktop' => '(min-width: 481px)',
+		);
+		$mobile  = $heroes['mobile'] ?? null;
+		$desktop = $heroes['desktop'] ?? null;
+		if ( $mobile && $desktop && $mobile['url'] === $desktop['url'] && $mobile['kind'] === $desktop['kind'] ) {
+			$media = array( 'mobile' => '' );
+			$heroes = array( 'mobile' => $mobile );
+		}
+		foreach ( $heroes as $device => $hero ) {
+			if ( 'img' === $hero['kind'] && $hero['id'] ) {
+				self::preload_image( (int) $hero['id'], $media[ $device ] ?? '' );
+				continue;
+			}
+			if ( 'bg' === $hero['kind'] ) {
+				// A background is fetched by the exact URL in the stylesheet.
+				printf(
+					'<link rel="preload" as="image" href="%s" fetchpriority="high"%s>%s',
+					esc_url( $hero['url'] ),
+					'' !== ( $media[ $device ] ?? '' ) ? ' media="' . esc_attr( $media[ $device ] ) . '"' : '',
+					"\n"
+				);
+			}
+		}
+	}
+
+	/**
+	 * Preload one attachment, with its responsive candidates.
+	 *
+	 * @param int    $id    Attachment ID.
+	 * @param string $media Media query limiting the preload, or empty.
+	 * @return void
+	 */
+	private static function preload_image( int $id, string $media ): void {
 		if ( ! $id ) {
 			return;
 		}
@@ -217,12 +307,13 @@ final class Viewport {
 		}
 
 		printf(
-			'<link rel="preload" as="image" href="%s"%s%s fetchpriority="high">%s',
+			'<link rel="preload" as="image" href="%s"%s%s fetchpriority="high"%s>%s',
 			esc_url( $url ),
 			$srcset && $sizes
 				? ' imagesrcset="' . esc_attr( $srcset ) . '" imagesizes="' . esc_attr( $sizes ) . '"'
 				: '',
 			$type,
+			'' !== $media ? ' media="' . esc_attr( $media ) . '"' : '',
 			"\n"
 		);
 	}
@@ -273,6 +364,17 @@ final class Viewport {
 			return self::$lcp;
 		}
 		self::$lcp = 0;
+		$heroes    = Styles::heroes();
+		if ( null !== $heroes ) {
+			self::$measured = true;
+			foreach ( array( 'mobile', 'desktop' ) as $device ) {
+				if ( isset( $heroes[ $device ] ) && 'img' === $heroes[ $device ]['kind'] && $heroes[ $device ]['id'] ) {
+					self::$lcp = (int) $heroes[ $device ]['id'];
+					break;
+				}
+			}
+			return self::$lcp;
+		}
 		$override  = (int) Settings::get()['preload_id'];
 		if ( $override && is_front_page() ) {
 			self::$lcp = $override;
@@ -389,5 +491,6 @@ final class Viewport {
 		self::$lcp      = null;
 		self::$seen     = 0;
 		self::$resolved = array();
+		self::$measured = false;
 	}
 }

@@ -281,9 +281,21 @@
 		var after = [];
 		var probe = doc.createElement('style');
 		probe.textContent = css;
+		// Test the captured rules where visitors get them: printed before every
+		// stylesheet, so inline styles that follow a stylesheet still win.
+		// Appended at the end instead, they overrode the theme's inline rules
+		// and failed pages that were fine.
+		var first = null;
+		items.forEach(function (item) {
+			if (!first || (item.link.compareDocumentPosition(first) & 4)) { first = item.link; }
+		});
 		try {
 			items.forEach(function (item) { item.link.disabled = true; });
-			doc.head.appendChild(probe);
+			if (first && first.parentNode) {
+				first.parentNode.insertBefore(probe, first);
+			} else {
+				doc.head.appendChild(probe);
+			}
 			for (var i = 0; i < before.length; i++) {
 				var box = before[i].el.getBoundingClientRect();
 				after.push({ left: box.left, top: box.top, width: box.width, height: box.height });
@@ -298,8 +310,68 @@
 		return score(before, after, width, limit);
 	}
 
+	/** Height of the first screen that PageSpeed looks at, per width. */
+	function screen(width) {
+		return width <= 480 ? 823 : 940;
+	}
+
+	/** First real image URL in a computed background-image value. */
+	function backgroundUrl(value) {
+		var match = /url\(\s*(['"]?)([^'")]+)\1\s*\)/.exec(value || '');
+		return match && !/^data:/i.test(match[2]) ? match[2] : '';
+	}
+
+	/**
+	 * The largest image in the first screen: an img, or a CSS background.
+	 *
+	 * This is what the browser will report as the Largest Contentful Paint
+	 * when the page's biggest element is an image. Guessing from the post
+	 * (featured image, first image in the content) misses page-builder
+	 * sections, whose images are usually CSS backgrounds.
+	 */
+	function hero(doc, width) {
+		var height = screen(width);
+		var best = null;
+		var all = doc.body ? doc.body.getElementsByTagName('*') : [];
+		for (var i = 0; i < all.length; i++) {
+			var el = all[i];
+			if (SKIP_TAGS[el.tagName]) { continue; }
+			var box = el.getBoundingClientRect();
+			if (box.bottom <= 0 || box.top >= height || box.width < 2 || box.height < 2) { continue; }
+			var url = '';
+			var kind = '';
+			var id = 0;
+			if (el.tagName === 'IMG') {
+				// Sliders and lazy loaders stretch a tiny placeholder over the
+				// real image; the file itself gives it away.
+				if (el.naturalWidth <= 8 || el.naturalHeight <= 8) { continue; }
+				url = el.currentSrc || el.src || '';
+				kind = 'img';
+				var match = /wp-image-(\d+)/.exec(el.className || '');
+				id = match ? Number(match[1]) : Number(el.getAttribute('data-smao-id') || 0);
+			} else {
+				var style = el.ownerDocument.defaultView.getComputedStyle(el);
+				if (style.visibility === 'hidden' || Number(style.opacity) === 0) { continue; }
+				url = backgroundUrl(style.backgroundImage);
+				kind = 'bg';
+			}
+			if (!url || /^data:/i.test(url)) { continue; }
+			var visible = Math.max(0, Math.min(box.right, width) - Math.max(box.left, 0)) *
+				Math.max(0, Math.min(box.bottom, height) - Math.max(box.top, 0));
+			if (!best || visible > best.area) {
+				best = { kind: kind, url: url, id: id, area: visible };
+			}
+		}
+		if (!best) { return null; }
+		best.share = Math.round(best.area / (width * height) * 1000) / 1000;
+		delete best.area;
+		return best;
+	}
+
 	var api = {
 		fold: fold,
+		hero: hero,
+		backgroundUrl: backgroundUrl,
 		absolutize: absolutize,
 		groupHeader: groupHeader,
 		familyName: familyName,

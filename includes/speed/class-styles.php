@@ -495,6 +495,18 @@ final class Styles {
 	}
 
 	/**
+	 * The measured main images for the page being rendered.
+	 *
+	 * @return array|null Keyed mobile and desktop, or null when unmeasured.
+	 */
+	public static function heroes(): ?array {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Only hashed.
+		$path  = (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ), PHP_URL_PATH );
+		$entry = self::pages()[ self::key( $path ) ] ?? null;
+		return is_array( $entry ) && ! empty( $entry['heroes'] ) ? (array) $entry['heroes'] : null;
+	}
+
+	/**
 	 * Every stored capture.
 	 *
 	 * @return array<string,array>
@@ -511,10 +523,11 @@ final class Styles {
 	 * @param string $css     Captured above-the-fold styles.
 	 * @param array  $handles Stylesheets the capture covers.
 	 * @param float  $shift   Worst layout movement seen while verifying.
+	 * @param array  $heroes  Largest image in the first screen, per width.
 	 * @return array{status:string,bytes:int}
 	 * @throws \RuntimeException When the URL is not on this site.
 	 */
-	public static function store_page( string $url, string $css, array $handles, float $shift ): array {
+	public static function store_page( string $url, string $css, array $handles, float $shift, array $heroes = array() ): array {
 		$url = esc_url_raw( $url );
 		if ( ! $url || ! str_starts_with( $url, home_url() ) ) {
 			throw new \RuntimeException( __( 'Only pages on this site can be measured.', 'smart-media-auditor-optimizer' ) );
@@ -546,6 +559,7 @@ final class Styles {
 			'bytes'   => strlen( $css ),
 			'css'     => 'ready' === $status ? $css : '',
 			'handles' => 'ready' === $status ? array_values( array_unique( $clean ) ) : array(),
+			'heroes'  => Viewport::clean_heroes( $heroes ),
 			'at'      => time(),
 		);
 		if ( count( $pages ) > self::MAX_PAGES ) {

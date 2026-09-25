@@ -70,12 +70,12 @@
 		});
 	}
 
-	async function sendCritical(url, capture, shift) {
+	async function sendCritical(url, capture, shift, heroes) {
 		var response = await fetch(smaoConfig.root + 'critical', {
 			method: 'POST',
 			credentials: 'same-origin',
 			headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': smaoConfig.nonce },
-			body: JSON.stringify({ url: url, css: capture.css, handles: capture.handles, shift: shift })
+			body: JSON.stringify({ url: url, css: capture.css, handles: capture.handles, shift: shift, heroes: heroes })
 		});
 		var data = await response.json();
 		return response.ok ? data : null;
@@ -124,12 +124,14 @@
 		try {
 			for (var i = 0; i < targets.length; i++) {
 				var marks = new Set();
+				var heroes = {};
 				for (var j = 0; j < viewports.length; j++) {
 					say(targets[i].label + ': ' + viewports[j] + 'px');
 					var observations = await measure(targets[i].url, viewports[j]);
 					stored += await send(targets[i].url, viewports[j], observations);
 					if (critical) {
 						try { critical.mark(frame.contentDocument, viewports[j], marks); } catch (error) { /* Unreadable page: nothing captured. */ }
+						try { heroes[viewports[j]] = critical.hero(frame.contentDocument, viewports[j]); } catch (error) { /* No main image recorded. */ }
 					}
 					progress(++done, total);
 				}
@@ -157,9 +159,7 @@
 					}
 					progress(++done, total);
 				}
-				if (capture) {
-					await sendCritical(targets[i].url, capture, shift);
-				}
+				await sendCritical(targets[i].url, capture || { css: '', handles: [] }, capture ? shift : -1, heroes);
 			}
 			say(t('Done. Reloading the results.'));
 			window.location.reload();

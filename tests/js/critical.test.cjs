@@ -74,3 +74,10 @@ test('the first screenful is taller on desktop than on a phone', () => {
   assert.equal(critical.fold(390), 900);
   assert.equal(critical.fold(1280), 1100);
 });
+
+test('background urls are read from computed styles, gradients and data uris ignored', () => {
+  assert.equal(critical.backgroundUrl('url("https://x.test/a.png")'), 'https://x.test/a.png');
+  assert.equal(critical.backgroundUrl('linear-gradient(red, blue), url(https://x.test/b.jpg)'), 'https://x.test/b.jpg');
+  assert.equal(critical.backgroundUrl('none'), '');
+  assert.equal(critical.backgroundUrl('url("data:image/png;base64,AAA")'), '');
+});

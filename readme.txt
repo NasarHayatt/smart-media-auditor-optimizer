@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.3.3
+Stable tag: 2.3.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,17 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.3.4 =
+* Fixed: the check behind "Stop stylesheets blocking the first paint" failed
+  pages that were fine. It tested the captured styles after the theme's own
+  inline styles instead of before them, where visitors get them, so themes
+  that adjust layout with inline styles were always refused.
+* New: the page measurement records the largest image in the first screen on
+  phones and desktops, including section backgrounds set in a page builder's
+  CSS, and "Load the main image first" preloads exactly that image. Before, the
+  image was guessed from the featured image or the first image in the content,
+  which misses builder backgrounds and preloaded the wrong file.
 
 = 2.3.3 =
 * Fixed: pages built with Elementor and similar builders jumped on phones.
@@ -252,6 +263,11 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.3.4 =
+Lets stylesheets load in the background on themes it previously refused, and
+preloads the real main image. Run the page measurement under Speed again after
+updating.
 
 = 2.3.3 =
 Fixes pages built with Elementor and similar builders jumping on phones, and

@@ -211,7 +211,8 @@ final class Admin {
 								(string) ( $payload['url'] ?? '' ),
 								(string) ( $payload['css'] ?? '' ),
 								(array) ( $payload['handles'] ?? array() ),
-								isset( $payload['shift'] ) && is_numeric( $payload['shift'] ) ? (float) $payload['shift'] : -1.0
+								isset( $payload['shift'] ) && is_numeric( $payload['shift'] ) ? (float) $payload['shift'] : -1.0,
+								(array) ( $payload['heroes'] ?? array() )
 							);
 						}
 						if ( 'measure' === $route ) {
