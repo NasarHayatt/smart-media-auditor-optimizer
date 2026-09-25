@@ -94,3 +94,27 @@ test('pre-built styles only apply while scripts wait, per width range', () => {
   assert.equal(prebuild.screenFor(412), 823);
   assert.deepEqual(prebuild.WIDTHS, [412, 768, 1350, 1920]);
 });
+
+test('every selector in a list is scoped, so nothing outlives the scripts', () => {
+  const css = prebuild.wrap(1350, '#menu > li:nth-of-type(2),#menu > li:nth-of-type(3){visibility:hidden!important}\n#a *,#b *{visibility:visible!important}');
+  assert.match(css, /html:not\(\.smao-ran\) #menu > li:nth-of-type\(2\),html:not\(\.smao-ran\) #menu > li:nth-of-type\(3\)\{/);
+  assert.match(css, /html:not\(\.smao-ran\) #a \*,html:not\(\.smao-ran\) #b \*\{/);
+  // No rule inside the media block may apply once html.smao-ran is set.
+  css.split('\n').slice(1, -1).forEach((line) => {
+    const brace = line.indexOf('{');
+    if (brace < 0) { return; }
+    prebuild.list(line.slice(0, brace)).forEach((sel) => assert.ok(sel.startsWith('html:not(.smao-ran) '), 'unscoped: ' + sel));
+  });
+  assert.deepEqual(prebuild.list('a:not(.x,.y),b[data-a="1,2"] , c'), ['a:not(.x,.y)', 'b[data-a="1,2"]', 'c']);
+});
+
+test('a width passes only when every measure is finite and within its limit', () => {
+  const ok = { shift: 0, height: 0.005, missing: 0, off: 0.02 };
+  assert.equal(prebuild.passes(ok), true);
+  assert.equal(prebuild.passes({ ...ok, height: 0.05 }), false);
+  assert.equal(prebuild.passes({ ...ok, shift: NaN }), false);
+  assert.equal(prebuild.passes({ ...ok, off: Infinity }), false);
+  assert.ok(prebuild.badness({ ...ok, height: 0.05 }) < prebuild.badness({ ...ok, height: 0.3 }));
+  assert.equal(prebuild.badness(ok), 0);
+  assert.deepEqual(prebuild.LIMITS, { shift: 0.02, height: 0.01, missing: 0.01, off: 0.05 });
+});

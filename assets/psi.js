@@ -43,6 +43,7 @@
 				flag: candidate.flag,
 				value: !now,
 				label: (now ? t('Switch off:') : t('Switch on:')) + ' ' + candidate.label,
+				reason: now ? '' : (candidate.reason || ''),
 				test: candidate.flag + '.' + (now ? 'off' : 'on')
 			});
 		});
@@ -98,7 +99,7 @@
 			[row.label, row.runs.length ? String(Math.round(average(row.runs, 'score'))) : '-',
 				row.runs.length ? seconds(average(row.runs, 'lcp')) : '-',
 				row.runs.length ? Math.round(average(row.runs, 'tbt')) + ' ms' : '-',
-				row.noop ? t('No effect on this page') : (row.broken ? t('Rejected: changed the page layout') : (row.runs.length ? average(row.runs, 'cls').toFixed(3) : '-'))
+				row.noop ? (row.reason || t('No effect on this page')) : (row.broken ? t('Rejected: changed the page layout') : (row.runs.length ? average(row.runs, 'cls').toFixed(3) : '-'))
 			].forEach(function (text) {
 				var td = document.createElement('td');
 				td.textContent = text;

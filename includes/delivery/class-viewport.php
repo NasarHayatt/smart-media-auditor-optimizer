@@ -63,6 +63,112 @@ final class Viewport {
 		if ( $settings['lcp_preload'] ) {
 			add_action( 'wp_head', array( self::class, 'preload' ), 2 );
 		}
+		if ( ! Rightsize::measuring() ) {
+			add_action( 'template_redirect', array( self::class, 'start' ), 5 );
+		}
+	}
+
+	/**
+	 * Correct every image in the finished page, not only post content.
+	 *
+	 * WordPress only runs its image filters for post content and for images
+	 * built on this request. Header logos, page-builder widgets and anything
+	 * a builder serves from its own element cache never pass through them,
+	 * so a 170px logo kept being sent at 982px with high priority, ahead of
+	 * the page's main image. Working on the finished page covers every
+	 * image, whoever printed it.
+	 *
+	 * @return void
+	 */
+	public static function start(): void {
+		if ( is_feed() || is_embed() ) {
+			return;
+		}
+		ob_start( array( self::class, 'page' ) );
+	}
+
+	/**
+	 * Output buffer callback: correct each image tag in the page body.
+	 *
+	 * @param string $html Page.
+	 * @return string
+	 */
+	public static function page( string $html ): string {
+		$start = stripos( $html, '<body' );
+		if ( false === $start || ! str_contains( $html, '</html>' ) ) {
+			return $html;
+		}
+		$body = substr( $html, $start );
+		// Markup inside scripts and templates is not part of the page yet.
+		$masked = (string) preg_replace_callback(
+			'#<(script|template|textarea|xmp)\b.*?</\1\s*>|<!--.*?-->#is',
+			static function ( array $match ): string {
+				return str_repeat( ' ', strlen( $match[0] ) );
+			},
+			$body
+		);
+		if ( ! preg_match_all( '#<img\b[^>]*>#i', $masked, $found, PREG_OFFSET_CAPTURE ) ) {
+			return $html;
+		}
+		$settings = Settings::get();
+		$measured = null !== Styles::heroes();
+		$out      = '';
+		$last     = 0;
+		foreach ( $found[0] as $match ) {
+			$offset = (int) $match[1];
+			$tag    = substr( $body, $offset, strlen( $match[0] ) );
+			$out   .= substr( $body, $last, $offset - $last ) . self::correct( $tag, $settings, $measured );
+			$last   = $offset + strlen( $tag );
+		}
+		return substr( $html, 0, $start ) . $out . substr( $body, $last );
+	}
+
+	/**
+	 * Apply every image correction to one tag. Each step leaves an already
+	 * corrected tag as it is, so content images are not changed twice.
+	 *
+	 * @param string $tag      Image tag.
+	 * @param array  $settings Settings.
+	 * @param bool   $measured Whether this page's first screen was measured.
+	 * @return string
+	 */
+	private static function correct( string $tag, array $settings, bool $measured ): string {
+		$id = self::known_id( $tag );
+		if ( $settings['dimensions'] ) {
+			$tag = self::dimensions( $tag, $id );
+		}
+		if ( $settings['rightsize'] && $id && preg_match( '/\ssrcset\s*=/i', $tag ) ) {
+			$tag = Rightsize::content_img( $tag, '', $id );
+		}
+		// Loading order is only changed where the page was measured: a guess
+		// about which image is the main one is not good enough for every image.
+		if ( $settings['lazy_correct'] && $measured ) {
+			$tag = self::loading( $tag, $id );
+		}
+		return $tag;
+	}
+
+	/**
+	 * The attachment behind a tag, looking it up by address only when the
+	 * answer can change something.
+	 *
+	 * @param string $tag Image tag.
+	 * @return int
+	 */
+	private static function known_id( string $tag ): int {
+		if ( preg_match( '/\bwp-image-(\d+)/', $tag, $match ) || preg_match( '/\sdata-smao-id\s*=\s*["\']?(\d+)/i', $tag, $match ) ) {
+			return (int) $match[1];
+		}
+		$src     = self::attribute( $tag, 'src' );
+		$uploads = wp_upload_dir( null, false );
+		$base    = (string) preg_replace( '#^https?:#i', '', (string) $uploads['baseurl'] );
+		if ( '' === $src || '' === $base || ! str_contains( $src, $base . '/' ) ) {
+			return 0;
+		}
+		if ( preg_match( '/\ssrcset\s*=/i', $tag ) || ! preg_match( '/\swidth\s*=/i', $tag ) ) {
+			return self::resolve( $tag );
+		}
+		return 0;
 	}
 
 	/**

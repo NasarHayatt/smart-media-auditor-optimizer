@@ -8,6 +8,17 @@
 use PHPUnit\Framework\TestCase;
 use SMAO\Prebuild;
 
+if ( ! function_exists( 'absint' ) ) {
+	/**
+	 * Stub absint.
+	 *
+	 * @param mixed $value Value.
+	 * @return int
+	 */
+	function absint( $value ) {
+		return abs( (int) $value );
+	}
+}
 if ( ! function_exists( 'wp_strip_all_tags' ) ) {
 	/**
 	 * Stub.
@@ -79,5 +90,43 @@ final class PrebuildTest extends TestCase {
 		$code = (string) file_get_contents( dirname( __DIR__, 2 ) . '/includes/speed/class-scripts.php' );
 		$rule = (string) strstr( $code, 'public static function holding_all' );
 		$this->assertStringContainsString( 'Prebuild::allows_holding()', substr( $rule, 0, 400 ) );
+	}
+
+	/**
+	 * Limits in the browser and on the server are the same numbers.
+	 *
+	 * @return void
+	 */
+	public function test_limits_match_the_browser(): void {
+		$js = (string) file_get_contents( dirname( __DIR__, 2 ) . '/assets/prebuild.js' );
+		$this->assertStringContainsString(
+			sprintf( 'var LIMITS = { shift: %s, height: %s, missing: %s, off: %s };', Prebuild::MAX_SHIFT, Prebuild::MAX_HEIGHT, Prebuild::MAX_MISSING, Prebuild::MAX_OFF ),
+			$js
+		);
+	}
+
+	/**
+	 * The failing width and measure are kept and named in plain words.
+	 *
+	 * @return void
+	 */
+	public function test_reason_names_the_width_and_the_measure(): void {
+		$stored = Prebuild::clean(
+			array(
+				'css'     => '#a{height:1px}',
+				'shift'   => 0,
+				'height'  => 0.04,
+				'missing' => 0.002,
+				'off'     => 0,
+				'width'   => 768,
+				'widths'  => array( array( 'width' => 768, 'shift' => 0, 'height' => 0.04, 'missing' => null, 'off' => 'x' ), 'junk' ),
+			)
+		);
+		$this->assertSame( 'moved', $stored['status'] );
+		$this->assertSame( 768, $stored['width'] );
+		$this->assertSame( array( array( 'width' => 768, 'shift' => 0.0, 'height' => 0.04, 'missing' => null, 'off' => null ) ), $stored['widths'] );
+		$this->assertSame( 'Scripts run as normal: on a 768px wide screen the page length would change by 4%.', Prebuild::reason( $stored ) );
+		$this->assertStringStartsWith( 'Looks the same', Prebuild::reason( array( 'status' => 'ready' ) ) );
+		$this->assertStringContainsString( 'Measure again', Prebuild::reason( array( 'status' => 'unchecked' ) ) );
 	}
 }

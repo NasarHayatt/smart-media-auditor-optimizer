@@ -99,7 +99,9 @@ final class Admin {
 		wp_enqueue_script( 'smao-admin', plugins_url( 'assets/admin.js', SMAO_FILE ), array( 'smao-model', 'wp-i18n' ), SMAO_VERSION, true );
 		wp_set_script_translations( 'smao-admin', 'smart-media-auditor-optimizer' );
 		if ( str_contains( $hook, 'smao-speed' ) ) {
-			$current = Settings::get();
+			$current   = Settings::get();
+			$home_path = (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH );
+			$home_pre  = Styles::pages()[ Styles::key( $home_path ) ]['prebuild'] ?? null;
 			wp_enqueue_script( 'smao-psi', plugins_url( 'assets/psi.js', SMAO_FILE ), array( 'smao-admin', 'wp-i18n' ), SMAO_VERSION, true );
 			wp_set_script_translations( 'smao-psi', 'smart-media-auditor-optimizer' );
 			wp_localize_script(
@@ -110,8 +112,12 @@ final class Admin {
 					'current'    => array_intersect_key( $current, array_flip( Settings::TESTABLE ) ),
 					'candidates' => array(
 						array(
-							'flag'  => 'delay_all',
-							'label' => __( 'Hold back all scripts until the page has appeared', 'smart-media-auditor-optimizer' ),
+							'flag'   => 'delay_all',
+							'label'  => __( 'Hold back all scripts until the page has appeared', 'smart-media-auditor-optimizer' ),
+							// Why switching it on changes nothing, when the home page did not pass.
+							'reason' => is_array( $home_pre ) && 'ready' !== ( $home_pre['status'] ?? '' )
+								? __( 'Not used: the home page did not pass the look-the-same check (see "Worth testing first")', 'smart-media-auditor-optimizer' )
+								: ( ! is_array( $home_pre ) ? __( 'Not used: measure your pages first', 'smart-media-auditor-optimizer' ) : '' ),
 						),
 						array(
 							'flag'  => 'defer_js',

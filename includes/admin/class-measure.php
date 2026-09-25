@@ -284,6 +284,11 @@ final class Measure {
 
 		$out = array();
 		foreach ( $rows as $row ) {
+			// A vector file is the same file at every size, so a smaller
+			// copy would save nothing.
+			if ( preg_match( '/\.svgz?$/i', (string) $row['filename'] ) ) {
+				continue;
+			}
 			$id     = (int) $row['attachment_id'];
 			$drawn  = (int) $row['drawn'];
 			$full   = (int) $row['width'];

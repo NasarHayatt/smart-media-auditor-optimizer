@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.5.0\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.5.1\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
@@ -68,6 +68,12 @@ msgid "%s page queued for rebuilding."
 msgstr ""
 
 msgid "%s saved"
+msgstr ""
+
+msgid "%s%% of the content would be missing until scripts run"
+msgstr ""
+
+msgid "%s%% of the rebuilt pieces would be out of place"
 msgstr ""
 
 msgid ","
@@ -610,6 +616,9 @@ msgstr ""
 msgid "Hold back third-party scripts until someone interacts"
 msgstr ""
 
+msgid "Home page"
+msgstr ""
+
 msgid "I reviewed these files and I have an independent backup."
 msgstr ""
 
@@ -731,6 +740,9 @@ msgid "Log pages"
 msgstr ""
 
 msgid "Looks the same with scripts waiting on %1$d of %2$d measured pages. Only those pages hold their scripts."
+msgstr ""
+
+msgid "Looks the same with scripts waiting, so its scripts wait."
 msgstr ""
 
 msgid "Lossless (pixel verified, needs ImageMagick)"
@@ -907,6 +919,12 @@ msgstr ""
 msgid "Not used anywhere"
 msgstr ""
 
+msgid "Not used: measure your pages first"
+msgstr ""
+
+msgid "Not used: the home page did not pass the look-the-same check (see \"Worth testing first\")"
+msgstr ""
+
 msgid "Nothing has advanced for over 30 seconds. Try Retry processing, and restart the scan if the same checkpoint keeps returning."
 msgstr ""
 
@@ -938,6 +956,9 @@ msgid "Nothing selected"
 msgstr ""
 
 msgid "Nothing to review"
+msgstr ""
+
+msgid "Now sent"
 msgstr ""
 
 msgid "Off"
@@ -1231,6 +1252,12 @@ msgstr ""
 msgid "Save scanning settings"
 msgstr ""
 
+msgid "Saved"
+msgstr ""
+
+msgid "Saved on every page load"
+msgstr ""
+
 msgid "Saved so far"
 msgstr ""
 
@@ -1277,6 +1304,18 @@ msgid "Scope confirmed. A fresh scan has started."
 msgstr ""
 
 msgid "Scripts are the single largest cause of a slow score. Most of them are not needed for the page to appear."
+msgstr ""
+
+msgid "Scripts run as normal: %s."
+msgstr ""
+
+msgid "Scripts run as normal: on a %1$dpx wide screen %2$s."
+msgstr ""
+
+msgid "Scripts run as normal: rebuilding this layout would need too many extra styles."
+msgstr ""
+
+msgid "Scripts run as normal: the page did not finish loading while it was checked. Measure again."
 msgstr ""
 
 msgid "Search"
@@ -1711,6 +1750,9 @@ msgstr ""
 msgid "WordPress tells the browser every image fills the whole window. It usually does not, so the browser downloads a much larger file than it draws. We can only know the real size by looking at your pages, so that is what this does."
 msgstr ""
 
+msgid "WordPress would send"
+msgstr ""
+
 msgid "Worth testing first"
 msgstr ""
 
@@ -1804,6 +1846,9 @@ msgstr ""
 msgid "cache"
 msgstr ""
 
+msgid "checking again, more slowly"
+msgstr ""
+
 msgid "checking how it looks before scripts run"
 msgstr ""
 
@@ -1861,6 +1906,9 @@ msgstr ""
 msgid "input"
 msgstr ""
 
+msgid "it would look different"
+msgstr ""
+
 msgid "kept as it is, because its stylesheets could not be read"
 msgstr ""
 
@@ -1901,6 +1949,9 @@ msgid "optimize"
 msgstr ""
 
 msgid "pages stop jumping about"
+msgstr ""
+
+msgid "parts of the page would move when scripts start (%s%%)"
 msgstr ""
 
 msgid "permanently deleted"
@@ -1997,6 +2048,9 @@ msgid "style"
 msgstr ""
 
 msgid "td"
+msgstr ""
+
+msgid "the page length would change by %s%%"
 msgstr ""
 
 msgid "token"

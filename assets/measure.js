@@ -101,30 +101,72 @@
 		});
 		var sep = url.indexOf('?') === -1 ? '?' : '&';
 		var css = [];
-		var worst = { shift: 0, height: 0, missing: 0, off: 0 };
+		var worst = { shift: 0, height: 0, missing: 0, off: 0, width: 0, widths: [] };
+		var worstBadness = 0;
+
+		// Wait until the page stops changing length: sliders and carousels
+		// finish building some time after the page reports it has loaded,
+		// and on a slow host that is well after any fixed delay.
+		async function steady(frame, limit) {
+			var last = -1;
+			var same = 0;
+			var start = Date.now();
+			while (Date.now() - start < limit) {
+				var doc = frame.contentDocument;
+				var height = doc && doc.body ? tool.pageHeight(doc) : 0;
+				if (height > 0 && Math.abs(height - last) < 2) {
+					if (++same >= 2) { return; }
+				} else {
+					same = 0;
+				}
+				last = height;
+				await new Promise(function (resolve) { window.setTimeout(resolve, 400); });
+			}
+		}
+
+		async function attempt(width, doneSettle, heldSettle) {
+			var screen = tool.screenFor(width);
+			await Promise.all([
+				loadInto(done, url + sep + 'smao-measure=1&smao-try=' + Date.now(), width, screen, doneSettle),
+				loadInto(held, url + sep + 'smao-measure=1&smao-held=1&smao-try=' + Date.now(), width, screen, heldSettle)
+			]);
+			await steady(done, 8000);
+			await steady(held, 3000);
+			var dd = done.contentDocument;
+			var hd = held.contentDocument;
+			if (!dd || !hd || !dd.body || !hd.body) { return null; }
+			var view = done.contentWindow;
+			var perf = function (address) {
+				var entry = view.performance.getEntriesByName(address)[0];
+				return !entry || !entry.responseStatus || entry.responseStatus < 400;
+			};
+			return tool.prepare(hd, tool.boxes(dd), tool.pageHeight(dd), width, perf, view);
+		}
+
 		try {
 			for (var i = 0; i < tool.WIDTHS.length; i++) {
 				var width = tool.WIDTHS[i];
 				say(label + ': ' + t('checking how it looks before scripts run') + ' ' + width + 'px');
-				var screen = tool.screenFor(width);
-				await Promise.all([
-					loadInto(done, url + sep + 'smao-measure=1', width, screen, 2000),
-					loadInto(held, url + sep + 'smao-measure=1&smao-held=1', width, screen, 1200)
-				]);
-				var dd = done.contentDocument;
-				var hd = held.contentDocument;
-				if (!dd || !hd || !dd.body || !hd.body) { return null; }
-				var view = done.contentWindow;
-				var perf = function (address) {
-					var entry = view.performance.getEntriesByName(address)[0];
-					return !entry || !entry.responseStatus || entry.responseStatus < 400;
-				};
-				var result = tool.prepare(hd, tool.boxes(dd), tool.pageHeight(dd), width, perf, view);
+				var result = await attempt(width, 2000, 1200);
+				if (!result || !tool.passes(result)) {
+					// One slow response should not decide the page: try again,
+					// giving both copies longer, and keep the better result.
+					say(label + ': ' + t('checking again, more slowly') + ' ' + width + 'px');
+					var second = await attempt(width, 5000, 2500);
+					if (second && (!result || tool.badness(second) < tool.badness(result))) { result = second; }
+				}
+				if (!result) { return null; }
 				css.push(tool.wrap(width, result.css));
-				worst.shift = Math.max(worst.shift, result.shift);
-				worst.height = Math.max(worst.height, result.height);
-				worst.missing = Math.max(worst.missing, result.missing);
-				worst.off = Math.max(worst.off, result.off);
+				var finite = function (value) { return isFinite(value) ? Math.round(value * 10000) / 10000 : null; };
+				worst.widths.push({ width: width, shift: finite(result.shift), height: finite(result.height), missing: finite(result.missing), off: finite(result.off) });
+				['shift', 'height', 'missing', 'off'].forEach(function (key) {
+					worst[key] = isFinite(result[key]) && worst[key] !== null ? Math.max(worst[key], result[key]) : null;
+				});
+				var bad = tool.badness(result);
+				if (bad > worstBadness) {
+					worstBadness = bad;
+					worst.width = width;
+				}
 			}
 		} catch (error) {
 			return null;

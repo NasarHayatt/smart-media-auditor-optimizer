@@ -141,6 +141,17 @@ final class Prebuild {
 		};
 		$css    = wp_strip_all_tags( (string) ( $data['css'] ?? '' ) );
 		$status = self::verdict( strlen( $css ), $number( 'shift' ), $number( 'height' ), $number( 'missing' ), $number( 'off' ) );
+		$widths = array();
+		foreach ( array_slice( (array) ( $data['widths'] ?? array() ), 0, 8 ) as $row ) {
+			if ( ! is_array( $row ) || ! absint( $row['width'] ?? 0 ) ) {
+				continue;
+			}
+			$clean = array( 'width' => absint( $row['width'] ) );
+			foreach ( array( 'shift', 'height', 'missing', 'off' ) as $key ) {
+				$clean[ $key ] = isset( $row[ $key ] ) && is_numeric( $row[ $key ] ) ? round( (float) $row[ $key ], 4 ) : null;
+			}
+			$widths[] = $clean;
+		}
 		return array(
 			'status'  => $status,
 			'css'     => 'ready' === $status ? $css : '',
@@ -149,7 +160,62 @@ final class Prebuild {
 			'missing' => round( max( 0, $number( 'missing' ) ), 4 ),
 			'off'     => round( max( 0, $number( 'off' ) ), 4 ),
 			'bytes'   => strlen( $css ),
+			'width'   => absint( $data['width'] ?? 0 ),
+			'widths'  => $widths,
 		);
+	}
+
+	/**
+	 * Plain words for why a page does or does not hold its scripts.
+	 *
+	 * @param array $prebuild Stored outcome.
+	 * @return string
+	 */
+	public static function reason( array $prebuild ): string {
+		$status = (string) ( $prebuild['status'] ?? '' );
+		if ( 'ready' === $status ) {
+			return __( 'Looks the same with scripts waiting, so its scripts wait.', 'smart-media-auditor-optimizer' );
+		}
+		if ( 'too_large' === $status ) {
+			return __( 'Scripts run as normal: rebuilding this layout would need too many extra styles.', 'smart-media-auditor-optimizer' );
+		}
+		if ( 'unchecked' === $status ) {
+			return __( 'Scripts run as normal: the page did not finish loading while it was checked. Measure again.', 'smart-media-auditor-optimizer' );
+		}
+		// The measure furthest over its limit is the one worth naming.
+		$limits = array(
+			'shift'   => self::MAX_SHIFT,
+			'height'  => self::MAX_HEIGHT,
+			'missing' => self::MAX_MISSING,
+			'off'     => self::MAX_OFF,
+		);
+		$worst = '';
+		$over  = 0.0;
+		foreach ( $limits as $key => $limit ) {
+			$ratio = (float) ( $prebuild[ $key ] ?? 0 ) / $limit;
+			if ( $ratio > $over ) {
+				$over  = $ratio;
+				$worst = $key;
+			}
+		}
+		$percent = round( (float) ( $prebuild[ $worst ] ?? 0 ) * 100, 1 );
+		$words   = array(
+			/* translators: %s: percentage. */
+			'shift'   => __( 'parts of the page would move when scripts start (%s%%)', 'smart-media-auditor-optimizer' ),
+			/* translators: %s: percentage. */
+			'height'  => __( 'the page length would change by %s%%', 'smart-media-auditor-optimizer' ),
+			/* translators: %s: percentage. */
+			'missing' => __( '%s%% of the content would be missing until scripts run', 'smart-media-auditor-optimizer' ),
+			/* translators: %s: percentage. */
+			'off'     => __( '%s%% of the rebuilt pieces would be out of place', 'smart-media-auditor-optimizer' ),
+		);
+		$what = isset( $words[ $worst ] ) ? sprintf( $words[ $worst ], $percent ) : __( 'it would look different', 'smart-media-auditor-optimizer' );
+		$at   = absint( $prebuild['width'] ?? 0 );
+		return $at
+			/* translators: 1: screen width in pixels, 2: what went wrong. */
+			? sprintf( __( 'Scripts run as normal: on a %1$dpx wide screen %2$s.', 'smart-media-auditor-optimizer' ), $at, $what )
+			/* translators: %s: what went wrong. */
+			: sprintf( __( 'Scripts run as normal: %s.', 'smart-media-auditor-optimizer' ), $what );
 	}
 
 	/**

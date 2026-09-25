@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.5.0
+Stable tag: 2.5.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,23 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.5.1 =
+* Fix: on pages that hold their scripts, some pre-built styles did not switch
+  off once the scripts ran, so a menu could lose items after the first tap.
+  Every rule now switches off together.
+* Fix: images outside the post content, such as header logos, page-builder
+  widgets and anything a builder serves from its own element cache, were sent
+  at full size and could take priority over the main image. Every image in
+  the finished page is now sized from the measurement and loaded in the right
+  order.
+* Improved: the page check waits until sliders and carousels have finished
+  building, and checks a screen width again before giving up on it.
+* Improved: each measured page now says whether its scripts wait, and if not,
+  why, at which screen width and by how much.
+* Improved: the Google check says why holding scripts had no effect, and the
+  image table leaves out vector (SVG) files, which are the same file at every
+  size, and shows the size now sent.
 
 = 2.5.0 =
 * New: pages look finished while their scripts wait. "Hold back all scripts"
@@ -356,6 +373,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.5.1 =
+Fixes pre-built styles that stayed on after scripts ran, and sizes every image
+in the page. Run the page measurement under Speed again.
 
 = 2.5.0 =
 Pages can now hold their scripts without looking broken. Run the page

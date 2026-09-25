@@ -194,6 +194,21 @@ final class Screen_Speed {
 						?>
 					<?php endif; ?>
 				</p>
+				<?php if ( $held['total'] ) : ?>
+					<ul class="smao-muted smao-prebuild-pages">
+						<?php foreach ( Styles::pages() as $entry ) : ?>
+							<?php
+							if ( ! is_array( $entry['prebuild'] ?? null ) ) {
+								continue;
+							}
+							$path  = (string) wp_parse_url( (string) ( $entry['url'] ?? '' ), PHP_URL_PATH );
+							$title = '/' === '/' . trim( $path, '/' ) ? __( 'Home page', 'smart-media-auditor-optimizer' ) : ( ! empty( $entry['post'] ) ? get_the_title( (int) $entry['post'] ) : '' );
+							$title = '' !== $title ? $title : $path;
+							?>
+							<li><strong><?php echo esc_html( $title ); ?></strong>: <?php echo esc_html( Prebuild::reason( $entry['prebuild'] ) ); ?></li>
+						<?php endforeach; ?>
+					</ul>
+				<?php endif; ?>
 				<?php
 				self::switch_row(
 					'async_css',
@@ -335,7 +350,7 @@ final class Screen_Speed {
 			<?php else : ?>
 				<div class="smao-figures">
 					<article class="smao-figure">
-						<span><?php esc_html_e( 'Wasted on every page load', 'smart-media-auditor-optimizer' ); ?></span>
+						<span><?php $settings['rightsize'] ? esc_html_e( 'Saved on every page load', 'smart-media-auditor-optimizer' ) : esc_html_e( 'Wasted on every page load', 'smart-media-auditor-optimizer' ); ?></span>
 						<strong><?php echo esc_html( size_format( $wasted ) ); ?></strong>
 					</article>
 					<article class="smao-figure">
@@ -355,9 +370,14 @@ final class Screen_Speed {
 						<thead>
 							<tr>
 								<th scope="col"><?php esc_html_e( 'Image', 'smart-media-auditor-optimizer' ); ?></th>
-								<th scope="col"><?php esc_html_e( 'Sent at', 'smart-media-auditor-optimizer' ); ?></th>
+								<?php if ( $settings['rightsize'] ) : ?>
+									<th scope="col"><?php esc_html_e( 'WordPress would send', 'smart-media-auditor-optimizer' ); ?></th>
+									<th scope="col"><?php esc_html_e( 'Now sent', 'smart-media-auditor-optimizer' ); ?></th>
+								<?php else : ?>
+									<th scope="col"><?php esc_html_e( 'Sent at', 'smart-media-auditor-optimizer' ); ?></th>
+								<?php endif; ?>
 								<th scope="col"><?php esc_html_e( 'Shown at', 'smart-media-auditor-optimizer' ); ?></th>
-								<th scope="col"><?php esc_html_e( 'Wasted', 'smart-media-auditor-optimizer' ); ?></th>
+								<th scope="col"><?php $settings['rightsize'] ? esc_html_e( 'Saved', 'smart-media-auditor-optimizer' ) : esc_html_e( 'Wasted', 'smart-media-auditor-optimizer' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -365,6 +385,9 @@ final class Screen_Speed {
 							<tr>
 								<td><?php echo esc_html( $row['filename'] ); ?></td>
 								<td><?php echo esc_html( $row['served'] . 'px' ); ?></td>
+								<?php if ( $settings['rightsize'] ) : ?>
+									<td><?php echo esc_html( $row['needed'] . 'px' ); ?></td>
+								<?php endif; ?>
 								<td><?php echo esc_html( $row['drawn'] . 'px' ); ?></td>
 								<td><?php echo esc_html( size_format( $row['wasted'] ) ); ?></td>
 							</tr>

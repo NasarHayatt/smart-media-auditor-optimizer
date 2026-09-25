@@ -225,6 +225,9 @@
 		try { return doc.querySelectorAll(sel).length === 1 ? sel : ''; } catch (error) { return ''; }
 	}
 
+	/** Declarations every placed piece shares. */
+	var PIECE = 'position:absolute!important;right:auto!important;bottom:auto!important;margin:0!important;transform:none!important;box-sizing:border-box!important;visibility:visible!important;opacity:1!important;overflow:hidden!important;z-index:1';
+
 	var COPY = ['font-family', 'font-size', 'font-weight', 'font-style', 'line-height', 'letter-spacing', 'text-transform', 'text-align', 'color', 'background-color', 'background-image', 'background-size', 'background-position', 'background-repeat', 'border-radius', 'border-top', 'border-right', 'border-bottom', 'border-left', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'box-shadow', 'white-space'];
 
 	function pageBox(doc, el) {
@@ -303,6 +306,7 @@
 		var view = doc.defaultView;
 		var regionBox = done[area.region.getAttribute('data-smao-n')];
 		var between = [];
+		var placedSelectors = [];
 		area.pieces.forEach(function (finished) {
 			var n = finished.getAttribute('data-smao-n');
 			var target = doc.querySelector('[data-smao-n="' + n + '"]');
@@ -315,7 +319,9 @@
 			var fb = done[n];
 			var cs = doneView.getComputedStyle(finished);
 			var hs = view.getComputedStyle(target);
-			var decl = ['position:absolute!important', 'left:' + round(fb.x - regionBox.x) + 'px!important', 'top:' + round(fb.y - regionBox.y) + 'px!important', 'right:auto!important', 'bottom:auto!important', 'width:' + round(fb.w) + 'px!important', 'height:' + round(fb.h) + 'px!important', 'margin:0!important', 'transform:none!important', 'box-sizing:border-box!important', 'visibility:visible!important', 'opacity:1!important', 'overflow:hidden!important', 'z-index:1'];
+			// What every piece shares is written once for the area, below.
+			placedSelectors.push(sel);
+			var decl = ['left:' + round(fb.x - regionBox.x) + 'px!important', 'top:' + round(fb.y - regionBox.y) + 'px!important', 'width:' + round(fb.w) + 'px!important', 'height:' + round(fb.h) + 'px!important'];
 			if (hs.display === 'none' || hs.display === 'inline' || hs.display === 'contents') { decl.push('display:block!important'); }
 			COPY.forEach(function (prop) {
 				var value = cs.getPropertyValue(prop);
@@ -338,8 +344,13 @@
 				}
 			}
 			lines.push(sel + '{' + decl.join(';') + '}');
-			lines.push(sel + ' *{visibility:visible!important}');
 		});
+		if (placedSelectors.length) {
+			lines.unshift(
+				placedSelectors.join(',') + '{' + PIECE + '}',
+				placedSelectors.map(function (s) { return s + ' *'; }).join(',') + '{visibility:visible!important}'
+			);
+		}
 		var chain = between.map(function (el) { return inside(area.region, area.selector, el, doc); }).filter(Boolean);
 		if (chain.length) {
 			lines.unshift(chain.join(',') + '{position:static!important;transform:none!important;filter:none!important;contain:none!important;opacity:1!important;clip-path:none!important;overflow:visible!important;visibility:hidden!important}');
@@ -449,18 +460,57 @@
 		return 1080;
 	}
 
-	/** Wrap each width's styles so they only apply while scripts wait. */
+	/** Split a selector list on its top-level commas. */
+	function list(selectors) {
+		var out = [];
+		var depth = 0;
+		var start = 0;
+		for (var i = 0; i < selectors.length; i++) {
+			var c = selectors.charAt(i);
+			if (c === '(' || c === '[') { depth++; }
+			else if (c === ')' || c === ']') { depth--; }
+			else if (c === ',' && depth === 0) { out.push(selectors.slice(start, i)); start = i + 1; }
+		}
+		out.push(selectors.slice(start));
+		return out.map(function (s) { return s.trim(); }).filter(Boolean);
+	}
+
+	/**
+	 * Wrap each width's styles so they only apply while scripts wait.
+	 *
+	 * Every selector in a list is scoped, not just the first: an unscoped one
+	 * would keep applying after the scripts run, and hide or pin the very
+	 * elements the scripts go on to show.
+	 */
 	function wrap(width, css) {
 		if (!css) { return ''; }
 		var scoped = css.split(NL).map(function (line) {
 			var brace = line.indexOf('{');
 			if (brace < 0) { return ''; }
-			return 'html:not(.smao-ran) ' + line.slice(0, brace) + line.slice(brace);
+			return list(line.slice(0, brace)).map(function (sel) { return 'html:not(.smao-ran) ' + sel; }).join(',') + line.slice(brace);
 		}).join(NL);
 		return '@media ' + range(width) + '{' + NL + scoped + NL + 'html:not(.smao-ran) body{overflow-x:clip}' + NL + '}';
 	}
 
-	var api = { range: range, screenFor: screenFor, boxes: boxes, origins: origins, selector: selector, prepare: prepare, wrap: wrap, compare: compare, pageHeight: pageHeight, pieces: pieces, inside: inside, WIDTHS: [412, 768, 1350, 1920] };
+	/** The same limits the server applies (Prebuild::MAX_*). */
+	var LIMITS = { shift: 0.02, height: 0.01, missing: 0.01, off: 0.05 };
+
+	/** Whether one width's result is good enough, and finite at all. */
+	function passes(result) {
+		return Object.keys(LIMITS).every(function (key) {
+			return isFinite(result[key]) && result[key] >= 0 && result[key] <= LIMITS[key];
+		});
+	}
+
+	/** How far over its limits a result is, for keeping the better of two tries. */
+	function badness(result) {
+		return Object.keys(LIMITS).reduce(function (sum, key) {
+			var value = result[key];
+			return sum + (isFinite(value) ? Math.max(0, value - LIMITS[key]) / LIMITS[key] : 1e6);
+		}, 0);
+	}
+
+	var api = { range: range, screenFor: screenFor, boxes: boxes, origins: origins, selector: selector, prepare: prepare, wrap: wrap, list: list, compare: compare, pageHeight: pageHeight, pieces: pieces, inside: inside, passes: passes, badness: badness, LIMITS: LIMITS, WIDTHS: [412, 768, 1350, 1920] };
 	if (typeof module !== 'undefined' && module.exports) {
 		module.exports = api;
 	} else {
