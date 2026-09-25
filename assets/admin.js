@@ -396,7 +396,14 @@
 				if (command === 'cancel_jobs' && !window.confirm(t('Cancel all queued jobs?'))) {
 					return;
 				}
-				render(await request('control', { command: command }));
+				var result = await request('control', { command: command });
+				// Cache commands answer with a message and the status inside it.
+				if (result && result.message) {
+					notice(result.message, false, button);
+					if (result.status) { render(result.status); }
+				} else {
+					render(result);
+				}
 				await refreshFragment(true);
 			}, button);
 		});

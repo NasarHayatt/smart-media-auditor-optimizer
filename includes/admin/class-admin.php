@@ -247,6 +247,20 @@ final class Admin {
 			 * does not wait for the media lock. Holding it back behind a WebP
 			 * job made "Measure again" fail with "another operation is running".
 			 */
+			/*
+			 * Settings and the page cache never touch media files, so they do not
+			 * wait for the media lock either. Waiting made "Save" and "Clear
+			 * everything" fail silently while WebP copies were being made.
+			 */
+			if ( 'settings' === $route ) {
+				$payload          = (array) $request->get_json_params();
+				$result           = Settings::save( $payload );
+				$result['status'] = self::status();
+				return rest_ensure_response( $result );
+			}
+			if ( 'control' === $route && in_array( sanitize_key( (string) $request->get_param( 'command' ) ), array( 'cache_flush', 'cache_forget', 'cache_warm' ), true ) ) {
+				return rest_ensure_response( self::control( $request ) );
+			}
 			if ( 'critical' === $route ) {
 				$payload = (array) $request->get_json_params();
 				return rest_ensure_response( Styles::store_page(

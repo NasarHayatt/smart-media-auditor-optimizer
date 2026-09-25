@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.3.7
+Stable tag: 2.3.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,15 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.3.8 =
+* Fixed: "Save" and "Clear everything" failed with "another media operation
+  is running" while WebP copies were being made, so visitors kept getting
+  pages built with the old settings.
+* Changing any speed setting now clears stored pages at once.
+* After the Google check applies a setting, the switch on screen shows it, so
+  a later Save does not undo it.
+* Updating clears stored pages.
 
 = 2.3.7 =
 * New: Check with Google PageSpeed. With a free Google API key, the plugin
@@ -305,6 +314,9 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.3.8 =
+Fixes Save and Clear everything being blocked while WebP copies are made.
 
 = 2.3.7 =
 Adds the Google PageSpeed check and fixes page measurement while WebP copies

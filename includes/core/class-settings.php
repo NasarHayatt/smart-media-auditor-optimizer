@@ -184,7 +184,9 @@ final class Settings {
 		}
 		$test = array();
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only, public, and limited to speed switches.
-		if ( ! isset( $_GET['smao-test'] ) || ( function_exists( 'is_admin' ) && is_admin() ) ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Only inspected.
+		$uri = (string) ( $_SERVER['REQUEST_URI'] ?? '' );
+		if ( ! isset( $_GET['smao-test'] ) || ( function_exists( 'is_admin' ) && is_admin() ) || str_contains( $uri, '/wp-json/' ) || isset( $_GET['rest_route'] ) ) {
 			return $test;
 		}
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Parsed against an allowlist below.
@@ -287,6 +289,14 @@ final class Settings {
 			);
 		}
 
+		$speed_changed = false;
+		foreach ( self::TESTABLE as $key ) {
+			if ( $out[ $key ] !== $current[ $key ] ) {
+				$speed_changed = true;
+				break;
+			}
+		}
+
 		$invalidated = false;
 		foreach ( self::COVERAGE as $key ) {
 			if ( $out[ $key ] !== $current[ $key ] ) {
@@ -296,6 +306,15 @@ final class Settings {
 		}
 
 		update_option( 'smao_settings', $out, false );
+
+		if ( $speed_changed ) {
+			// Stored pages were built with the old setting; rebuild them now.
+			Cache::flush();
+			if ( Cache::active() ) {
+				Cache::write_config();
+				Warm::queue_important();
+			}
+		}
 
 		if ( $out['schedule'] !== $current['schedule'] ) {
 			wp_clear_scheduled_hook( 'smao_scheduled_scan' );

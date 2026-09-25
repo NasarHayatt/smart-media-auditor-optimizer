@@ -167,7 +167,9 @@
 				var payload = { _flags: [best.flag] };
 				payload[best.flag] = best.value;
 				await post('settings', payload);
-				await post('control', { command: 'cache_flush' });
+				var box = document.querySelector('input[type="checkbox"][name="' + best.flag + '"]');
+				if (box) { box.checked = best.value; }
+				config.current[best.flag] = best.value;
 				var gain = Math.round(average(best.runs, 'score') - baseline);
 				say(t('Applied the best result. Your stored pages were cleared so visitors get it now.'));
 				toast(best.label + ': ' + t('applied, Google scored it higher by') + ' ' + gain + ' ' + t('points.'), false);
