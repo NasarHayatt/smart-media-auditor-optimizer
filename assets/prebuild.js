@@ -482,13 +482,61 @@
 	 * would keep applying after the scripts run, and hide or pin the very
 	 * elements the scripts go on to show.
 	 */
+	function scopeLine(line) {
+		var brace = line.indexOf('{');
+		if (brace < 0) { return ''; }
+		return list(line.slice(0, brace)).map(function (sel) { return 'html:not(.smao-ran) ' + sel; }).join(',') + line.slice(brace);
+	}
+
+	/**
+	 * Every width's styles in one sheet, each rule written once for all the
+	 * widths it belongs to. Most rules are the same at several widths.
+	 *
+	 * Each width's rules keep their order: a rule is only shared with an
+	 * earlier width's copy when that copy comes after everything already
+	 * placed for this width, otherwise it is written again.
+	 *
+	 * @param {Object} byWidth width => styles from prepare().
+	 */
+	function combine(byWidth) {
+		var entries = [];
+		Object.keys(byWidth).map(Number).sort(function (a, b) { return a - b; }).forEach(function (width) {
+			var css = byWidth[width];
+			if (!css) { return; }
+			var last = -1;
+			css.split(NL).concat(['body{overflow-x:clip}']).forEach(function (line) {
+				if (line.indexOf('{') < 0) { return; }
+				var at = -1;
+				for (var i = last + 1; i < entries.length; i++) {
+					if (entries[i].line === line) { at = i; break; }
+				}
+				if (at === -1) {
+					at = last + 1;
+					entries.splice(at, 0, { line: line, widths: [] });
+				}
+				entries[at].widths.push(width);
+				last = at;
+			});
+		});
+		var out = [];
+		var group = null;
+		entries.forEach(function (entry) {
+			var key = entry.widths.slice().sort(function (a, b) { return a - b; }).join(',');
+			if (!group || group.key !== key) {
+				group = { key: key, widths: entry.widths, lines: [] };
+				out.push(group);
+			}
+			group.lines.push(scopeLine(entry.line));
+		});
+		return out.map(function (g) {
+			var queries = g.widths.slice().sort(function (a, b) { return a - b; }).map(range);
+			return '@media ' + queries.join(', ') + '{' + NL + g.lines.join(NL) + NL + '}';
+		}).join(NL);
+	}
+
 	function wrap(width, css) {
 		if (!css) { return ''; }
-		var scoped = css.split(NL).map(function (line) {
-			var brace = line.indexOf('{');
-			if (brace < 0) { return ''; }
-			return list(line.slice(0, brace)).map(function (sel) { return 'html:not(.smao-ran) ' + sel; }).join(',') + line.slice(brace);
-		}).join(NL);
+		var scoped = css.split(NL).map(scopeLine).join(NL);
 		return '@media ' + range(width) + '{' + NL + scoped + NL + 'html:not(.smao-ran) body{overflow-x:clip}' + NL + '}';
 	}
 
@@ -510,7 +558,7 @@
 		}, 0);
 	}
 
-	var api = { range: range, screenFor: screenFor, boxes: boxes, origins: origins, selector: selector, prepare: prepare, wrap: wrap, list: list, compare: compare, pageHeight: pageHeight, pieces: pieces, inside: inside, passes: passes, badness: badness, LIMITS: LIMITS, WIDTHS: [412, 768, 1350, 1920] };
+	var api = { range: range, screenFor: screenFor, boxes: boxes, origins: origins, selector: selector, prepare: prepare, wrap: wrap, combine: combine, list: list, compare: compare, pageHeight: pageHeight, pieces: pieces, inside: inside, passes: passes, badness: badness, LIMITS: LIMITS, WIDTHS: [412, 768, 1350, 1920] };
 	if (typeof module !== 'undefined' && module.exports) {
 		module.exports = api;
 	} else {

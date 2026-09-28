@@ -100,7 +100,7 @@
 			document.body.appendChild(f);
 		});
 		var sep = url.indexOf('?') === -1 ? '?' : '&';
-		var css = [];
+		var css = {};
 		var worst = { shift: 0, height: 0, missing: 0, off: 0, width: 0, widths: [] };
 		var worstBadness = 0;
 
@@ -156,7 +156,7 @@
 					if (second && (!result || tool.badness(second) < tool.badness(result))) { result = second; }
 				}
 				if (!result) { return null; }
-				css.push(tool.wrap(width, result.css));
+				css[width] = result.css;
 				var finite = function (value) { return isFinite(value) ? Math.round(value * 10000) / 10000 : null; };
 				worst.widths.push({ width: width, shift: finite(result.shift), height: finite(result.height), missing: finite(result.missing), off: finite(result.off) });
 				['shift', 'height', 'missing', 'off'].forEach(function (key) {
@@ -174,7 +174,7 @@
 			done.parentNode.removeChild(done);
 			held.parentNode.removeChild(held);
 		}
-		worst.css = css.filter(Boolean).join(String.fromCharCode(10));
+		worst.css = tool.combine(css);
 		return worst;
 	}
 

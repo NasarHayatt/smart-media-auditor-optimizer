@@ -63,6 +63,8 @@ final class PrebuildTest extends TestCase {
 		$this->assertSame( 'moved', Prebuild::verdict( 15000, 0.0, 0.0, 0.05, 0.0 ), 'content missing while held' );
 		$this->assertSame( 'moved', Prebuild::verdict( 15000, 0.0, 0.0, 0.0, 0.3 ), 'pieces off target' );
 		$this->assertSame( 'too_large', Prebuild::verdict( 500000, 0.0, 0.0, 0.0, 0.0 ) );
+		$this->assertSame( 'ready', Prebuild::verdict( 3000, 0.0, 0.0, 0.0, 0.0, 65544 ), 'judged as sent, compressed' );
+		$this->assertSame( 'too_large', Prebuild::verdict( 3000, 0.0, 0.0, 0.0, 0.0, 600000 ), 'too much to read, however well it compresses' );
 		$this->assertSame( 'unchecked', Prebuild::verdict( 15000, -1.0, 0.0, 0.0, 0.0 ) );
 	}
 
@@ -128,5 +130,20 @@ final class PrebuildTest extends TestCase {
 		$this->assertSame( 'Scripts run as normal: on a 768px wide screen the page length would change by 4%.', Prebuild::reason( $stored ) );
 		$this->assertStringStartsWith( 'Looks the same', Prebuild::reason( array( 'status' => 'ready' ) ) );
 		$this->assertStringContainsString( 'Measure again', Prebuild::reason( array( 'status' => 'unchecked' ) ) );
+	}
+
+	/**
+	 * Repetitive rules are measured as they travel.
+	 *
+	 * @return void
+	 */
+	public function test_sent_size_is_compressed(): void {
+		$css = str_repeat( "html:not(.smao-ran) #menu-main-menu > li.menu-item:nth-of-type(2) > a{position:absolute!important;left:80px!important}
+", 400 );
+		$this->assertLessThan( strlen( $css ) / 10, Prebuild::sent_size( $css ) );
+		$this->assertSame( 0, Prebuild::sent_size( '' ) );
+		$stored = Prebuild::clean( array( 'css' => $css, 'shift' => 0, 'height' => 0, 'missing' => 0, 'off' => 0 ) );
+		$this->assertSame( 'ready', $stored['status'] );
+		$this->assertSame( Prebuild::sent_size( $css ), $stored['sent'] );
 	}
 }

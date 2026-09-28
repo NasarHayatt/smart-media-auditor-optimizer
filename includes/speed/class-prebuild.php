@@ -50,9 +50,19 @@ final class Prebuild {
 	public const MAX_OFF = 0.05;
 
 	/**
-	 * Largest amount of generated styles accepted for one page.
+	 * Largest amount of generated styles accepted for one page, as sent:
+	 * compressed, which is how every host and CDN delivers a page. The rules
+	 * repeat the same selectors and declarations, so they compress about
+	 * twenty times; judging them uncompressed turned away a home page whose
+	 * 65 KB of styles cost visitors under 3 KB.
 	 */
-	private const MAX_CSS = 122880;
+	public const MAX_CSS = 30720;
+
+	/**
+	 * Largest amount of generated styles accepted uncompressed, which bounds
+	 * the time a phone spends reading them.
+	 */
+	public const MAX_RAW = 524288;
 
 	/**
 	 * Register hooks.
@@ -140,7 +150,8 @@ final class Prebuild {
 			return isset( $data[ $key ] ) && is_numeric( $data[ $key ] ) ? (float) $data[ $key ] : -1.0;
 		};
 		$css    = wp_strip_all_tags( (string) ( $data['css'] ?? '' ) );
-		$status = self::verdict( strlen( $css ), $number( 'shift' ), $number( 'height' ), $number( 'missing' ), $number( 'off' ) );
+		$sent   = self::sent_size( $css );
+		$status = self::verdict( $sent, $number( 'shift' ), $number( 'height' ), $number( 'missing' ), $number( 'off' ), strlen( $css ) );
 		$widths = array();
 		foreach ( array_slice( (array) ( $data['widths'] ?? array() ), 0, 8 ) as $row ) {
 			if ( ! is_array( $row ) || ! absint( $row['width'] ?? 0 ) ) {
@@ -160,9 +171,29 @@ final class Prebuild {
 			'missing' => round( max( 0, $number( 'missing' ) ), 4 ),
 			'off'     => round( max( 0, $number( 'off' ) ), 4 ),
 			'bytes'   => strlen( $css ),
+			'sent'    => $sent,
 			'width'   => absint( $data['width'] ?? 0 ),
 			'widths'  => $widths,
 		);
+	}
+
+	/**
+	 * Size of styles as a visitor downloads them, compressed.
+	 *
+	 * @param string $css Styles.
+	 * @return int
+	 */
+	public static function sent_size( string $css ): int {
+		if ( '' === $css ) {
+			return 0;
+		}
+		if ( function_exists( 'gzencode' ) ) {
+			$packed = gzencode( $css, 6 );
+			if ( false !== $packed ) {
+				return strlen( $packed );
+			}
+		}
+		return (int) ceil( strlen( $css ) / 8 ); // Typical ratio for these rules.
 	}
 
 	/**
@@ -177,7 +208,14 @@ final class Prebuild {
 			return __( 'Looks the same with scripts waiting, so its scripts wait.', 'smart-media-auditor-optimizer' );
 		}
 		if ( 'too_large' === $status ) {
-			return __( 'Scripts run as normal: rebuilding this layout would need too many extra styles.', 'smart-media-auditor-optimizer' );
+			if ( empty( $prebuild['sent'] ) ) {
+				return __( 'Scripts run as normal: rebuilding this layout would need too many extra styles. Measure again.', 'smart-media-auditor-optimizer' );
+			}
+			return sprintf(
+				/* translators: %s: size, such as 40 KB. */
+				__( 'Scripts run as normal: rebuilding this layout would add %s to the page.', 'smart-media-auditor-optimizer' ),
+				size_format( (int) ( (int) ( $prebuild['bytes'] ?? 0 ) > self::MAX_RAW ? $prebuild['bytes'] : $prebuild['sent'] ) )
+			);
 		}
 		if ( 'unchecked' === $status ) {
 			return __( 'Scripts run as normal: the page did not finish loading while it was checked. Measure again.', 'smart-media-auditor-optimizer' );
@@ -221,18 +259,19 @@ final class Prebuild {
 	/**
 	 * Decide whether a page may hold its scripts.
 	 *
-	 * @param int   $bytes   Size of the generated styles.
+	 * @param int   $bytes   Size of the generated styles as sent, compressed.
 	 * @param float $shift   Layout movement between held and finished page.
 	 * @param float $height  Difference in page height, as a share.
 	 * @param float $missing Share of visible content missing when held.
 	 * @param float $off     Share of rebuilt pieces not where they belong.
+	 * @param int   $raw     Size of the generated styles uncompressed.
 	 * @return string ready, moved, too_large or unchecked.
 	 */
-	public static function verdict( int $bytes, float $shift, float $height, float $missing = 0.0, float $off = 0.0 ): string {
+	public static function verdict( int $bytes, float $shift, float $height, float $missing = 0.0, float $off = 0.0, int $raw = 0 ): string {
 		if ( $shift < 0 || $height < 0 || $missing < 0 || $off < 0 ) {
 			return 'unchecked';
 		}
-		if ( $bytes > self::MAX_CSS ) {
+		if ( $bytes > self::MAX_CSS || $raw > self::MAX_RAW ) {
 			return 'too_large';
 		}
 		if ( $shift > self::MAX_SHIFT || $height > self::MAX_HEIGHT || $missing > self::MAX_MISSING || $off > self::MAX_OFF ) {

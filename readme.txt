@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.5.1
+Stable tag: 2.5.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,14 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.5.2 =
+* Fix: a page's pre-built layout was turned away as "too many extra styles"
+  by its uncompressed size. The rules repeat the same selectors and compress
+  about twenty times, so a home page whose styles cost visitors under 3 KB
+  kept its scripts running. The limit now applies to the size actually sent.
+* Improved: rules shared by several screen widths are written once, about a
+  quarter less to read.
 
 = 2.5.1 =
 * Fix: on pages that hold their scripts, some pre-built styles did not switch
@@ -373,6 +381,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.5.2 =
+Pages with larger layouts can now hold their scripts. Run the page measurement
+under Speed again.
 
 = 2.5.1 =
 Fixes pre-built styles that stayed on after scripts ran, and sizes every image

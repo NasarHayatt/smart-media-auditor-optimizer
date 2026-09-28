@@ -118,3 +118,26 @@ test('a width passes only when every measure is finite and within its limit', ()
   assert.equal(prebuild.badness(ok), 0);
   assert.deepEqual(prebuild.LIMITS, { shift: 0.02, height: 0.01, missing: 0.01, off: 0.05 });
 });
+
+test('rules shared by several widths are written once, and each width keeps its order', () => {
+  const byWidth = {
+    412: '#a{height:1px!important}\n#a *{visibility:hidden!important}\n#p{left:1px!important}',
+    768: '#a{height:1px!important}\n#a *{visibility:hidden!important}\n#p{left:2px!important}',
+    1350: '#b{height:9px!important}\n#a{height:1px!important}',
+    1920: '',
+  };
+  const css = prebuild.combine(byWidth);
+  assert.equal(css.split('#a *{').length - 1, 1, 'shared rule written once');
+  assert.match(css, /@media \(max-width: 600px\), \(min-width: 601px\) and \(max-width: 1024px\), \(min-width: 1025px\) and \(max-width: 1600px\)\{\nhtml:not\(\.smao-ran\) #a\{height:1px!important\}/);
+  assert.equal(css.split('#a{').length - 1, 1);
+  assert.ok(!/1601/.test(css), 'a width with nothing to rebuild adds nothing');
+  // Rebuild what each width sees, in order, and compare with its own rules.
+  const blocks = css.split(/\n(?=@media)/).map((b) => ({ q: b.slice(7, b.indexOf('{')), lines: b.split('\n').slice(1, -1) }));
+  for (const [width, own] of Object.entries(byWidth)) {
+    if (!own) { continue; }
+    const q = prebuild.range(Number(width));
+    const seen = blocks.filter((b) => b.q.split(', ').includes(q)).flatMap((b) => b.lines);
+    const expected = own.split('\n').concat('body{overflow-x:clip}').map((l) => 'html:not(.smao-ran) ' + l);
+    assert.deepEqual(seen, expected, 'width ' + width);
+  }
+});
