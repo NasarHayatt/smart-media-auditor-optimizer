@@ -146,4 +146,18 @@ final class PrebuildTest extends TestCase {
 		$this->assertSame( 'ready', $stored['status'] );
 		$this->assertSame( Prebuild::sent_size( $css ), $stored['sent'] );
 	}
+
+	/**
+	 * Measuring frames have no scrollbar, and visitors' scrollbars are
+	 * taken off full-width areas by a script that is never held back.
+	 *
+	 * @return void
+	 */
+	public function test_scrollbars_do_not_change_the_result(): void {
+		$root = dirname( __DIR__, 2 );
+		$this->assertStringContainsString( 'html{scrollbar-width:none}', (string) file_get_contents( $root . '/includes/delivery/class-rightsize.php' ) );
+		$this->assertStringContainsString( 'setProperty("--smao-sb"', Prebuild::SCROLLBAR );
+		$this->assertStringContainsString( "str_contains( \$attributes, 'smao-prebuild' )", (string) file_get_contents( $root . '/includes/speed/class-scripts.php' ) );
+		$this->assertStringContainsString( 'calc(100vw - var(--smao-sb,0px))', (string) file_get_contents( $root . '/assets/prebuild.js' ) );
+	}
 }

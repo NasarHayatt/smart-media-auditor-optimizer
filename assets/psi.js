@@ -18,7 +18,7 @@
 	var table = document.getElementById('smao-psi-results');
 	var keyField = document.querySelector('input[name="psi_key"]');
 	var config = window.smaoPsi;
-	var RUNS = 2;
+	var RUNS = 3;
 	var MARGIN = 3;
 
 	function say(message) { if (status) { status.textContent = message; } }
@@ -141,13 +141,18 @@
 		} catch (error) {
 			/* Without fingerprints every setting is tested, as before. */
 		}
+		// Take turns: one run of every setting, then the next round. Running
+		// all of one setting first gave it whatever the server and Google
+		// were doing at that moment, and the first setting always met a
+		// cold server, so the current settings lost to plain timing.
 		var jobs = [];
-		list.forEach(function (row) {
-			row.runs = [];
-			if (row.noop) { return; }
-			var count = row.reference ? 1 : RUNS;
-			for (var i = 0; i < count; i++) { jobs.push(row); }
-		});
+		list.forEach(function (row) { row.runs = []; });
+		for (var round = 0; round < RUNS; round++) {
+			list.forEach(function (row) {
+				if (row.noop || (row.reference && round > 0)) { return; }
+				jobs.push(row);
+			});
+		}
 		var done = 0;
 		var failures = [];
 		say(t('Asking Google to test your home page. This takes a few minutes.'));

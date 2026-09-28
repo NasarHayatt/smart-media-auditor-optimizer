@@ -59,6 +59,11 @@ final class Prebuild {
 	public const MAX_CSS = 30720;
 
 	/**
+	 * Measures the scrollbar a desktop browser takes from the page width.
+	 */
+	public const SCROLLBAR = '(function(){var d=document.documentElement,p=document.createElement("div");p.style.cssText="position:absolute;top:-999px;left:0;width:100px;height:100px;overflow:scroll";d.appendChild(p);d.style.setProperty("--smao-sb",(p.offsetWidth-p.clientWidth)+"px");d.removeChild(p)})()';
+
+	/**
 	 * Largest amount of generated styles accepted uncompressed, which bounds
 	 * the time a phone spends reading them.
 	 */
@@ -344,6 +349,11 @@ final class Prebuild {
 		$entry = self::entry();
 		if ( null === $entry || '' === $entry['css'] ) {
 			return;
+		}
+		if ( str_contains( $entry['css'], '--smao-sb' ) ) {
+			// Full-width areas subtract the scrollbar a desktop browser adds.
+			// Measured here, before the first paint; zero on phones.
+			echo '<script id="smao-prebuild-scrollbar">' . self::SCROLLBAR . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fixed script.
 		}
 		echo '<style id="smao-prebuild">' . wp_strip_all_tags( $entry['css'] ) . '</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS, tags stripped.
 	}

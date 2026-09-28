@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.5.3
+Stable tag: 2.5.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,17 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.5.4 =
+* Fix: the page check ran in frames that, in a desktop browser on Windows,
+  have a 17px scrollbar. Every layout was measured narrower than a phone or
+  Google's test sees it, and full-width areas such as sliders landed out of
+  place, so pages failed the check. The frames no longer show a scrollbar.
+* Fix: rebuilt full-width areas subtract a visitor's desktop scrollbar,
+  measured before the first paint, so they line up exactly.
+* Fix: the Google check ran every test of one setting before the next, so the
+  current settings always met a cold server and could lose to timing alone.
+  Settings now take turns, three runs each.
 
 = 2.5.3 =
 * Fix: an element with no width whose contents overflow it, such as a
@@ -389,6 +400,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.5.4 =
+Pages measured from a Windows desktop now pass the page check. Measure again,
+then run the Google check.
 
 = 2.5.3 =
 Fixes pages with carousels in zero-width columns failing the page check on

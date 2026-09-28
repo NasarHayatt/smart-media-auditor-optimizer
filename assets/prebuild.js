@@ -273,7 +273,9 @@
 		if (Math.abs(a.w - b.w) > TOLERANCE || Math.abs(a.x - b.x) > TOLERANCE) {
 			var docWidth = doc.documentElement.clientWidth;
 			if (Math.abs(b.w - docWidth) <= TOLERANCE && b.x <= TOLERANCE) {
-				decl.push('width:100vw!important', 'max-width:100vw!important', 'margin-left:calc(50% - 50vw)!important', 'margin-right:calc(50% - 50vw)!important', 'left:auto!important');
+				// 100vw includes a desktop scrollbar the page itself does not
+					// have; --smao-sb, set before the first paint, takes it off.
+					decl.push('width:calc(100vw - var(--smao-sb,0px))!important', 'max-width:none!important', 'margin-left:calc(50% - 50vw + var(--smao-sb,0px) / 2)!important', 'margin-right:calc(50% - 50vw + var(--smao-sb,0px) / 2)!important', 'left:auto!important');
 			} else {
 				// Its parent may also differ until the script runs, so a share
 				// of the parent would be wrong; use the finished width.

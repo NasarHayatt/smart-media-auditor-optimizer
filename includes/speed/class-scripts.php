@@ -280,7 +280,7 @@ final class Scripts {
 	}
 
 	private static function keep_running( string $attributes, string $body ): bool {
-		if ( str_contains( $attributes, 'smao-delay' ) ) {
+		if ( str_contains( $attributes, 'smao-delay' ) || str_contains( $attributes, 'smao-prebuild' ) ) {
 			return true;
 		}
 		if ( preg_match( '#\ssrc\s*=\s*["\'][^"\']*/jquery(?:-migrate)?(?:\.min)?\.js#i', $attributes ) ) {

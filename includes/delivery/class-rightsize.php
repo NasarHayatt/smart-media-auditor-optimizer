@@ -46,6 +46,18 @@ final class Rightsize {
 			// The admin bar is not on the page visitors see, and its styles
 			// would otherwise be captured as if the page depended on them.
 			add_filter( 'show_admin_bar', '__return_false' );
+			// Measure as a phone and as Google's test see a page: without a
+			// scrollbar taking width. A desktop browser on Windows gives the
+			// measuring frame a 17px scrollbar, which narrowed every layout,
+			// moved full-width areas, and made pages fail a check they pass
+			// for real visitors.
+			add_action(
+				'wp_head',
+				static function (): void {
+					echo '<style id="smao-measure-scrollbar">html{scrollbar-width:none}html::-webkit-scrollbar{display:none}</style>' . "\n";
+				},
+				0
+			);
 			add_filter( 'wp_get_attachment_image_attributes', array( self::class, 'label' ), 20, 2 );
 			add_filter( 'wp_content_img_tag', array( self::class, 'label_content' ), 5, 3 );
 			// Tell the measurement frame which template it is looking at, so
