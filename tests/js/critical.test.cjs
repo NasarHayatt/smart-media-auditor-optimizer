@@ -103,7 +103,7 @@ test('every selector in a list is scoped, so nothing outlives the scripts', () =
   css.split('\n').slice(1, -1).forEach((line) => {
     const brace = line.indexOf('{');
     if (brace < 0) { return; }
-    prebuild.list(line.slice(0, brace)).forEach((sel) => assert.ok(sel.startsWith('html:not(.smao-ran) '), 'unscoped: ' + sel));
+    prebuild.list(line.slice(0, brace)).forEach((sel) => assert.ok(sel.startsWith('html:not(.smao-ran) ') || sel.startsWith('html.smao-ran '), 'unscoped: ' + sel));
   });
   assert.deepEqual(prebuild.list('a:not(.x,.y),b[data-a="1,2"] , c'), ['a:not(.x,.y)', 'b[data-a="1,2"]', 'c']);
 });
@@ -140,4 +140,14 @@ test('rules shared by several widths are written once, and each width keeps its 
     const expected = own.split('\n').concat('body{overflow-x:clip}').map((l) => 'html:not(.smao-ran) ' + l);
     assert.deepEqual(seen, expected, 'width ' + width);
   }
+});
+
+test('after the scripts run, a rebuilt area only keeps a minimum height', () => {
+  const css = prebuild.wrap(1350, '#grid{height:900px!important}\n#grid *{visibility:hidden!important}\n@smao-ran #grid{min-height:900px!important}');
+  assert.match(css, /html\.smao-ran #grid\{min-height:900px!important\}/);
+  const after = css.split('\n').filter((l) => l.startsWith('html.smao-ran'));
+  assert.equal(after.length, 1);
+  assert.ok(!/visibility/.test(after[0]), 'nothing but the minimum height survives the scripts');
+  const merged = prebuild.combine({ 412: '#grid{height:1px!important}\n@smao-ran #grid{min-height:1px!important}' });
+  assert.match(merged, /html\.smao-ran #grid\{min-height:1px!important\}/);
 });

@@ -160,4 +160,44 @@ final class PrebuildTest extends TestCase {
 		$this->assertStringContainsString( "str_contains( \$attributes, 'smao-prebuild' )", (string) file_get_contents( $root . '/includes/speed/class-scripts.php' ) );
 		$this->assertStringContainsString( 'calc(100vw - var(--smao-sb,0px))', (string) file_get_contents( $root . '/assets/prebuild.js' ) );
 	}
+
+	/**
+	 * A real visit that moves the page switches that page back, by itself.
+	 *
+	 * @return void
+	 */
+	public function test_visitors_report_a_moving_page(): void {
+		$root    = dirname( __DIR__, 2 );
+		$scripts = (string) file_get_contents( $root . '/includes/speed/class-scripts.php' );
+		$runtime = (string) strstr( $scripts, 'public static function runtime' );
+		$this->assertStringContainsString( 'getAttribute("data-smao-check")', $runtime );
+		$this->assertStringContainsString( 'navigator.sendBeacon', $runtime );
+		$this->assertStringContainsString( '(g>0.03||C>0.05)', $runtime, 'a 3% change in length or 0.05 of movement is reported' );
+		$prebuild = (string) file_get_contents( $root . '/includes/speed/class-prebuild.php' );
+		$this->assertStringContainsString( "hash_equals( self::token( \$key ), \$token )", $prebuild );
+		$this->assertStringContainsString( "Styles::mark_prebuild( \$key, 'visitor_moved' )", $prebuild );
+		$this->assertStringContainsString( 'switched back automatically', Prebuild::reason( array( 'status' => 'visitor_moved' ) ) );
+	}
+
+	/**
+	 * The check measures pages on screen and scrolled through.
+	 *
+	 * @return void
+	 */
+	public function test_measurement_sees_content_built_on_scroll(): void {
+		$js = (string) file_get_contents( dirname( __DIR__, 2 ) . '/assets/measure.js' );
+		$this->assertStringNotContainsString( 'left:-12000px', $js );
+		$this->assertStringContainsString( 'await Promise.all([scrollThrough(done), scrollThrough(held)]);', $js );
+	}
+
+	/**
+	 * jQuery waits only when every script waits and none is kept running.
+	 *
+	 * @return void
+	 */
+	public function test_jquery_waits_only_with_everything_else(): void {
+		$code = (string) file_get_contents( dirname( __DIR__, 2 ) . '/includes/speed/class-scripts.php' );
+		$this->assertStringContainsString( "if ( 'smao-delay' !== \$handle && in_array( \$handle, self::NEVER, true ) && self::core_can_wait() ) {", $code );
+		$this->assertStringContainsString( 'if ( ! self::holding_all() ) {', (string) strstr( $code, 'public static function core_can_wait' ) );
+	}
 }

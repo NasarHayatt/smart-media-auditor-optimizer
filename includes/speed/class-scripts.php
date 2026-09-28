@@ -283,8 +283,13 @@ final class Scripts {
 		if ( str_contains( $attributes, 'smao-delay' ) || str_contains( $attributes, 'smao-prebuild' ) ) {
 			return true;
 		}
-		if ( preg_match( '#\ssrc\s*=\s*["\'][^"\']*/jquery(?:-migrate)?(?:\.min)?\.js#i', $attributes ) ) {
+		$core_waits = self::core_can_wait();
+		if ( ! $core_waits && preg_match( '#\ssrc\s*=\s*["\'][^"\']*/jquery(?:-migrate)?(?:\.min)?\.js#i', $attributes ) ) {
 			return true;
+		}
+		// With jQuery waiting, a tiny script that calls it must wait as well.
+		if ( $core_waits && preg_match( '#\bjQuery\b|\$\s*\(|\bwp\.(hooks|i18n)\b#', $body ) ) {
+			return false;
 		}
 		foreach ( array( 'setREVStartSize', 'document.documentElement.className', 'document.documentElement.classList', 'no-js' ) as $needle ) {
 			if ( str_contains( $body, $needle ) ) {
@@ -292,6 +297,41 @@ final class Scripts {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Whether jQuery and WordPress's own libraries can wait with everything else.
+	 *
+	 * When every script waits, nothing is left that needs jQuery before the
+	 * visitor interacts, so it can wait too, first in line, and stop holding
+	 * up the first paint: about 100 KB that every slow phone had to fetch and
+	 * run before drawing anything. The one exception is a script the site
+	 * owner told us never to touch; it runs straight away, so what it needs
+	 * must be there.
+	 *
+	 * @return bool
+	 */
+	public static function core_can_wait(): bool {
+		static $answer = null;
+		if ( null !== $answer ) {
+			return $answer;
+		}
+		if ( ! self::holding_all() ) {
+			return $answer = false;
+		}
+		$scripts = function_exists( 'wp_scripts' ) ? wp_scripts() : null;
+		if ( ! $scripts instanceof \WP_Scripts ) {
+			return $answer = false;
+		}
+		foreach ( $scripts->registered as $handle => $item ) {
+			if ( in_array( $handle, self::NEVER, true ) ) {
+				continue;
+			}
+			if ( self::excluded( (string) $handle, (string) $item->src ) ) {
+				return $answer = false;
+			}
+		}
+		return $answer = true;
 	}
 
 	private static function inline_is_third_party( string $text ): bool {
@@ -317,6 +357,9 @@ final class Scripts {
 	 * @return bool
 	 */
 	private static function is_delayed( string $handle, string $src ): bool {
+		if ( 'smao-delay' !== $handle && in_array( $handle, self::NEVER, true ) && self::core_can_wait() ) {
+			return true; // Every script that uses it waits too, and runs after it.
+		}
 		if ( self::excluded( $handle, $src ) ) {
 			return false;
 		}
@@ -462,6 +505,8 @@ final class Scripts {
 (function(){var t=<?php echo (int) ( $timeout * 1000 ); ?>,f=!1,E=["keydown","mousemove","touchstart","touchmove","wheel","scroll","pointerdown","mousedown"];
 function run(){if(f)return;f=!0;E.forEach(function(e){window.removeEventListener(e,run,{passive:!0})});
 var s=document.querySelectorAll('script[type="smao/delayed"]'),i=0;if(!s.length){document.documentElement.classList.add("smao-ran");return}
+var P=document.getElementById("smao-prebuild"),K=P&&P.getAttribute("data-smao-check"),H=document.documentElement.scrollHeight,C=0,O=null;
+if(K&&window.PerformanceObserver){try{O=new PerformanceObserver(function(l){l.getEntries().forEach(function(e){if(!e.hadRecentInput)C+=e.value})});O.observe({type:"layout-shift"})}catch(x){}}
 var L=[],W=["DOMContentLoaded","load","readystatechange"],D=document.addEventListener,X=window.addEventListener;
 function trap(t,o){return function(e,h,p){if(W.indexOf(e)>-1){L.push([t,e,h]);return}return o.call(this,e,h,p)}}
 document.addEventListener=trap(document,D);window.addEventListener=trap(window,X);
@@ -469,6 +514,7 @@ function next(){if(i>=s.length){done();return}var o=s[i++],n=document.createElem
 for(var a=0;a<o.attributes.length;a++){var at=o.attributes[a];if("type"===at.name)continue;n.setAttribute(at.name,at.value)}
 if(o.src){n.onload=n.onerror=next;n.src=o.src;o.parentNode.replaceChild(n,o)}else{n.text=o.text;o.parentNode.replaceChild(n,o);next()}}
 function done(){document.addEventListener=D;window.addEventListener=X;document.documentElement.classList.add("smao-ran");
+if(K){window.setTimeout(function(){var g=Math.abs(document.documentElement.scrollHeight-H)/Math.max(H,1);if(O)O.disconnect();if((g>0.03||C>0.05)&&navigator.sendBeacon){var c=K.split("|");navigator.sendBeacon(c[0],new URLSearchParams({k:c[1],t:c[2]}))}},3000)}
 ["readystatechange","DOMContentLoaded","load"].forEach(function(e){L.forEach(function(l){if(l[1]!==e)return;try{var v=new Event(e);typeof l[2]==="function"?l[2].call(l[0],v):l[2]&&l[2].handleEvent&&l[2].handleEvent(v)}catch(x){}})})}
 next()}
 E.forEach(function(e){window.addEventListener(e,run,{passive:!0})});

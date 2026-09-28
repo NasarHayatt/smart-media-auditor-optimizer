@@ -14,6 +14,9 @@
 	'use strict';
 
 	var NL = String.fromCharCode(10);
+	// Marks a rule that applies after the scripts have run. While checking
+	// the held page the browser skips it as an unknown at-rule.
+	var RAN = '@smao-ran ';
 	var TOLERANCE = 2;
 
 	/** Media query for the widths a measurement at this width stands for. */
@@ -69,9 +72,9 @@
 	}
 
 	/**
-	 * Where each difference starts: an element that differs, none of whose
-	 * children differs by the same amount. Its ancestors only differ because
-	 * of it, and fixing it fixes them.
+	 * Where each difference starts: an element that differs while none of its
+	 * children does. Its ancestors only differ because of such elements, and
+	 * fixing them fixes the ancestors; the check afterwards confirms it.
 	 */
 	function origins(held, done, doc) {
 		var found = [];
@@ -81,14 +84,30 @@
 			var a = n ? held[n] : null;
 			var b = n ? done[n] : null;
 			if (n && a && b && differs(a, b)) {
+				var kids = children(el);
 				var dh = b.h - a.h;
 				var dw = b.w - a.w;
-				var kids = children(el);
-				var explained = a.shown === b.shown && kids.some(function (kid) {
+				// The change starts further down when one child changed by the
+				// same amount, or when the children's own changes add up to it,
+				// as when sections stacked down a page each change a little.
+				// A parent that rearranges its children, such as a row of cards
+				// a script lays out side by side, is rebuilt as a whole. Taking
+				// the parent whenever no single child explained everything
+				// rebuilt entire pages as frozen pieces, and the whole page then
+				// reflowed at once when the scripts started.
+				var sum = 0;
+				var changed = 0;
+				var single = false;
+				kids.forEach(function (kid) {
 					var ka = held[kid.getAttribute('data-smao-n')];
 					var kb = done[kid.getAttribute('data-smao-n')];
-					return ka && kb && Math.abs((kb.h - ka.h) - dh) <= TOLERANCE && Math.abs((kb.w - ka.w) - dw) <= TOLERANCE && (ka.shown === a.shown);
+					if (!ka || !kb || !differs(ka, kb)) { return; }
+					changed++;
+					sum += kb.h - ka.h;
+					if (Math.abs((kb.h - ka.h) - dh) <= TOLERANCE && Math.abs((kb.w - ka.w) - dw) <= TOLERANCE && ka.shown === a.shown) { single = true; }
 				});
+				var stacked = changed > 1 && Math.abs(dw) <= TOLERANCE && Math.abs(sum - dh) <= TOLERANCE * (changed + 1);
+				var explained = a.shown === b.shown && (single || stacked);
 				if (!explained) {
 					found.push(el);
 					return; // Everything inside is handled with it.
@@ -248,6 +267,34 @@
 		return rest.slice(0, end < 0 ? rest.length : end).replace(/^["']|["']$/g, '');
 	}
 
+	/**
+	 * The margin of an element's first or last child that, in normal flow,
+	 * shows outside the element instead of inside it.
+	 */
+	function collapsed(el, view, edge) {
+		var largest = 0;
+		var node = el;
+		for (var depth = 0; depth < 4 && node; depth++) {
+			var cs = view.getComputedStyle(node);
+			if (cs.display !== 'block' || parseFloat(cs['padding-' + edge]) > 0 || parseFloat(cs['border-' + edge + '-width']) > 0) { break; }
+			if (cs.overflow !== 'visible' && cs.overflow !== 'clip') { break; }
+			var kids = node.children;
+			var child = null;
+			for (var i = 0; i < kids.length; i++) {
+				var k = kids[edge === 'top' ? i : kids.length - 1 - i];
+				var ks = view.getComputedStyle(k);
+				if (ks.display === 'none' || ks.position === 'absolute' || ks.position === 'fixed' || ks.float !== 'none' || k.tagName === 'SCRIPT' || k.tagName === 'STYLE') { continue; }
+				child = k;
+				break;
+			}
+			if (!child) { break; }
+			var margin = parseFloat(view.getComputedStyle(child)['margin-' + edge]) || 0;
+			if (margin > largest) { largest = margin; }
+			node = child;
+		}
+		return largest;
+	}
+
 	/** Styles that make one area of the held page look finished. */
 	function rules(el, held, done, doc, doneView) {
 		var sel = selector(el, doc);
@@ -263,13 +310,24 @@
 		var screenHeight = doneView.innerHeight;
 		var height = Math.abs(b.h - screenHeight) <= TOLERANCE ? '100vh' : round(b.h) + 'px';
 		// A box with no width or height shows its contents only by letting
-		// them overflow, so it must not clip them.
-		var clip = b.w >= 1 && b.h >= 1 ? 'hidden' : 'visible';
+		// them overflow, so it must not clip them. clip rather than hidden,
+		// which would also change how margins behave at the area's edges.
+		var clip = b.w >= 1 && b.h >= 1 ? 'clip' : 'visible';
 		var decl = ['height:' + height + '!important', 'min-height:0!important', 'max-height:none!important', 'overflow:' + clip + '!important', 'visibility:visible!important', 'opacity:1!important'];
 		if (view.getComputedStyle(el).display === 'none') {
 			decl.push('display:' + (doneView.getComputedStyle(b.el).display || 'block') + '!important');
 		}
 		if (view.getComputedStyle(el).position === 'static') { decl.push('position:relative!important'); }
+		// In the finished page the margin of the area's first or last element
+		// can show outside the area, pushing it and everything after it. While
+		// scripts wait those elements are pinned in place and their margins
+		// no longer count, so the area carries them itself. A heading's margin
+		// moved every such area, and the rest of the page, by 20px.
+		['top', 'bottom'].forEach(function (edge) {
+			var extra = collapsed(b.el, doneView, edge);
+			var own = parseFloat(doneView.getComputedStyle(b.el)['margin-' + edge]) || 0;
+			if (extra > own + 0.5) { decl.push('margin-' + edge + ':' + round(extra) + 'px!important'); }
+		});
 		if (Math.abs(a.w - b.w) > TOLERANCE || Math.abs(a.x - b.x) > TOLERANCE) {
 			var docWidth = doc.documentElement.clientWidth;
 			if (Math.abs(b.w - docWidth) <= TOLERANCE && b.x <= TOLERANCE) {
@@ -283,6 +341,11 @@
 			}
 		}
 		var lines = [sel + '{' + decl.join(';') + '}', sel + ' *{visibility:hidden!important;animation:none!important;transition:none!important}'];
+		// Once the scripts run, the area keeps at least its finished height.
+		// Many widgets only build as they scroll into view; without this the
+		// area would fall back to empty until then and the page below it
+		// would move twice, up now and down again in front of the visitor.
+		lines.push(RAN + sel + '{min-height:' + height + '!important}');
 		return { selector: sel, css: lines.join(NL), region: el, done: b, pieces: pieces(b.el, done, doneView) };
 	}
 
@@ -494,7 +557,13 @@
 	function scopeLine(line) {
 		var brace = line.indexOf('{');
 		if (brace < 0) { return ''; }
-		return list(line.slice(0, brace)).map(function (sel) { return 'html:not(.smao-ran) ' + sel; }).join(',') + line.slice(brace);
+		var scope = 'html:not(.smao-ran) ';
+		if (line.indexOf(RAN) === 0) {
+			scope = 'html.smao-ran ';
+			line = line.slice(RAN.length);
+			brace = line.indexOf('{');
+		}
+		return list(line.slice(0, brace)).map(function (sel) { return scope + sel; }).join(',') + line.slice(brace);
 	}
 
 	/**

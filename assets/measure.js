@@ -96,7 +96,11 @@
 		[done, held].forEach(function (f) {
 			f.setAttribute('aria-hidden', 'true');
 			f.setAttribute('tabindex', '-1');
-			f.style.cssText = 'position:absolute;left:-12000px;top:0;border:0;visibility:hidden;';
+			// On screen but invisible. A frame placed off screen never counts
+			// as in view, so anything a page builds as it scrolls into view,
+			// sliders included, never started, and the "finished" page the
+			// check compared against was not finished at all.
+			f.style.cssText = 'position:fixed;left:0;top:0;border:0;opacity:0;pointer-events:none;z-index:-1;';
 			document.body.appendChild(f);
 		});
 		var sep = url.indexOf('?') === -1 ? '?' : '&';
@@ -124,12 +128,31 @@
 			}
 		}
 
+		// Scroll a page from top to bottom and back, so everything that
+		// appears as it scrolls into view has appeared before it is compared.
+		async function scrollThrough(frame) {
+			var view = frame.contentWindow;
+			var doc = frame.contentDocument;
+			if (!view || !doc || !doc.body) { return; }
+			var step = Math.max(300, Math.round(view.innerHeight * 0.8));
+			var pause = function (ms) { return new Promise(function (resolve) { window.setTimeout(resolve, ms); }); };
+			for (var y = 0, n = 0; y < tool.pageHeight(doc) && n < 120; y += step, n++) {
+				view.scrollTo(0, y);
+				await pause(120);
+			}
+			view.scrollTo(0, tool.pageHeight(doc));
+			await pause(800);
+			view.scrollTo(0, 0);
+			await pause(600);
+		}
+
 		async function attempt(width, doneSettle, heldSettle) {
 			var screen = tool.screenFor(width);
 			await Promise.all([
 				loadInto(done, url + sep + 'smao-measure=1&smao-try=' + Date.now(), width, screen, doneSettle),
 				loadInto(held, url + sep + 'smao-measure=1&smao-held=1&smao-try=' + Date.now(), width, screen, heldSettle)
 			]);
+			await Promise.all([scrollThrough(done), scrollThrough(held)]);
 			await steady(done, 8000);
 			await steady(held, 3000);
 			var dd = done.contentDocument;

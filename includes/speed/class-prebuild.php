@@ -75,6 +75,7 @@ final class Prebuild {
 	 * @return void
 	 */
 	public static function boot(): void {
+		add_action( 'rest_api_init', array( self::class, 'routes' ) );
 		if ( is_admin() ) {
 			return;
 		}
@@ -202,6 +203,60 @@ final class Prebuild {
 	}
 
 	/**
+	 * Register the route a visitor's browser reports a moving page to.
+	 *
+	 * @return void
+	 */
+	public static function routes(): void {
+		register_rest_route(
+			'smao/v1',
+			'/prebuild-report',
+			array(
+				'methods'             => 'POST',
+				'permission_callback' => '__return_true', // Visitors report; the token below limits it to real pages.
+				'callback'            => array( self::class, 'report' ),
+			)
+		);
+	}
+
+	/**
+	 * A token that ties a report to a page this site printed.
+	 *
+	 * @param string $key Page key.
+	 * @return string
+	 */
+	public static function token( string $key ): string {
+		return substr( hash_hmac( 'sha256', 'prebuild|' . $key, wp_salt( 'auth' ) ), 0, 20 );
+	}
+
+	/**
+	 * A visitor's page changed when its scripts started: stop holding them.
+	 *
+	 * The measurement is checked before any page holds its scripts, but a
+	 * page can still do something only a real visit shows, such as loading
+	 * more content as it is scrolled. The visitor's browser compares the page
+	 * before and after its scripts run and reports a real change here. That
+	 * page then runs its scripts normally, and its stored copy is rebuilt, so
+	 * no visitor keeps getting a page that jumps. The worst a false report can
+	 * do is switch one page back to how it loads without this feature.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public static function report( \WP_REST_Request $request ): \WP_REST_Response {
+		$key   = strtolower( (string) $request->get_param( 'k' ) );
+		$token = (string) $request->get_param( 't' );
+		if ( ! preg_match( '/^[a-f0-9]{32}$/', $key ) || ! hash_equals( self::token( $key ), $token ) ) {
+			return new \WP_REST_Response( array( 'ok' => false ), 400 );
+		}
+		$url = Styles::mark_prebuild( $key, 'visitor_moved' );
+		if ( '' !== $url ) {
+			Cache::forget( $url );
+		}
+		return new \WP_REST_Response( array( 'ok' => true ), 200 );
+	}
+
+	/**
 	 * Plain words for why a page does or does not hold its scripts.
 	 *
 	 * @param array $prebuild Stored outcome.
@@ -221,6 +276,9 @@ final class Prebuild {
 				__( 'Scripts run as normal: rebuilding this layout would add %s to the page.', 'smart-media-auditor-optimizer' ),
 				size_format( (int) ( (int) ( $prebuild['bytes'] ?? 0 ) > self::MAX_RAW ? $prebuild['bytes'] : $prebuild['sent'] ) )
 			);
+		}
+		if ( 'visitor_moved' === $status ) {
+			return __( 'Scripts run as normal: on a real visit the page changed when its scripts started, so it was switched back automatically. Measure again after changing this page.', 'smart-media-auditor-optimizer' );
 		}
 		if ( 'unchecked' === $status ) {
 			return __( 'Scripts run as normal: the page did not finish loading while it was checked. Measure again.', 'smart-media-auditor-optimizer' );
@@ -355,6 +413,9 @@ final class Prebuild {
 			// Measured here, before the first paint; zero on phones.
 			echo '<script id="smao-prebuild-scrollbar">' . self::SCROLLBAR . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fixed script.
 		}
-		echo '<style id="smao-prebuild">' . wp_strip_all_tags( $entry['css'] ) . '</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS, tags stripped.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Only hashed.
+		$key   = Styles::key( (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ), PHP_URL_PATH ) );
+		$check = rest_url( 'smao/v1/prebuild-report' ) . '|' . $key . '|' . self::token( $key );
+		echo '<style id="smao-prebuild" data-smao-check="' . esc_attr( $check ) . '">' . wp_strip_all_tags( $entry['css'] ) . '</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS, tags stripped.
 	}
 }

@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.5.4
+Stable tag: 2.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,23 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.6.0 =
+* Fix: the page check loaded pages in frames placed off screen, where nothing
+  ever counts as scrolled into view. Anything a page builds as it scrolls into
+  view, and sliders that wait to be seen, never started, so the check compared
+  two unfinished pages. Pages are now measured on screen, invisibly, and
+  scrolled through before they are compared.
+* New: visitors' pages check themselves. When scripts start on a page that
+  holds them, the page compares its length and movement before and after. If
+  it changed, that page stops holding its scripts straight away and its stored
+  copy is rebuilt, so no visitor keeps getting a page that jumps.
+* New: when every script waits, jQuery and WordPress's own libraries wait too,
+  first in line, unless a script you excluded needs them. Stylesheets can then
+  load in the background as well. Together these are the largest remaining
+  cost of the first paint on a slow phone.
+* Fix: the Google check judged page layout by an average that counted runs in
+  which Google left out the full-page screenshot as a page with no height.
 
 = 2.5.4 =
 * Fix: the page check ran in frames that, in a desktop browser on Windows,
@@ -400,6 +417,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.6.0 =
+The page check now sees content built as the page scrolls, and pages that
+change on a real visit switch themselves back. Measure again after updating.
 
 = 2.5.4 =
 Pages measured from a Windows desktop now pass the page check. Measure again,

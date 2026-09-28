@@ -507,6 +507,25 @@ final class Styles {
 	}
 
 	/**
+	 * Change the stored pre-build status of one page.
+	 *
+	 * @param string $key    Page key.
+	 * @param string $status New status.
+	 * @return string The page URL when a verified pre-build was changed, else empty.
+	 */
+	public static function mark_prebuild( string $key, string $status ): string {
+		$pages = self::pages();
+		if ( 'ready' !== ( $pages[ $key ]['prebuild']['status'] ?? '' ) ) {
+			return '';
+		}
+		$pages[ $key ]['prebuild']['status']   = $status;
+		$pages[ $key ]['prebuild']['css']      = '';
+		$pages[ $key ]['prebuild']['reported'] = time();
+		update_option( self::OPTION, $pages, false );
+		return (string) ( $pages[ $key ]['url'] ?? '' );
+	}
+
+	/**
 	 * Every stored capture.
 	 *
 	 * @return array<string,array>
