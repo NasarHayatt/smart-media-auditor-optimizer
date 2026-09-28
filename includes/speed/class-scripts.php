@@ -497,7 +497,11 @@ final class Scripts {
 		 * replaying them to the whole page re-ran every theme and builder
 		 * handler and moved the layout.
 		 */
-		$timeout = (int) Settings::get()['delay_timeout'];
+		// A page that holds every script already looks finished, so it waits
+		// for the visitor. Starting them on a timer rebuilt the slider six
+		// seconds in, and a test that never interacts recorded that as the
+		// page's main content, and its blocking and movement as the page's.
+		$timeout = self::holding_all() ? 0 : (int) Settings::get()['delay_timeout'];
 		?>
 <script id="smao-delay"><?php
 		// phpcs:disable

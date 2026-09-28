@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.6.1
+Stable tag: 2.6.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,19 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.6.2 =
+* Fix: a desktop scrollbar made the page 15px narrower than its window, so
+  Google's desktop test never got the held page. Screens are now matched by
+  window width, as the page's own width rules are.
+* Fix: pages that hold every script no longer start them on a timer. They
+  already look finished; the visitor's first scroll, tap or mouse movement
+  starts them. On a timer, a slider built six seconds in and a test that
+  never interacts took that as the page's main content. The timer still
+  applies to third-party scripts held on their own.
+* Faster: stylesheets loading in the background are switched on together,
+  once all have arrived, instead of one at a time. A page with 26 of them was
+  laid out 26 times over, most of its blocking time on a slow phone.
 
 = 2.6.1 =
 * Fix: a pre-built page is only known to look right at the screen widths it
@@ -429,6 +442,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.6.2 =
+Desktop tests now get the fast page, and pages no longer start their scripts
+on a timer. No need to measure again.
 
 = 2.6.1 =
 Pages that switched themselves back hold their scripts again, and the main

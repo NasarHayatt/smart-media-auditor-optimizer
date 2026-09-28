@@ -147,7 +147,7 @@ final class Screen_Speed {
 						<textarea rows="3" name="delay_extra" spellcheck="false"><?php echo esc_textarea( $settings['delay_extra'] ); ?></textarea>
 						<small><?php esc_html_e( 'One per line. Anything here waits for interaction as well.', 'smart-media-auditor-optimizer' ); ?></small>
 					</label>
-					<?php self::number_row( 'delay_timeout', __( 'Run held-back scripts anyway after (seconds)', 'smart-media-auditor-optimizer' ), $settings ); ?>
+					<?php self::number_row( 'delay_timeout', __( 'Run held-back third-party scripts anyway after (seconds). Pages that hold every script wait for the visitor.', 'smart-media-auditor-optimizer' ), $settings ); ?>
 				</details>
 			</section>
 

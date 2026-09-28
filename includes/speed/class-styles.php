@@ -61,6 +61,13 @@ final class Styles {
 	public const MAX_SHIFT = 0.01;
 
 	/**
+	 * Switches every background stylesheet on in one go: once all of them
+	 * have arrived and the page has been read, or after three seconds.
+	 * Its id keeps it running when every other script waits.
+	 */
+	public const SWITCH_ON = '(function(){var on=0;function all(){if(on)return;on=1;var l=document.querySelectorAll("link[data-smao-media]");for(var i=0;i<l.length;i++){l[i].media=l[i].getAttribute("data-smao-media");l[i].removeAttribute("data-smao-media")}}window.smaoCss=function(){if(document.readyState==="loading")return;var l=document.querySelectorAll("link[data-smao-media]");for(var i=0;i<l.length;i++){if(!l[i].hasAttribute("data-smao-l"))return}all()};document.addEventListener("DOMContentLoaded",window.smaoCss);setTimeout(all,3000)})()';
+
+	/**
 	 * Handles noted during a measurement pass.
 	 *
 	 * @var array<int,string>
@@ -263,13 +270,18 @@ final class Styles {
 			return $tag;
 		}
 
-		$async = str_replace(
+		// Each stylesheet downloads in the background and is switched on with
+		// all the others at once. Switched on one by one as each arrived, a
+		// page of 26 stylesheets was styled and laid out again 26 times, and
+		// on a slow phone those passes were most of the page's blocking time.
+		$onload = 'this.onload=null;this.setAttribute(\'data-smao-l\',\'\');window.smaoCss&&smaoCss()';
+		$async  = str_replace(
 			"media='" . $media . "'",
-			"media='print' onload=\"this.media='" . $media . "';this.onload=null\"",
+			"media='print' data-smao-media='" . $media . "' onload=\"" . $onload . "\"",
 			$tag
 		);
 		if ( $async === $tag ) {
-			$async = str_replace( '<link ', '<link media="print" onload="this.media=\'all\';this.onload=null" ', $tag );
+			$async = str_replace( '<link ', '<link media="print" data-smao-media="all" onload="' . $onload . '" ', $tag );
 		}
 		return $async . '<noscript>' . $tag . '</noscript>';
 	}
@@ -318,6 +330,7 @@ final class Styles {
 			return;
 		}
 		echo '<style id="smao-critical">' . wp_strip_all_tags( $entry['css'] ) . '</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS, tags stripped.
+		echo '<script id="smao-prebuild-css">' . self::SWITCH_ON . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fixed script.
 	}
 
 	/**

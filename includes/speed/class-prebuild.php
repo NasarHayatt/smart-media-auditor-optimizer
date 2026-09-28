@@ -67,7 +67,9 @@ final class Prebuild {
 	/**
 	 * Before the first paint: measure the scrollbar a desktop browser takes
 	 * from the page width, and open the page, so its scripts run straight
-	 * away, when the page is not as wide as one the check looked at.
+	 * away, when the window is not as wide as one the check looked at. The
+	 * window, not the page inside it: the rules are chosen by window width,
+	 * and a scrollbar made Google's desktop test miss the checked 1350px.
 	 *
 	 * A pre-built layout is only known to match at the widths it was checked
 	 * at. Sliders scale with the screen and text wraps differently a few
@@ -80,7 +82,7 @@ final class Prebuild {
 	 */
 	public static function gate( array $widths ): string {
 		$list = implode( ',', array_map( 'intval', $widths ) );
-		return '(function(){var d=document.documentElement,p=document.createElement("div");p.style.cssText="position:absolute;top:-999px;left:0;width:100px;height:100px;overflow:scroll";d.appendChild(p);var s=p.offsetWidth-p.clientWidth;d.removeChild(p);d.style.setProperty("--smao-sb",s+"px");var w=window.innerWidth-s;if(![' . $list . '].some(function(x){return Math.abs(w-x)<=' . self::WIDTH_MATCH . '}))d.classList.add("smao-open")})()';
+		return '(function(){var d=document.documentElement,p=document.createElement("div");p.style.cssText="position:absolute;top:-999px;left:0;width:100px;height:100px;overflow:scroll";d.appendChild(p);var s=p.offsetWidth-p.clientWidth;d.removeChild(p);d.style.setProperty("--smao-sb",s+"px");var w=window.innerWidth;if(![' . $list . '].some(function(x){return Math.abs(w-x)<=' . self::WIDTH_MATCH . '}))d.classList.add("smao-open")})()';
 	}
 
 	/**
