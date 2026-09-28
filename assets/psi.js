@@ -184,14 +184,22 @@
 			return;
 		}
 		var baseline = average(current.runs, 'score');
-		var pageHeight = average(current.runs, 'height');
+		// The middle height of the runs that have a screenshot: Google leaves
+		// the full-page screenshot out of some runs of a very tall page, and
+		// averaging in that zero rejected a layout that had not changed.
+		function heightOf(runs) {
+			var list = runs.map(function (r) { return r.height; }).filter(function (h) { return h > 0; }).sort(function (x, y) { return x - y; });
+			return list.length ? list[Math.floor(list.length / 2)] : 0;
+		}
+		var pageHeight = heightOf(current.runs);
 		var best = null;
 		list.forEach(function (row) {
 			if (row.reference || row.key === 'current' || row.runs.length < RUNS) { return; }
 			// A setting that changes how long the page is changed the layout:
 			// a carousel left unbuilt, a section stacked or hidden. A higher
 			// score for a broken page is not a result, so it is never applied.
-			if (pageHeight > 0 && Math.abs(average(row.runs, 'height') - pageHeight) / pageHeight > 0.03) {
+			var rowHeight = heightOf(row.runs);
+			if (pageHeight > 0 && rowHeight > 0 && Math.abs(rowHeight - pageHeight) / pageHeight > 0.03) {
 				row.broken = true;
 				return;
 			}
