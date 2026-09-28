@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.5.2
+Stable tag: 2.5.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,14 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.5.3 =
+* Fix: an element with no width whose contents overflow it, such as a
+  carousel column in some phone layouts, was treated as hidden. The page check
+  then hid it while scripts waited, which also removed its height and moved
+  everything below it, so the page never passed. Only elements the page
+  actually hides count as hidden now, and such a column keeps its height and
+  shows its contents.
 
 = 2.5.2 =
 * Fix: a page's pre-built layout was turned away as "too many extra styles"
@@ -381,6 +389,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.5.3 =
+Fixes pages with carousels in zero-width columns failing the page check on
+phones. Run the page measurement under Speed again.
 
 = 2.5.2 =
 Pages with larger layouts can now hold their scripts. Run the page measurement

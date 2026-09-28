@@ -37,8 +37,12 @@
 			var n = el.getAttribute('data-smao-n');
 			var r = el.getBoundingClientRect();
 			var cs = view.getComputedStyle(el);
-			var visible = r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && Number(cs.opacity) > 0.01;
-			var box = { x: r.left + view.scrollX, y: r.top + view.scrollY, w: r.width, h: r.height, visible: visible, el: el };
+			// Shown: not hidden by the page. A box of no width can still show
+			// its contents, which overflow it; a theme's carousel column did
+			// exactly that on phones. Visible: shown and taking up space.
+			var shown = cs.visibility !== 'hidden' && cs.display !== 'none' && Number(cs.opacity) > 0.01;
+			var visible = shown && r.width > 0 && r.height > 0;
+			var box = { x: r.left + view.scrollX, y: r.top + view.scrollY, w: r.width, h: r.height, visible: visible, shown: shown, el: el };
 			var onScreen = visible && box.x > -TOLERANCE && box.x < width;
 			var current = out[n];
 			// Carousels clone their items; keep the copy actually on screen.
@@ -60,7 +64,7 @@
 
 	function differs(a, b) {
 		if (!a || !b) { return false; }
-		if (a.visible !== b.visible) { return true; }
+		if (a.shown !== b.shown) { return true; }
 		return Math.abs(a.h - b.h) > TOLERANCE || Math.abs(a.w - b.w) > TOLERANCE;
 	}
 
@@ -80,10 +84,10 @@
 				var dh = b.h - a.h;
 				var dw = b.w - a.w;
 				var kids = children(el);
-				var explained = a.visible === b.visible && kids.some(function (kid) {
+				var explained = a.shown === b.shown && kids.some(function (kid) {
 					var ka = held[kid.getAttribute('data-smao-n')];
 					var kb = done[kid.getAttribute('data-smao-n')];
-					return ka && kb && Math.abs((kb.h - ka.h) - dh) <= TOLERANCE && Math.abs((kb.w - ka.w) - dw) <= TOLERANCE && (ka.visible === a.visible);
+					return ka && kb && Math.abs((kb.h - ka.h) - dh) <= TOLERANCE && Math.abs((kb.w - ka.w) - dw) <= TOLERANCE && (ka.shown === a.shown);
 				});
 				if (!explained) {
 					found.push(el);
@@ -190,7 +194,7 @@
 			if (n && b && b.visible) {
 				// Only what shows inside the area: a carousel's cards scrolled
 				// out of view are clipped away in the finished page too.
-				if (area && (b.x + b.w <= area.x + 1 || b.x >= area.x + area.w - 1 || b.y + b.h <= area.y + 1 || b.y >= area.y + area.h - 1)) { return; }
+				if (area && area.w >= 1 && area.h >= 1 && (b.x + b.w <= area.x + 1 || b.x >= area.x + area.w - 1 || b.y + b.h <= area.y + 1 || b.y >= area.y + area.h - 1)) { return; }
 				var cs = view.getComputedStyle(node);
 				var tag = node.tagName;
 				var bg = cs.backgroundImage && cs.backgroundImage !== 'none' && cs.backgroundImage.indexOf('url(') !== -1;
@@ -252,13 +256,16 @@
 		var a = held[n];
 		var b = done[n];
 		var view = doc.defaultView;
-		if (!b.visible) {
+		if (!b.shown) {
 			return { selector: sel, css: sel + '{display:none!important}', pieces: [] };
 		}
 		// An area as tall as the screen follows the screen, not this frame.
 		var screenHeight = doneView.innerHeight;
 		var height = Math.abs(b.h - screenHeight) <= TOLERANCE ? '100vh' : round(b.h) + 'px';
-		var decl = ['height:' + height + '!important', 'min-height:0!important', 'max-height:none!important', 'overflow:hidden!important', 'visibility:visible!important', 'opacity:1!important'];
+		// A box with no width or height shows its contents only by letting
+		// them overflow, so it must not clip them.
+		var clip = b.w >= 1 && b.h >= 1 ? 'hidden' : 'visible';
+		var decl = ['height:' + height + '!important', 'min-height:0!important', 'max-height:none!important', 'overflow:' + clip + '!important', 'visibility:visible!important', 'opacity:1!important'];
 		if (view.getComputedStyle(el).display === 'none') {
 			decl.push('display:' + (doneView.getComputedStyle(b.el).display || 'block') + '!important');
 		}
