@@ -395,11 +395,17 @@
 			placedSelectors.push(sel);
 			var decl = ['left:' + round(fb.x - regionBox.x) + 'px!important', 'top:' + round(fb.y - regionBox.y) + 'px!important', 'width:' + round(fb.w) + 'px!important', 'height:' + round(fb.h) + 'px!important'];
 			if (hs.display === 'none' || hs.display === 'inline' || hs.display === 'contents') { decl.push('display:block!important'); }
+			// Below the first screen nobody sees a piece before interacting,
+			// and scrolling is interacting, which starts the real scripts. So
+			// there a piece only holds its place: a picture would still be
+			// downloaded, and on a slow phone every one of them competes with
+			// the page's main image. 3 MB of them delayed a live home page.
+			var below = fb.y >= doneView.innerHeight * 1.1;
 			COPY.forEach(function (prop) {
 				var value = cs.getPropertyValue(prop);
 				if (!value || value === hs.getPropertyValue(prop)) { return; }
 				if (prop === 'background-image') {
-					if (value === 'none') { return; }
+					if (value === 'none' || below) { return; }
 					var url = firstUrl(value);
 					if (url && perf && !perf(url)) { return; }
 				}
@@ -408,7 +414,7 @@
 			if (finished.tagName === 'IMG') {
 				var src = finished.currentSrc || finished.src || '';
 				var shows = target.naturalWidth > 8 && (target.currentSrc || target.src) === src;
-				if (!shows && src && src.indexOf('data:') !== 0 && finished.naturalWidth > 8 && (!perf || perf(src))) {
+				if (!below && !shows && src && src.indexOf('data:') !== 0 && finished.naturalWidth > 8 && (!perf || perf(src))) {
 					// A script swaps a placeholder for the real file; show the
 					// real file behind the placeholder until it does.
 					var real = 'url("' + src.replace(/"/g, '%22') + '")';
@@ -475,6 +481,33 @@
 	}
 
 	/**
+	 * Background pictures below the first screen wait while the scripts do.
+	 *
+	 * A browser downloads the background of everything it lays out, on
+	 * screen or not, as soon as the styles arrive. Page builders put a
+	 * background on nearly every section, so a slow phone fetched pictures
+	 * from the whole page while the main one waited its turn. Nobody sees
+	 * below the first screen before scrolling, and scrolling starts the
+	 * scripts, which lifts these rules. Backgrounds never affect layout.
+	 */
+	function laterBackgrounds(doc, done, doneView) {
+		var view = doc.defaultView;
+		var fold = doneView.innerHeight * 1.1;
+		var picked = [];
+		var list = doc.querySelectorAll('[data-smao-n]');
+		for (var i = 0; i < list.length && picked.length < 150; i++) {
+			var el = list[i];
+			var bg = view.getComputedStyle(el).backgroundImage;
+			if (!bg || bg.indexOf('url(') === -1) { continue; }
+			var box = done[el.getAttribute('data-smao-n')];
+			if (!box || box.y < fold) { continue; }
+			var sel = selector(el, doc);
+			if (sel) { picked.push(sel); }
+		}
+		return picked.length ? [picked.join(',') + '{background-image:none!important}'] : [];
+	}
+
+	/**
 	 * Build and check the styles for one width.
 	 *
 	 * @param {Document} heldDoc    Page with scripts held, labelled.
@@ -500,7 +533,7 @@
 		built.forEach(function (r) {
 			if (r.region) { placed = placed.concat(place(r, done, heldDoc, doneView, perf)); }
 		});
-		var text = built.map(function (r) { return r.css; }).concat(placed).join(NL);
+		var text = built.map(function (r) { return r.css; }).concat(placed, laterBackgrounds(heldDoc, done, doneView)).join(NL);
 		probe.textContent = text + NL + 'body{overflow-x:clip!important}';
 		var after = boxes(heldDoc);
 		// Inside a rebuilt area only its placed pieces show, so only those
@@ -557,9 +590,9 @@
 	function scopeLine(line) {
 		var brace = line.indexOf('{');
 		if (brace < 0) { return ''; }
-		var scope = 'html:not(.smao-ran) ';
+		var scope = 'html:not(.smao-ran):not(.smao-open) ';
 		if (line.indexOf(RAN) === 0) {
-			scope = 'html.smao-ran ';
+			scope = 'html.smao-ran:not(.smao-open) ';
 			line = line.slice(RAN.length);
 			brace = line.indexOf('{');
 		}
@@ -615,7 +648,7 @@
 	function wrap(width, css) {
 		if (!css) { return ''; }
 		var scoped = css.split(NL).map(scopeLine).join(NL);
-		return '@media ' + range(width) + '{' + NL + scoped + NL + 'html:not(.smao-ran) body{overflow-x:clip}' + NL + '}';
+		return '@media ' + range(width) + '{' + NL + scoped + NL + 'html:not(.smao-ran):not(.smao-open) body{overflow-x:clip}' + NL + '}';
 	}
 
 	/** The same limits the server applies (Prebuild::MAX_*). */

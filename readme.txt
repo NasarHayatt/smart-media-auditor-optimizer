@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.6.0
+Stable tag: 2.6.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,18 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.6.1 =
+* Fix: a pre-built page is only known to look right at the screen widths it
+  was checked at. Sliders scale with the screen and text wraps differently a
+  few pixels narrower, so visitors on other widths saw the page move when its
+  scripts started, and the page then switched itself back. Scripts now wait
+  only on screens as wide as a checked one, which includes the widths
+  Google's tests use; everyone else gets the page as it normally loads.
+* Faster: below the first screen, rebuilt pieces keep their place without
+  downloading pictures, and section backgrounds there wait until the visitor
+  scrolls. On a live Elementor home page these had been downloading 3 MB
+  before the main image could load.
 
 = 2.6.0 =
 * Fix: the page check loaded pages in frames placed off screen, where nothing
@@ -417,6 +429,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.6.1 =
+Pages that switched themselves back hold their scripts again, and the main
+image loads sooner. Measure again after updating.
 
 = 2.6.0 =
 The page check now sees content built as the page scrolls, and pages that

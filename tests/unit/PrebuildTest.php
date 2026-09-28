@@ -156,7 +156,10 @@ final class PrebuildTest extends TestCase {
 	public function test_scrollbars_do_not_change_the_result(): void {
 		$root = dirname( __DIR__, 2 );
 		$this->assertStringContainsString( 'html{scrollbar-width:none}', (string) file_get_contents( $root . '/includes/delivery/class-rightsize.php' ) );
-		$this->assertStringContainsString( 'setProperty("--smao-sb"', Prebuild::SCROLLBAR );
+		$gate = Prebuild::gate( array( 412, 1350 ) );
+		$this->assertStringContainsString( 'setProperty("--smao-sb"', $gate );
+		$this->assertStringContainsString( '[412,1350].some(function(x){return Math.abs(w-x)<=4})', $gate, 'only checked widths hold their scripts' );
+		$this->assertStringContainsString( 'd.classList.add("smao-open")', $gate );
 		$this->assertStringContainsString( "str_contains( \$attributes, 'smao-prebuild' )", (string) file_get_contents( $root . '/includes/speed/class-scripts.php' ) );
 		$this->assertStringContainsString( 'calc(100vw - var(--smao-sb,0px))', (string) file_get_contents( $root . '/assets/prebuild.js' ) );
 	}

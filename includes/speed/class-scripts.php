@@ -505,7 +505,7 @@ final class Scripts {
 (function(){var t=<?php echo (int) ( $timeout * 1000 ); ?>,f=!1,E=["keydown","mousemove","touchstart","touchmove","wheel","scroll","pointerdown","mousedown"];
 function run(){if(f)return;f=!0;E.forEach(function(e){window.removeEventListener(e,run,{passive:!0})});
 var s=document.querySelectorAll('script[type="smao/delayed"]'),i=0;if(!s.length){document.documentElement.classList.add("smao-ran");return}
-var P=document.getElementById("smao-prebuild"),K=P&&P.getAttribute("data-smao-check"),H=document.documentElement.scrollHeight,C=0,O=null;
+var P=document.getElementById("smao-prebuild"),K=P&&!document.documentElement.classList.contains("smao-open")&&P.getAttribute("data-smao-check"),H=document.documentElement.scrollHeight,C=0,O=null;
 if(K&&window.PerformanceObserver){try{O=new PerformanceObserver(function(l){l.getEntries().forEach(function(e){if(!e.hadRecentInput)C+=e.value})});O.observe({type:"layout-shift"})}catch(x){}}
 var L=[],W=["DOMContentLoaded","load","readystatechange"],D=document.addEventListener,X=window.addEventListener;
 function trap(t,o){return function(e,h,p){if(W.indexOf(e)>-1){L.push([t,e,h]);return}return o.call(this,e,h,p)}}
@@ -518,6 +518,7 @@ if(K){window.setTimeout(function(){var g=Math.abs(document.documentElement.scrol
 ["readystatechange","DOMContentLoaded","load"].forEach(function(e){L.forEach(function(l){if(l[1]!==e)return;try{var v=new Event(e);typeof l[2]==="function"?l[2].call(l[0],v):l[2]&&l[2].handleEvent&&l[2].handleEvent(v)}catch(x){}})})}
 next()}
 E.forEach(function(e){window.addEventListener(e,run,{passive:!0})});
+document.addEventListener("DOMContentLoaded",function(){document.documentElement.classList.contains("smao-open")&&run()});
 if(t>0){window.setTimeout(run,t)}
 document.addEventListener("visibilitychange",function(){document.hidden||run()});
 })();

@@ -87,8 +87,8 @@ const prebuild = require('../../assets/prebuild.js');
 test('pre-built styles only apply while scripts wait, per width range', () => {
   const css = prebuild.wrap(412, '#slider{height:275px!important}\n#slider *{visibility:hidden!important}');
   assert.match(css, /^@media \(max-width: 600px\)\{/);
-  assert.match(css, /html:not\(\.smao-ran\) #slider\{height:275px!important\}/);
-  assert.match(css, /html:not\(\.smao-ran\) #slider \*\{visibility:hidden!important\}/);
+  assert.match(css, /html:not\(\.smao-ran\):not\(\.smao-open\) #slider\{height:275px!important\}/);
+  assert.match(css, /html:not\(\.smao-ran\):not\(\.smao-open\) #slider \*\{visibility:hidden!important\}/);
   assert.equal(prebuild.wrap(1350, ''), '');
   assert.equal(prebuild.range(1920), '(min-width: 1601px)');
   assert.equal(prebuild.screenFor(412), 823);
@@ -97,13 +97,13 @@ test('pre-built styles only apply while scripts wait, per width range', () => {
 
 test('every selector in a list is scoped, so nothing outlives the scripts', () => {
   const css = prebuild.wrap(1350, '#menu > li:nth-of-type(2),#menu > li:nth-of-type(3){visibility:hidden!important}\n#a *,#b *{visibility:visible!important}');
-  assert.match(css, /html:not\(\.smao-ran\) #menu > li:nth-of-type\(2\),html:not\(\.smao-ran\) #menu > li:nth-of-type\(3\)\{/);
-  assert.match(css, /html:not\(\.smao-ran\) #a \*,html:not\(\.smao-ran\) #b \*\{/);
+  assert.match(css, /html:not\(\.smao-ran\):not\(\.smao-open\) #menu > li:nth-of-type\(2\),html:not\(\.smao-ran\):not\(\.smao-open\) #menu > li:nth-of-type\(3\)\{/);
+  assert.match(css, /html:not\(\.smao-ran\):not\(\.smao-open\) #a \*,html:not\(\.smao-ran\):not\(\.smao-open\) #b \*\{/);
   // No rule inside the media block may apply once html.smao-ran is set.
   css.split('\n').slice(1, -1).forEach((line) => {
     const brace = line.indexOf('{');
     if (brace < 0) { return; }
-    prebuild.list(line.slice(0, brace)).forEach((sel) => assert.ok(sel.startsWith('html:not(.smao-ran) ') || sel.startsWith('html.smao-ran '), 'unscoped: ' + sel));
+    prebuild.list(line.slice(0, brace)).forEach((sel) => assert.ok(sel.startsWith('html:not(.smao-ran):not(.smao-open) ') || sel.startsWith('html.smao-ran:not(.smao-open) '), 'unscoped: ' + sel));
   });
   assert.deepEqual(prebuild.list('a:not(.x,.y),b[data-a="1,2"] , c'), ['a:not(.x,.y)', 'b[data-a="1,2"]', 'c']);
 });
@@ -128,7 +128,7 @@ test('rules shared by several widths are written once, and each width keeps its 
   };
   const css = prebuild.combine(byWidth);
   assert.equal(css.split('#a *{').length - 1, 1, 'shared rule written once');
-  assert.match(css, /@media \(max-width: 600px\), \(min-width: 601px\) and \(max-width: 1024px\), \(min-width: 1025px\) and \(max-width: 1600px\)\{\nhtml:not\(\.smao-ran\) #a\{height:1px!important\}/);
+  assert.match(css, /@media \(max-width: 600px\), \(min-width: 601px\) and \(max-width: 1024px\), \(min-width: 1025px\) and \(max-width: 1600px\)\{\nhtml:not\(\.smao-ran\):not\(\.smao-open\) #a\{height:1px!important\}/);
   assert.equal(css.split('#a{').length - 1, 1);
   assert.ok(!/1601/.test(css), 'a width with nothing to rebuild adds nothing');
   // Rebuild what each width sees, in order, and compare with its own rules.
@@ -137,17 +137,17 @@ test('rules shared by several widths are written once, and each width keeps its 
     if (!own) { continue; }
     const q = prebuild.range(Number(width));
     const seen = blocks.filter((b) => b.q.split(', ').includes(q)).flatMap((b) => b.lines);
-    const expected = own.split('\n').concat('body{overflow-x:clip}').map((l) => 'html:not(.smao-ran) ' + l);
+    const expected = own.split('\n').concat('body{overflow-x:clip}').map((l) => 'html:not(.smao-ran):not(.smao-open) ' + l);
     assert.deepEqual(seen, expected, 'width ' + width);
   }
 });
 
 test('after the scripts run, a rebuilt area only keeps a minimum height', () => {
   const css = prebuild.wrap(1350, '#grid{height:900px!important}\n#grid *{visibility:hidden!important}\n@smao-ran #grid{min-height:900px!important}');
-  assert.match(css, /html\.smao-ran #grid\{min-height:900px!important\}/);
-  const after = css.split('\n').filter((l) => l.startsWith('html.smao-ran'));
+  assert.match(css, /html\.smao-ran:not\(\.smao-open\) #grid\{min-height:900px!important\}/);
+  const after = css.split('\n').filter((l) => l.startsWith('html.smao-ran:'));
   assert.equal(after.length, 1);
   assert.ok(!/visibility/.test(after[0]), 'nothing but the minimum height survives the scripts');
   const merged = prebuild.combine({ 412: '#grid{height:1px!important}\n@smao-ran #grid{min-height:1px!important}' });
-  assert.match(merged, /html\.smao-ran #grid\{min-height:1px!important\}/);
+  assert.match(merged, /html\.smao-ran:not\(\.smao-open\) #grid\{min-height:1px!important\}/);
 });

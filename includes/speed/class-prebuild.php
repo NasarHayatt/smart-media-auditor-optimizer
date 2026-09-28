@@ -59,9 +59,29 @@ final class Prebuild {
 	public const MAX_CSS = 30720;
 
 	/**
-	 * Measures the scrollbar a desktop browser takes from the page width.
+	 * Largest difference, in pixels, between a visitor's page width and a
+	 * checked width for the visitor to get the pre-built page.
 	 */
-	public const SCROLLBAR = '(function(){var d=document.documentElement,p=document.createElement("div");p.style.cssText="position:absolute;top:-999px;left:0;width:100px;height:100px;overflow:scroll";d.appendChild(p);d.style.setProperty("--smao-sb",(p.offsetWidth-p.clientWidth)+"px");d.removeChild(p)})()';
+	public const WIDTH_MATCH = 4;
+
+	/**
+	 * Before the first paint: measure the scrollbar a desktop browser takes
+	 * from the page width, and open the page, so its scripts run straight
+	 * away, when the page is not as wide as one the check looked at.
+	 *
+	 * A pre-built layout is only known to match at the widths it was checked
+	 * at. Sliders scale with the screen and text wraps differently a few
+	 * pixels narrower, so on a 390px phone a layout checked at 412px moved
+	 * when the scripts started. Those visitors now get the page exactly as it
+	 * loads without this feature, and nobody sees it move.
+	 *
+	 * @param array<int,int> $widths Widths the page passed at.
+	 * @return string
+	 */
+	public static function gate( array $widths ): string {
+		$list = implode( ',', array_map( 'intval', $widths ) );
+		return '(function(){var d=document.documentElement,p=document.createElement("div");p.style.cssText="position:absolute;top:-999px;left:0;width:100px;height:100px;overflow:scroll";d.appendChild(p);var s=p.offsetWidth-p.clientWidth;d.removeChild(p);d.style.setProperty("--smao-sb",s+"px");var w=window.innerWidth-s;if(![' . $list . '].some(function(x){return Math.abs(w-x)<=' . self::WIDTH_MATCH . '}))d.classList.add("smao-open")})()';
+	}
 
 	/**
 	 * Largest amount of generated styles accepted uncompressed, which bounds
@@ -408,14 +428,11 @@ final class Prebuild {
 		if ( null === $entry || '' === $entry['css'] ) {
 			return;
 		}
-		if ( str_contains( $entry['css'], '--smao-sb' ) ) {
-			// Full-width areas subtract the scrollbar a desktop browser adds.
-			// Measured here, before the first paint; zero on phones.
-			echo '<script id="smao-prebuild-scrollbar">' . self::SCROLLBAR . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fixed script.
-		}
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Only hashed.
 		$key   = Styles::key( (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ), PHP_URL_PATH ) );
 		$check = rest_url( 'smao/v1/prebuild-report' ) . '|' . $key . '|' . self::token( $key );
 		echo '<style id="smao-prebuild" data-smao-check="' . esc_attr( $check ) . '">' . wp_strip_all_tags( $entry['css'] ) . '</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS, tags stripped.
+		$widths = array_filter( array_map( 'absint', array_column( (array) ( $entry['widths'] ?? array() ), 'width' ) ) );
+		echo '<script id="smao-prebuild-gate">' . self::gate( $widths ? $widths : array( 412, 768, 1350, 1920 ) ) . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built from integers.
 	}
 }
