@@ -507,7 +507,7 @@ final class Scripts {
 		// phpcs:disable
 		?>
 (function(){var t=<?php echo (int) ( $timeout * 1000 ); ?>,f=!1,E=["keydown","mousemove","touchstart","touchmove","wheel","scroll","pointerdown","mousedown"];
-function run(){if(f)return;f=!0;E.forEach(function(e){window.removeEventListener(e,run,{passive:!0})});
+function run(ev){if(f)return;f=!0;var U=!!(ev&&ev.type&&E.indexOf(ev.type)>-1);E.forEach(function(e){window.removeEventListener(e,run,{passive:!0})});
 var s=document.querySelectorAll('script[type="smao/delayed"]'),i=0;if(!s.length){document.documentElement.classList.add("smao-ran");return}
 var P=document.getElementById("smao-prebuild"),K=P&&!document.documentElement.classList.contains("smao-open")&&P.getAttribute("data-smao-check"),H=document.documentElement.scrollHeight,C=0,O=null;
 if(K&&window.PerformanceObserver){try{O=new PerformanceObserver(function(l){l.getEntries().forEach(function(e){if(!e.hadRecentInput)C+=e.value})});O.observe({type:"layout-shift"})}catch(x){}}
@@ -518,13 +518,12 @@ function next(){if(i>=s.length){done();return}var o=s[i++],n=document.createElem
 for(var a=0;a<o.attributes.length;a++){var at=o.attributes[a];if("type"===at.name)continue;n.setAttribute(at.name,at.value)}
 if(o.src){n.onload=n.onerror=next;n.src=o.src;o.parentNode.replaceChild(n,o)}else{n.text=o.text;o.parentNode.replaceChild(n,o);next()}}
 function done(){document.addEventListener=D;window.addEventListener=X;document.documentElement.classList.add("smao-ran");
-if(K){window.setTimeout(function(){var g=Math.abs(document.documentElement.scrollHeight-H)/Math.max(H,1);if(O)O.disconnect();if((g>0.03||C>0.05)&&navigator.sendBeacon){var c=K.split("|");navigator.sendBeacon(c[0],new URLSearchParams({k:c[1],t:c[2]}))}},3000)}
+if(K&&U){window.setTimeout(function(){var g=Math.abs(document.documentElement.scrollHeight-H)/Math.max(H,1);if(O)O.disconnect();if((g>0.03||C>0.05)&&navigator.sendBeacon){var c=K.split("|");navigator.sendBeacon(c[0],new URLSearchParams({k:c[1],t:c[2],w:window.innerWidth,g:g.toFixed(3),c:C.toFixed(3)}))}},3000)}
 ["readystatechange","DOMContentLoaded","load"].forEach(function(e){L.forEach(function(l){if(l[1]!==e)return;try{var v=new Event(e);typeof l[2]==="function"?l[2].call(l[0],v):l[2]&&l[2].handleEvent&&l[2].handleEvent(v)}catch(x){}})})}
 next()}
 E.forEach(function(e){window.addEventListener(e,run,{passive:!0})});
 document.addEventListener("DOMContentLoaded",function(){document.documentElement.classList.contains("smao-open")&&run()});
-if(t>0){window.setTimeout(run,t)}
-document.addEventListener("visibilitychange",function(){document.hidden||run()});
+if(t>0){window.setTimeout(run,t);document.addEventListener("visibilitychange",function(){document.hidden||run()})}
 })();
 <?php
 		// phpcs:enable

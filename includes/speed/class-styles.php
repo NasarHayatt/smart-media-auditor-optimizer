@@ -524,16 +524,18 @@ final class Styles {
 	 *
 	 * @param string $key    Page key.
 	 * @param string $status New status.
+	 * @param array  $detail What was seen, for the explanation.
 	 * @return string The page URL when a verified pre-build was changed, else empty.
 	 */
-	public static function mark_prebuild( string $key, string $status ): string {
+	public static function mark_prebuild( string $key, string $status, array $detail = array() ): string {
 		$pages = self::pages();
 		if ( 'ready' !== ( $pages[ $key ]['prebuild']['status'] ?? '' ) ) {
 			return '';
 		}
 		$pages[ $key ]['prebuild']['status']   = $status;
 		$pages[ $key ]['prebuild']['css']      = '';
-		$pages[ $key ]['prebuild']['reported'] = time();
+		$pages[ $key ]['prebuild']['reported']        = time();
+		$pages[ $key ]['prebuild']['reported_detail'] = $detail;
 		update_option( self::OPTION, $pages, false );
 		return (string) ( $pages[ $key ]['url'] ?? '' );
 	}

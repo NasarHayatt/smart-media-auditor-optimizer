@@ -271,7 +271,12 @@ final class Prebuild {
 		if ( ! preg_match( '/^[a-f0-9]{32}$/', $key ) || ! hash_equals( self::token( $key ), $token ) ) {
 			return new \WP_REST_Response( array( 'ok' => false ), 400 );
 		}
-		$url = Styles::mark_prebuild( $key, 'visitor_moved' );
+		$detail = array(
+			'width'  => min( 10000, absint( $request->get_param( 'w' ) ) ),
+			'growth' => min( 100.0, max( 0.0, (float) $request->get_param( 'g' ) ) ),
+			'shift'  => min( 100.0, max( 0.0, (float) $request->get_param( 'c' ) ) ),
+		);
+		$url    = Styles::mark_prebuild( $key, 'visitor_moved', $detail );
 		if ( '' !== $url ) {
 			Cache::forget( $url );
 		}
@@ -300,6 +305,16 @@ final class Prebuild {
 			);
 		}
 		if ( 'visitor_moved' === $status ) {
+			$seen = (array) ( $prebuild['reported_detail'] ?? array() );
+			if ( ! empty( $seen['width'] ) ) {
+				return sprintf(
+					/* translators: 1: screen width in pixels, 2: change in page length in percent, 3: layout shift score. */
+					__( 'Scripts run as normal: when a visitor on a %1$dpx wide screen started the scripts, the page length changed by %2$s%% and parts moved (%3$s), so it was switched back automatically. Measure again after changing this page.', 'smart-media-auditor-optimizer' ),
+					(int) $seen['width'],
+					number_format_i18n( (float) $seen['growth'] * 100, 1 ),
+					number_format_i18n( (float) $seen['shift'], 3 )
+				);
+			}
 			return __( 'Scripts run as normal: on a real visit the page changed when its scripts started, so it was switched back automatically. Measure again after changing this page.', 'smart-media-auditor-optimizer' );
 		}
 		if ( 'unchecked' === $status ) {

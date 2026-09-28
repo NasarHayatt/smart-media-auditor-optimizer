@@ -178,7 +178,9 @@ final class PrebuildTest extends TestCase {
 		$this->assertStringContainsString( '(g>0.03||C>0.05)', $runtime, 'a 3% change in length or 0.05 of movement is reported' );
 		$prebuild = (string) file_get_contents( $root . '/includes/speed/class-prebuild.php' );
 		$this->assertStringContainsString( "hash_equals( self::token( \$key ), \$token )", $prebuild );
-		$this->assertStringContainsString( "Styles::mark_prebuild( \$key, 'visitor_moved' )", $prebuild );
+		$this->assertStringContainsString( "Styles::mark_prebuild( \$key, 'visitor_moved', \$detail )", $prebuild );
+		$this->assertStringContainsString( 'if(K&&U){', $runtime, 'only a visitor interaction can switch a page back, never a timer or a test' );
+		$this->assertStringContainsString( 'if(t>0){window.setTimeout(run,t);document.addEventListener("visibilitychange"', $runtime, 'pages that hold every script have neither a timer nor a visibility start' );
 		$this->assertStringContainsString( 'switched back automatically', Prebuild::reason( array( 'status' => 'visitor_moved' ) ) );
 	}
 

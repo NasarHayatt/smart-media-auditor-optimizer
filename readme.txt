@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.6.2
+Stable tag: 2.6.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,15 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.6.3 =
+* Fix: a page switched itself back when its scripts were started by a timer
+  or by the browser tab becoming visible, as happens during speed tests,
+  rather than by a visitor. Only a visitor's own scroll, tap or mouse
+  movement can now switch a page back, and pages that hold every script
+  start them for nothing else.
+* Improved: when a page is switched back, the Speed screen says on how wide
+  a screen, by how much the page length changed and how much moved.
 
 = 2.6.2 =
 * Fix: a desktop scrollbar made the page 15px narrower than its window, so
@@ -442,6 +451,9 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.6.3 =
+Speed tests can no longer switch a page back. Measure again after updating.
 
 = 2.6.2 =
 Desktop tests now get the fast page, and pages no longer start their scripts
