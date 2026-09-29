@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.6.4
+Stable tag: 2.6.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,16 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.6.5 =
+* Fix: page measurements were cleared, and pages quietly lost their speed-up,
+  on changes that do not affect how a page looks: every donation, order or
+  other private record, routine theme-setting writes, and any plugin update,
+  including automatic ones. Only layout changes clear them now: the theme,
+  the Customizer, menus, widgets, shared templates, and updates to the theme,
+  page builders and sliders.
+* New: when measurements are cleared, the admin says why, and the Speed
+  screen measures again by itself as soon as it is opened.
 
 = 2.6.4 =
 * Fix: a visitor who touched the page before its background stylesheets had
@@ -460,6 +470,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.6.5 =
+Pages keep their speed-up through donations, background saves and plugin
+updates. Open Speed after updating; it measures again by itself.
 
 = 2.6.4 =
 Stops pages switching themselves back when visitors tap early. Measure again

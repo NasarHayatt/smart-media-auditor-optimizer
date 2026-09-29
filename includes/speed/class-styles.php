@@ -609,6 +609,7 @@ final class Styles {
 			$pages = array_slice( $pages, -self::MAX_PAGES, null, true );
 		}
 		update_option( self::OPTION, $pages, false );
+		delete_option( self::FORGOT );
 		// The stored copy of this page was built before the capture existed.
 		Purge::urls( array( $url ) );
 
@@ -619,18 +620,66 @@ final class Styles {
 	}
 
 	/**
+	 * Post types that hold layout shared by many pages: builder templates,
+	 * block templates and reusable parts. Saving one changes pages it is on.
+	 */
+	private const SHARED_TYPES = array( 'elementor_library', 'wp_template', 'wp_template_part', 'wp_global_styles', 'wp_navigation', 'wp_block', 'et_pb_layout', 'et_template', 'et_header_layout', 'et_footer_layout', 'et_body_layout', 'fl-builder-template', 'ct_template', 'bricks_template', 'elementskit_template', 'ae_global_templates', 'jet-theme-core', 'oceanwp_library', 'astra-advanced-hook', 'vc_grid_item', 'templatera', 'kadence_element', 'gp_elements', 'blocksy_ct', 'header', 'footer' );
+
+	/**
+	 * Plugins whose update can change how every page is laid out.
+	 */
+	private const LAYOUT_PLUGINS = array( 'elementor', 'elementor-pro', 'js_composer', 'divi-builder', 'beaver-builder-lite-version', 'bb-plugin', 'oxygen', 'bricks', 'brizy', 'thrive-visual-editor', 'revslider', 'LayerSlider', 'essential-addons-for-elementor-lite', 'header-footer-elementor', 'ultimate-elementor', 'jet-elements', 'kadence-blocks', 'spectra', 'ultimate-addons-for-gutenberg', 'generateblocks', 'stackable-ultimate-gutenberg-blocks', 'woocommerce' );
+
+	/**
+	 * Plain words for a site-wide change, looked up only when it happens.
+	 *
+	 * @param string $hook Action that fired.
+	 * @return string
+	 */
+	private static function reason_for( string $hook ): string {
+		switch ( $hook ) {
+			case 'switch_theme':
+				return __( 'the theme was changed', 'smart-media-auditor-optimizer' );
+			case 'customize_save_after':
+				return __( 'the Customizer was saved', 'smart-media-auditor-optimizer' );
+			case 'activated_plugin':
+				return __( 'a plugin was activated', 'smart-media-auditor-optimizer' );
+			case 'deactivated_plugin':
+				return __( 'a plugin was deactivated', 'smart-media-auditor-optimizer' );
+			case 'wp_update_nav_menu':
+				return __( 'a menu was changed', 'smart-media-auditor-optimizer' );
+			default:
+				return __( 'Elementor regenerated its styles', 'smart-media-auditor-optimizer' );
+		}
+	}
+
+	/**
+	 * Why every capture was last dropped, for the Speed screen.
+	 */
+	public const FORGOT = 'smao_styles_forgot';
+
+	/**
 	 * Drop captures that may no longer describe their page.
 	 *
-	 * @param int $post_id Post whose captures to drop, or 0 for all of them.
+	 * @param int    $post_id Post whose captures to drop, or 0 for all of them.
+	 * @param string $reason  Plain words for why, when all are dropped.
 	 * @return void
 	 */
-	public static function forget( int $post_id = 0 ): void {
+	public static function forget( int $post_id = 0, string $reason = '' ): void {
 		$pages = self::pages();
 		if ( ! $pages ) {
 			return;
 		}
 		if ( 0 === $post_id ) {
 			delete_option( self::OPTION );
+			update_option(
+				self::FORGOT,
+				array(
+					'reason' => '' !== $reason ? $reason : __( 'the site changed', 'smart-media-auditor-optimizer' ),
+					'at'     => time(),
+				),
+				false
+			);
 			// Stored pages still carry the old inline styles; rebuild them.
 			Purge::everything();
 			return;
@@ -647,12 +696,14 @@ final class Styles {
 	}
 
 	/**
-	 * Forget captures whenever what is at the top of a page may have changed.
+	 * Forget captures whenever the layout of a page may have changed.
 	 *
-	 * Editing a page changes only that page. A theme, a plugin, a menu, a
-	 * widget, a shared template or a builder's global styles can change every
-	 * page, so all captures go. A page without a capture simply keeps its
-	 * stylesheets blocking until it is measured again.
+	 * Editing a page changes only that page. A theme, a menu, widgets, the
+	 * customizer, a shared template or a page builder's update can change
+	 * every page, so all captures go, and the Speed screen measures again the
+	 * next time it is opened. Anything else is left alone: a site where every
+	 * donation, background save or plugin update dropped the measurements
+	 * quietly lost its speed-up again and again.
 	 *
 	 * @return void
 	 */
@@ -671,24 +722,62 @@ final class Styles {
 					self::forget( (int) $post_id );
 					return;
 				}
-				self::forget(); // Templates, headers, footers, kits: shared by many pages.
+				/**
+				 * Filter the post types whose changes affect many pages.
+				 *
+				 * @param array<int,string> $types Post types.
+				 */
+				$shared = (array) apply_filters( 'smao_shared_layout_types', self::SHARED_TYPES );
+				if ( in_array( $post->post_type, $shared, true ) ) {
+					/* translators: %s: title of a template or other shared part. */
+					self::forget( 0, sprintf( __( '"%s", which several pages share, was edited', 'smart-media-auditor-optimizer' ), get_the_title( $post ) ) );
+				}
+				// Donations, orders, form entries and other private records do
+				// not change how a page looks.
 			},
 			10,
 			2
 		);
-		foreach ( array( 'switch_theme', 'customize_save_after', 'activated_plugin', 'deactivated_plugin', 'upgrader_process_complete', 'wp_update_nav_menu', 'elementor/core/files/clear_cache' ) as $hook ) {
+		foreach ( array( 'switch_theme', 'customize_save_after', 'activated_plugin', 'deactivated_plugin', 'wp_update_nav_menu', 'elementor/core/files/clear_cache' ) as $hook ) {
 			add_action(
 				$hook,
-				static function (): void {
-					self::forget();
+				static function () use ( $hook ): void {
+					self::forget( 0, self::reason_for( $hook ) );
 				}
 			);
 		}
 		add_action(
+			'upgrader_process_complete',
+			static function ( $upgrader, $data = array() ): void {
+				$data = is_array( $data ) ? $data : array();
+				if ( 'theme' === ( $data['type'] ?? '' ) ) {
+					self::forget( 0, __( 'the theme was updated', 'smart-media-auditor-optimizer' ) );
+					return;
+				}
+				if ( 'plugin' !== ( $data['type'] ?? '' ) ) {
+					return;
+				}
+				$slugs = array();
+				foreach ( (array) ( $data['plugins'] ?? array() ) as $file ) {
+					$slugs[] = dirname( (string) $file );
+				}
+				if ( isset( $data['plugin'] ) ) {
+					$slugs[] = dirname( (string) $data['plugin'] );
+				}
+				$layout = array_intersect( $slugs, (array) apply_filters( 'smao_layout_plugins', self::LAYOUT_PLUGINS ) );
+				if ( $layout ) {
+					/* translators: %s: plugin folder name. */
+					self::forget( 0, sprintf( __( '%s was updated', 'smart-media-auditor-optimizer' ), reset( $layout ) ) );
+				}
+			},
+			10,
+			2
+		);
+		add_action(
 			'updated_option',
 			static function ( $option ): void {
-				if ( 'sidebars_widgets' === $option || str_starts_with( (string) $option, 'theme_mods_' ) ) {
-					self::forget();
+				if ( 'sidebars_widgets' === $option ) {
+					self::forget( 0, __( 'widgets were changed', 'smart-media-auditor-optimizer' ) );
 				}
 			}
 		);

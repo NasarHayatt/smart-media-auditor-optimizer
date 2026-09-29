@@ -302,4 +302,8 @@
 			if (frame && frame.parentNode) { frame.parentNode.removeChild(frame); }
 		}
 	});
+	// Measurements the site's changes cleared are taken again straight away.
+	if (button.getAttribute('data-auto') === '1') {
+		window.setTimeout(function () { if (!button.disabled) { button.click(); } }, 1500);
+	}
 })();

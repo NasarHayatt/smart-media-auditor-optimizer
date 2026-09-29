@@ -42,6 +42,40 @@ final class Admin {
 		add_action( 'rest_api_init', array( self::class, 'routes' ) );
 		add_action( 'admin_post_smao_export', array( self::class, 'export' ) );
 		add_action( 'admin_bar_menu', array( self::class, 'admin_bar' ), 100 );
+		add_action( 'admin_notices', array( self::class, 'remeasure_notice' ) );
+	}
+
+	/**
+	 * Say so when a site change cleared the page measurements that holding
+	 * scripts and background stylesheets depend on, anywhere in the admin.
+	 *
+	 * @return void
+	 */
+	public static function remeasure_notice(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( $screen && str_contains( (string) $screen->id, 'smao-speed' ) ) {
+			return; // The Speed screen measures again by itself.
+		}
+		$forgot   = get_option( Styles::FORGOT );
+		$settings = Settings::get();
+		if ( ! is_array( $forgot ) || Styles::pages() || ! ( $settings['delay_all'] || $settings['async_css'] ) ) {
+			return;
+		}
+		printf(
+			'<div class="notice notice-warning"><p>%s <a href="%s">%s</a></p></div>',
+			esc_html(
+				sprintf(
+					/* translators: %s: reason. */
+					__( 'Media Auditor: your pages load without the full speed-up because %s, which cleared the page measurements.', 'smart-media-auditor-optimizer' ),
+					(string) $forgot['reason']
+				)
+			),
+			esc_url( admin_url( 'admin.php?page=smao-speed' ) ),
+			esc_html__( 'Open Speed to measure again (a few minutes)', 'smart-media-auditor-optimizer' )
+		);
 	}
 
 	/**

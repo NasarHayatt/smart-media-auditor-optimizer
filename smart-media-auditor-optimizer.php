@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Smart Media Auditor & Optimizer
  * Description: Find out where every image is actually used, remove what is not, and make the pages that remain load faster.
- * Version: 2.6.4
+ * Version: 2.6.5
  * Requires at least: 6.5
  * Requires PHP: 8.0
  * Author: Smart Media Auditor Contributors
@@ -21,7 +21,7 @@ if ( ! defined( 'SMAO_FILE' ) ) {
 	define( 'SMAO_FILE', __FILE__ );
 }
 if ( ! defined( 'SMAO_VERSION' ) ) {
-	define( 'SMAO_VERSION', '2.6.4' );
+	define( 'SMAO_VERSION', '2.6.5' );
 }
 
 require_once __DIR__ . '/includes/autoload.php';

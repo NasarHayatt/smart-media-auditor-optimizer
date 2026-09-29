@@ -205,4 +205,20 @@ final class PrebuildTest extends TestCase {
 		$this->assertStringContainsString( "if ( 'smao-delay' !== \$handle && in_array( \$handle, self::NEVER, true ) && self::core_can_wait() ) {", $code );
 		$this->assertStringContainsString( 'if ( ! self::holding_all() ) {', (string) strstr( $code, 'public static function core_can_wait' ) );
 	}
+
+	/**
+	 * Only changes to layout clear the measurements, never private records,
+	 * routine theme-setting writes or ordinary plugin updates.
+	 *
+	 * @return void
+	 */
+	public function test_only_layout_changes_clear_measurements(): void {
+		$code  = (string) file_get_contents( dirname( __DIR__, 2 ) . '/includes/speed/class-styles.php' );
+		$watch = (string) strstr( $code, 'public static function watch' );
+		$this->assertStringNotContainsString( "'theme_mods_'", $watch );
+		$this->assertStringContainsString( "if ( in_array( \$post->post_type, \$shared, true ) ) {", $watch );
+		$this->assertStringContainsString( "'theme' === ( \$data['type'] ?? '' )", $watch );
+		$this->assertStringContainsString( 'self::LAYOUT_PLUGINS', $watch );
+		$this->assertStringNotContainsString( "'upgrader_process_complete', 'wp_update_nav_menu'", $watch );
+	}
 }

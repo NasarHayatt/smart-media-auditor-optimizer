@@ -397,8 +397,26 @@ final class Screen_Speed {
 				</div>
 			<?php endif; ?>
 
+			<?php
+			// Measurements dropped because the site changed are taken again as
+			// soon as this screen is open, while features that need them are on.
+			$forgot = get_option( Styles::FORGOT );
+			$again  = is_array( $forgot ) && ! Styles::pages() && ( $settings['delay_all'] || $settings['async_css'] );
+			?>
+			<?php if ( $again ) : ?>
+				<p class="smao-inline-note">
+					<?php
+					printf(
+						/* translators: 1: time since, 2: reason. */
+						esc_html__( 'Page measurements were cleared %1$s ago because %2$s. Measuring again now; keep this page open for a few minutes.', 'smart-media-auditor-optimizer' ),
+						esc_html( human_time_diff( (int) $forgot['at'] ) ),
+						esc_html( (string) $forgot['reason'] )
+					);
+					?>
+				</p>
+			<?php endif; ?>
 			<div class="smao-measure-actions">
-				<button type="button" class="smao-cta smao-cta-quiet" id="smao-measure">
+				<button type="button" class="smao-cta smao-cta-quiet" id="smao-measure"<?php echo $again ? ' data-auto="1"' : ''; ?>>
 					<?php
 					echo $coverage['images']
 						? esc_html__( 'Measure again', 'smart-media-auditor-optimizer' )
