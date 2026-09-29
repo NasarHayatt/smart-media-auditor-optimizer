@@ -175,7 +175,7 @@ final class PrebuildTest extends TestCase {
 		$runtime = (string) strstr( $scripts, 'public static function runtime' );
 		$this->assertStringContainsString( 'getAttribute("data-smao-check")', $runtime );
 		$this->assertStringContainsString( 'navigator.sendBeacon', $runtime );
-		$this->assertStringContainsString( '(g>0.03||C>0.05)', $runtime, 'a 3% change in length or 0.05 of movement is reported' );
+		$this->assertStringContainsString( '((Q&&g>0.03)||C>0.05)', $runtime, 'a 3% change in length or 0.05 of movement is reported' );
 		$prebuild = (string) file_get_contents( $root . '/includes/speed/class-prebuild.php' );
 		$this->assertStringContainsString( "hash_equals( self::token( \$key ), \$token )", $prebuild );
 		$this->assertStringContainsString( "Styles::mark_prebuild( \$key, 'visitor_moved', \$detail )", $prebuild );

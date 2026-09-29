@@ -61,11 +61,13 @@ final class Styles {
 	public const MAX_SHIFT = 0.01;
 
 	/**
-	 * Switches every background stylesheet on in one go: once all of them
-	 * have arrived and the page has been read, or after three seconds.
-	 * Its id keeps it running when every other script waits.
+	 * Fetches the background stylesheets once the page has loaded, the
+	 * visitor acts, or four seconds after the page was read, whichever comes
+	 * first, and switches them all on in one go once they have arrived, or
+	 * three seconds after fetching began. Its id keeps it running when every
+	 * other script waits.
 	 */
-	public const SWITCH_ON = '(function(){var on=0;function all(){if(on)return;on=1;var l=document.querySelectorAll("link[data-smao-media]");for(var i=0;i<l.length;i++){l[i].media=l[i].getAttribute("data-smao-media");l[i].removeAttribute("data-smao-media")}}window.smaoCss=function(){if(document.readyState==="loading")return;var l=document.querySelectorAll("link[data-smao-media]");for(var i=0;i<l.length;i++){if(!l[i].hasAttribute("data-smao-l"))return}all()};document.addEventListener("DOMContentLoaded",window.smaoCss);setTimeout(all,3000)})()';
+	public const SWITCH_ON = '(function(){var on=0,go=0,E=["load","scroll","keydown","mousemove","touchstart","pointerdown","wheel"];function all(){if(on)return;on=1;var l=document.querySelectorAll("link[data-smao-media]");for(var i=0;i<l.length;i++){if(l[i].hasAttribute("data-smao-href"))l[i].href=l[i].getAttribute("data-smao-href");l[i].media=l[i].getAttribute("data-smao-media");l[i].removeAttribute("data-smao-media")}}function start(){if(go)return;go=1;E.forEach(function(e){window.removeEventListener(e,start,{passive:!0})});var l=document.querySelectorAll("link[data-smao-href]");for(var i=0;i<l.length;i++){l[i].href=l[i].getAttribute("data-smao-href");l[i].removeAttribute("data-smao-href")}setTimeout(all,3000)}window.smaoCss=function(){if(!go||document.readyState==="loading")return;var l=document.querySelectorAll("link[data-smao-media]");for(var i=0;i<l.length;i++){if(!l[i].hasAttribute("data-smao-l"))return}all()};E.forEach(function(e){window.addEventListener(e,start,{passive:!0})});document.addEventListener("DOMContentLoaded",function(){setTimeout(start,4000)})})()';
 
 	/**
 	 * Handles noted during a measurement pass.
@@ -283,6 +285,11 @@ final class Styles {
 		if ( $async === $tag ) {
 			$async = str_replace( '<link ', '<link media="print" data-smao-media="all" onload="' . $onload . '" ', $tag );
 		}
+		// Not even fetched until the page has loaded or the visitor acts. The
+		// styles written into the page draw the first screen on their own
+		// (checked when the page was measured), and a download started
+		// earlier competes with the main image on a slow phone.
+		$async = (string) preg_replace( '/\shref=(["\'])/', ' data-smao-href=$1', $async, 1 );
 		return $async . '<noscript>' . $tag . '</noscript>';
 	}
 

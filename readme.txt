@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.6.3
+Stable tag: 2.6.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,15 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.6.4 =
+* Fix: a visitor who touched the page before its background stylesheets had
+  arrived saw nothing move, but the page grew as they arrived, and that
+  switched the page back. A change in length now only counts when the
+  stylesheets were already on; movement on screen always counts.
+* Faster: stylesheets the page does not need for its first screen are not
+  even fetched until the page has loaded or the visitor acts, so they no
+  longer compete with the main image on a slow phone.
 
 = 2.6.3 =
 * Fix: a page switched itself back when its scripts were started by a timer
@@ -451,6 +460,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.6.4 =
+Stops pages switching themselves back when visitors tap early. Measure again
+after updating.
 
 = 2.6.3 =
 Speed tests can no longer switch a page back. Measure again after updating.
