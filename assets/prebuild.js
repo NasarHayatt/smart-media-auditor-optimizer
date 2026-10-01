@@ -508,6 +508,57 @@
 	}
 
 	/**
+	 * Large blocks entirely below the first screen, which the browser may skip
+	 * drawing until they come near the screen.
+	 *
+	 * Style and layout of everything on a long page was most of a phone's
+	 * blocking time before the first paint. Each block keeps its finished
+	 * height, and carries the margins its first and last element would
+	 * otherwise have pushed outside it, so the page around it is unchanged.
+	 * A block holding anything fixed or sticky is left alone, since skipping
+	 * would pin that to the block instead of the screen.
+	 */
+	function laterSections(doc, done, doneView) {
+		var fold = doneView.innerHeight * 1.1;
+		var width = doc.documentElement.clientWidth;
+		var lines = [];
+		var view = doc.defaultView;
+		function pinned(el) {
+			var all = el.getElementsByTagName('*');
+			for (var i = 0; i < all.length && i < 3000; i++) {
+				var p = view.getComputedStyle(all[i]).position;
+				if (p === 'fixed' || p === 'sticky') { return true; }
+			}
+			return all.length >= 3000;
+		}
+		function walk(el, depth) {
+			for (var i = 0; i < el.children.length && lines.length < 40; i++) {
+				var child = el.children[i];
+				var n = child.getAttribute('data-smao-n');
+				var box = n ? done[n] : null;
+				if (!box || !box.visible) { continue; }
+				if (box.y >= fold && box.h >= 150 && box.w >= width * 0.5) {
+					var cs = view.getComputedStyle(child);
+					if (cs.display === 'contents' || cs.display.indexOf('inline') === 0 || cs.position === 'fixed' || cs.position === 'sticky' || pinned(child)) { continue; }
+					var sel = selector(child, doc);
+					if (!sel) { continue; }
+					var decl = ['content-visibility:auto!important', 'contain-intrinsic-size:auto ' + round(box.h) + 'px!important'];
+					['top', 'bottom'].forEach(function (edge) {
+						var extra = collapsed(box.el, doneView, edge);
+						var own = parseFloat(doneView.getComputedStyle(box.el)['margin-' + edge]) || 0;
+						if (extra > own + 0.5) { decl.push('margin-' + edge + ':' + round(extra) + 'px!important'); }
+					});
+					lines.push(sel + '{' + decl.join(';') + '}');
+				} else if (box.y + box.h > fold && depth < 14) {
+					walk(child, depth + 1);
+				}
+			}
+		}
+		if (doc.body) { walk(doc.body, 0); }
+		return lines;
+	}
+
+	/**
 	 * Build and check the styles for one width.
 	 *
 	 * @param {Document} heldDoc    Page with scripts held, labelled.
@@ -553,8 +604,27 @@
 		var missing = fidelity(after, considered, heldDoc, {});
 		var off = offTarget(after, done, pieceKeys);
 		var height = Math.abs(pageHeight(heldDoc) - doneHeight) / Math.max(doneHeight, 1);
+		var result = { css: text, areas: areas.length, pieces: pieceKeys.length, skipped: skipped, shift: shift + (skipped ? 1 : 0), height: height, missing: missing, off: off, inner: inner, skippedRendering: 0 };
+		// Then, if the page passed, let the browser skip drawing what is below
+		// the first screen, and check again; keep it only if nothing changed.
+		var later = passes(result) ? laterSections(heldDoc, done, doneView) : [];
+		if (later.length) {
+			var withLater = text + NL + later.join(NL);
+			probe.textContent = withLater + NL + 'body{overflow-x:clip!important}';
+			var again = boxes(heldDoc);
+			var trial = {
+				shift: compare(again, considered, heldDoc) + (skipped ? 1 : 0),
+				height: Math.abs(pageHeight(heldDoc) - doneHeight) / Math.max(doneHeight, 1),
+				missing: fidelity(again, considered, heldDoc, {}),
+				off: offTarget(again, done, pieceKeys)
+			};
+			if (passes(trial) && trial.shift <= result.shift + 0.001 && trial.height <= result.height + 0.001) {
+				result.css = withLater;
+				result.skippedRendering = later.length;
+			}
+		}
 		probe.parentNode.removeChild(probe);
-		return { css: text, areas: areas.length, pieces: pieceKeys.length, skipped: skipped, shift: shift + (skipped ? 1 : 0), height: height, missing: missing, off: off };
+		return result;
 	}
 
 	/** Screen height to measure with, for each width. */

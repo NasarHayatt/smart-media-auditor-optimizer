@@ -487,9 +487,10 @@ final class Scripts {
 	 * @return void
 	 */
 	public static function runtime(): void {
-		if ( Prebuild::held() ) {
-			return; // The measurement wants the page as it is before anyone interacts.
-		}
+		// The measurement's held page gets the same runtime with no triggers:
+		// the check starts the scripts itself, as a visitor's first tap
+		// would, and compares what follows with the finished page.
+		$manual = Prebuild::held();
 		/*
 		 * The page's own load events fired long before a delayed script runs.
 		 * Listeners the delayed scripts register for them are collected and
@@ -521,9 +522,11 @@ function done(){document.addEventListener=D;window.addEventListener=X;document.d
 if(K&&U){window.setTimeout(function(){var g=Math.abs(document.documentElement.scrollHeight-H)/Math.max(H,1);if(O)O.disconnect();if(((Q&&g>0.03)||C>0.05)&&navigator.sendBeacon){var c=K.split("|");navigator.sendBeacon(c[0],new URLSearchParams({k:c[1],t:c[2],w:window.innerWidth,g:g.toFixed(3),c:C.toFixed(3)}))}},3000)}
 ["readystatechange","DOMContentLoaded","load"].forEach(function(e){L.forEach(function(l){if(l[1]!==e)return;try{var v=new Event(e);typeof l[2]==="function"?l[2].call(l[0],v):l[2]&&l[2].handleEvent&&l[2].handleEvent(v)}catch(x){}})})}
 next()}
-E.forEach(function(e){window.addEventListener(e,run,{passive:!0})});
+<?php if ( $manual ) : ?>window.smaoRelease=function(){run({type:"mousemove"})};
+<?php else : ?>E.forEach(function(e){window.addEventListener(e,run,{passive:!0})});
 document.addEventListener("DOMContentLoaded",function(){document.documentElement.classList.contains("smao-open")&&run()});
 if(t>0){window.setTimeout(run,t);document.addEventListener("visibilitychange",function(){document.hidden||run()})}
+<?php endif; ?>
 })();
 <?php
 		// phpcs:enable

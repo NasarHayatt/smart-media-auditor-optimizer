@@ -191,8 +191,25 @@ final class Prebuild {
 			}
 			$widths[] = $clean;
 		}
+		// A page that fails at some widths still holds its scripts at the
+		// widths that passed; the others load normally. A slider can differ at
+		// one width only, and the whole page used to lose its speed-up for it.
+		$blocked = array();
+		if ( 'moved' === $status && $widths ) {
+			foreach ( $widths as $row ) {
+				$values = array( $row['shift'], $row['height'], $row['missing'], $row['off'] );
+				if ( in_array( null, $values, true ) || 'ready' !== self::verdict( $sent, (float) $row['shift'], (float) $row['height'], (float) $row['missing'], (float) $row['off'], strlen( $css ) ) ) {
+					$blocked[] = $row['width'];
+				}
+			}
+			if ( count( $blocked ) < count( $widths ) ) {
+				$status = 'ready';
+			}
+		}
 		return array(
 			'status'  => $status,
+			'blocked' => 'ready' === $status ? $blocked : array(),
+			'checked_blocked' => 'ready' === $status ? $blocked : array(),
 			'css'     => 'ready' === $status ? $css : '',
 			'shift'   => round( max( 0, $number( 'shift' ) ), 4 ),
 			'height'  => round( max( 0, $number( 'height' ) ), 4 ),
@@ -276,11 +293,30 @@ final class Prebuild {
 			'growth' => min( 100.0, max( 0.0, (float) $request->get_param( 'g' ) ) ),
 			'shift'  => min( 100.0, max( 0.0, (float) $request->get_param( 'c' ) ) ),
 		);
-		$url    = Styles::mark_prebuild( $key, 'visitor_moved', $detail );
+		// Only the screen width the visitor had stops holding its scripts; the
+		// page stays fast on every other checked width. A layout can differ
+		// at one width only, and switching the whole page off for one visitor
+		// also took the speed-up away from everyone else.
+		$url    = Styles::block_width( $key, $detail );
 		if ( '' !== $url ) {
 			Cache::forget( $url );
 		}
 		return new \WP_REST_Response( array( 'ok' => true ), 200 );
+	}
+
+	/**
+	 * Checked widths at which the page still holds its scripts.
+	 *
+	 * @param array $prebuild Stored outcome.
+	 * @return array<int,int>
+	 */
+	public static function allowed_widths( array $prebuild ): array {
+		$measured = array_values( array_filter( array_map( 'absint', array_column( (array) ( $prebuild['widths'] ?? array() ), 'width' ) ) ) );
+		if ( ! $measured ) {
+			$measured = array( 412, 768, 1350, 1920 );
+		}
+		$blocked = array_map( 'absint', (array) ( $prebuild['blocked'] ?? array() ) );
+		return array_values( array_diff( $measured, $blocked ) );
 	}
 
 	/**
@@ -292,6 +328,28 @@ final class Prebuild {
 	public static function reason( array $prebuild ): string {
 		$status = (string) ( $prebuild['status'] ?? '' );
 		if ( 'ready' === $status ) {
+			$blocked = array_map( 'absint', (array) ( $prebuild['blocked'] ?? array() ) );
+			$checked = array_map( 'absint', (array) ( $prebuild['checked_blocked'] ?? array() ) );
+			$visitor = array_values( array_diff( $blocked, $checked ) );
+			$list    = static function ( array $widths ): string {
+				return implode( ', ', array_map( static fn( int $w ): string => $w . 'px', $widths ) );
+			};
+			$parts = array();
+			if ( $checked ) {
+				/* translators: %s: list of screen widths. */
+				$parts[] = sprintf( __( 'on %s wide screens the check saw it move when scripts start', 'smart-media-auditor-optimizer' ), $list( $checked ) );
+			}
+			if ( $visitor ) {
+				/* translators: %s: list of screen widths. */
+				$parts[] = sprintf( __( 'on %s wide screens a visitor saw it move', 'smart-media-auditor-optimizer' ), $list( $visitor ) );
+			}
+			if ( $parts ) {
+				return sprintf(
+					/* translators: %s: where and why some screens load normally. */
+					__( 'Its scripts wait, except where %s; those screens load normally.', 'smart-media-auditor-optimizer' ),
+					implode( '; ', $parts )
+				);
+			}
 			return __( 'Looks the same with scripts waiting, so its scripts wait.', 'smart-media-auditor-optimizer' );
 		}
 		if ( 'too_large' === $status ) {
@@ -449,7 +507,6 @@ final class Prebuild {
 		$key   = Styles::key( (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ), PHP_URL_PATH ) );
 		$check = rest_url( 'smao/v1/prebuild-report' ) . '|' . $key . '|' . self::token( $key );
 		echo '<style id="smao-prebuild" data-smao-check="' . esc_attr( $check ) . '">' . wp_strip_all_tags( $entry['css'] ) . '</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS, tags stripped.
-		$widths = array_filter( array_map( 'absint', array_column( (array) ( $entry['widths'] ?? array() ), 'width' ) ) );
-		echo '<script id="smao-prebuild-gate">' . self::gate( $widths ? $widths : array( 412, 768, 1350, 1920 ) ) . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built from integers.
+		echo '<script id="smao-prebuild-gate">' . self::gate( self::allowed_widths( $entry ) ) . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built from integers.
 	}
 }

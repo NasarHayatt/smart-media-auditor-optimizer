@@ -163,7 +163,45 @@
 				var entry = view.performance.getEntriesByName(address)[0];
 				return !entry || !entry.responseStatus || entry.responseStatus < 400;
 			};
-			return tool.prepare(hd, tool.boxes(dd), tool.pageHeight(dd), width, perf, view);
+			var doneBoxes = tool.boxes(dd);
+			var doneHeight = tool.pageHeight(dd);
+			var result = tool.prepare(hd, doneBoxes, doneHeight, width, perf, view);
+			if (tool.passes(result)) {
+				var started = await release(width, result, doneBoxes, doneHeight);
+				// The same limits a visitor's page uses to switch itself back.
+				if (started && started.shift > 0.05) { result.shift = Math.max(result.shift, started.shift); }
+				if (started && started.height > 0.03) { result.height = Math.max(result.height, started.height); }
+			}
+			return result;
+		}
+
+		// Start the held page's scripts as a visitor's first tap would, with
+		// the pre-built styles in place, and see whether the page moves.
+		async function release(width, result, doneBoxes, doneHeight) {
+			var hd = held.contentDocument;
+			var hv = held.contentWindow;
+			if (!hv || typeof hv.smaoRelease !== 'function') { return null; }
+			var style = hd.createElement('style');
+			style.textContent = tool.wrap(width, result.css);
+			hd.head.appendChild(style);
+			await new Promise(function (resolve) { window.setTimeout(resolve, 300); });
+			hv.smaoRelease();
+			var start = Date.now();
+			while (!hd.documentElement.classList.contains('smao-ran') && Date.now() - start < 20000) {
+				await new Promise(function (resolve) { window.setTimeout(resolve, 250); });
+			}
+			await scrollThrough(held);
+			await steady(held, 6000);
+			var after = tool.boxes(hd);
+			// Inside a rebuilt area the real widget takes over and may differ in
+			// detail, such as a carousel on another slide; the area itself and
+			// everything around it must stay where it is.
+			var considered = {};
+			Object.keys(doneBoxes).forEach(function (key) { if (!result.inner[key]) { considered[key] = doneBoxes[key]; } });
+			return {
+				shift: tool.compare(after, considered, hd),
+				height: Math.abs(tool.pageHeight(hd) - doneHeight) / Math.max(doneHeight, 1)
+			};
 		}
 
 		try {

@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.6.5
+Stable tag: 2.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,21 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.7.0 =
+* New: the page check now also starts the held page's scripts, as a
+  visitor's first tap would, and compares what follows with the finished
+  page. A screen width where the page would move never holds its scripts.
+* New: a page that passes at some screen widths and not others holds its
+  scripts where it passed and loads normally where it did not. A visitor
+  who sees a page move switches off only their screen width, not the page.
+* New: while scripts wait, the browser skips drawing large blocks below the
+  first screen until they come near it, with their size kept, and only
+  where the page check confirms nothing changes.
+* New: leave emoji to the browser (WordPress's emoji script removed), load
+  maps and embeds only when needed, and send smaller pages (comments and
+  spare space in styles removed). Text whitespace is never changed: a theme
+  may draw it as written.
 
 = 2.6.5 =
 * Fix: page measurements were cleared, and pages quietly lost their speed-up,
@@ -470,6 +485,11 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.7.0 =
+Checks the moment scripts start, keeps pages fast at every screen width that
+passes, and adds emoji, embed and page-size savings. Open Speed after
+updating; it measures again by itself.
 
 = 2.6.5 =
 Pages keep their speed-up through donations, background saves and plugin

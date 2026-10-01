@@ -548,6 +548,46 @@ final class Styles {
 	}
 
 	/**
+	 * A visitor at one checked width saw the page move when its scripts
+	 * started: stop holding them at that width only, or, when no checked
+	 * width is left, for the whole page.
+	 *
+	 * @param string $key    Page key.
+	 * @param array  $detail Width, change in length and movement seen.
+	 * @return string The page URL when something changed, else empty.
+	 */
+	public static function block_width( string $key, array $detail ): string {
+		$pages = self::pages();
+		$entry = $pages[ $key ]['prebuild'] ?? null;
+		if ( ! is_array( $entry ) || 'ready' !== ( $entry['status'] ?? '' ) ) {
+			return '';
+		}
+		$seen    = absint( $detail['width'] ?? 0 );
+		$allowed = Prebuild::allowed_widths( $entry );
+		$match   = 0;
+		foreach ( $allowed as $width ) {
+			if ( abs( $width - $seen ) <= Prebuild::WIDTH_MATCH ) {
+				$match = $width;
+				break;
+			}
+		}
+		if ( ! $match ) {
+			return ''; // That screen was not holding its scripts anyway.
+		}
+		$entry['blocked']                    = array_values( array_unique( array_merge( array_map( 'absint', (array) ( $entry['blocked'] ?? array() ) ), array( $match ) ) ) );
+		$entry['blocked_detail'][ $match ]   = $detail + array( 'at' => time() );
+		$entry['reported']                   = time();
+		$entry['reported_detail']            = $detail;
+		if ( ! Prebuild::allowed_widths( $entry ) ) {
+			$entry['status'] = 'visitor_moved';
+			$entry['css']    = '';
+		}
+		$pages[ $key ]['prebuild'] = $entry;
+		update_option( self::OPTION, $pages, false );
+		return (string) ( $pages[ $key ]['url'] ?? '' );
+	}
+
+	/**
 	 * Every stored capture.
 	 *
 	 * @return array<string,array>

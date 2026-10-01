@@ -195,6 +195,7 @@ final class Plugin {
 		Rightsize::boot();
 		Delivery::boot();
 		Prebuild::boot();
+		Markup::boot();
 		Styles::watch();
 		/*
 		 * These inspect the main query to decide whether to optimise, so they

@@ -52,6 +52,9 @@ final class Settings {
 		'delay_all',
 		'async_css',
 		'optimize_fonts',
+		'disable_emoji',
+		'lazy_iframes',
+		'minify_html',
 		'page_cache',
 		'browser_cache',
 		'cache_gzip',
@@ -109,6 +112,9 @@ final class Settings {
 			'style_exclusions'  => '',
 			'async_css'         => false,
 			'optimize_fonts'    => true,
+			'disable_emoji'     => true,
+			'lazy_iframes'      => true,
+			'minify_html'       => true,
 			'page_cache'        => true,
 			'browser_cache'     => true,
 			'cache_gzip'        => true,
@@ -163,6 +169,9 @@ final class Settings {
 		'delay_all',
 		'async_css',
 		'optimize_fonts',
+		'disable_emoji',
+		'lazy_iframes',
+		'minify_html',
 	);
 
 	/**

@@ -178,7 +178,13 @@ final class PrebuildTest extends TestCase {
 		$this->assertStringContainsString( '((Q&&g>0.03)||C>0.05)', $runtime, 'a 3% change in length or 0.05 of movement is reported' );
 		$prebuild = (string) file_get_contents( $root . '/includes/speed/class-prebuild.php' );
 		$this->assertStringContainsString( "hash_equals( self::token( \$key ), \$token )", $prebuild );
-		$this->assertStringContainsString( "Styles::mark_prebuild( \$key, 'visitor_moved', \$detail )", $prebuild );
+		$this->assertStringContainsString( 'Styles::block_width( $key, $detail )', $prebuild );
+		$this->assertSame( array( 412, 1350, 1920 ), Prebuild::allowed_widths( array( 'widths' => array( array( 'width' => 412 ), array( 'width' => 768 ), array( 'width' => 1350 ), array( 'width' => 1920 ) ), 'blocked' => array( 768 ) ) ), 'one width blocked, the rest still hold' );
+		$this->assertStringContainsString( 'on 768px wide screens a visitor saw it move', Prebuild::reason( array( 'status' => 'ready', 'blocked' => array( 768 ) ) ) );
+		$partial = Prebuild::clean( array( 'css' => '#a{height:1px}', 'shift' => 0.2, 'height' => 0, 'missing' => 0, 'off' => 0, 'widths' => array( array( 'width' => 412, 'shift' => 0, 'height' => 0, 'missing' => 0, 'off' => 0 ), array( 'width' => 768, 'shift' => 0.2, 'height' => 0, 'missing' => 0, 'off' => 0 ) ) ) );
+		$this->assertSame( 'ready', $partial['status'], 'the widths that passed still hold' );
+		$this->assertSame( array( 768 ), $partial['blocked'] );
+		$this->assertStringContainsString( 'on 768px wide screens the check saw it move', Prebuild::reason( $partial ) );
 		$this->assertStringContainsString( 'if(K&&U){', $runtime, 'only a visitor interaction can switch a page back, never a timer or a test' );
 		$this->assertStringContainsString( 'if(t>0){window.setTimeout(run,t);document.addEventListener("visibilitychange"', $runtime, 'pages that hold every script have neither a timer nor a visibility start' );
 		$this->assertStringContainsString( 'switched back automatically', Prebuild::reason( array( 'status' => 'visitor_moved' ) ) );

@@ -28,7 +28,7 @@ final class Screen_Speed {
 			<?php self::google_panel( $settings ); ?>
 			<?php self::cache_panel(); ?>
 
-			<input type="hidden" name="_flags" value="speed_enabled,dimensions,lcp_preload,lazy_correct,delivery,rightsize,defer_js,delay_js,delay_all,async_css,optimize_fonts,page_cache,browser_cache,cache_gzip,cache_warm,separate_mobile">
+			<input type="hidden" name="_flags" value="speed_enabled,dimensions,lcp_preload,lazy_correct,delivery,rightsize,defer_js,delay_js,delay_all,async_css,optimize_fonts,disable_emoji,lazy_iframes,minify_html,page_cache,browser_cache,cache_gzip,cache_warm,separate_mobile">
 
 			<section class="smao-panel smao-master-panel">
 				<label class="smao-switch">
@@ -74,6 +74,27 @@ final class Screen_Speed {
 					__( 'Load lower images only when needed', 'smart-media-auditor-optimizer' ),
 					__( 'Images further down the page wait until someone scrolls near them, and the main image never waits.', 'smart-media-auditor-optimizer' ),
 					__( 'Less to download before the page is usable', 'smart-media-auditor-optimizer' )
+				);
+				self::switch_row(
+					'lazy_iframes',
+					$settings['lazy_iframes'],
+					__( 'Load maps and embeds only when needed', 'smart-media-auditor-optimizer' ),
+					__( 'Maps, videos and other embedded frames wait until someone scrolls near them. One that is on screen when the page opens still loads straight away.', 'smart-media-auditor-optimizer' ),
+					__( 'Embeds are often the heaviest part of a page', 'smart-media-auditor-optimizer' )
+				);
+				self::switch_row(
+					'minify_html',
+					$settings['minify_html'],
+					__( 'Send smaller pages', 'smart-media-auditor-optimizer' ),
+					__( 'Removes comments and spare whitespace from each page and the styles written into it. Nothing that changes how the page looks or works is touched.', 'smart-media-auditor-optimizer' ),
+					__( 'Less to download and read before anything appears', 'smart-media-auditor-optimizer' )
+				);
+				self::switch_row(
+					'disable_emoji',
+					$settings['disable_emoji'],
+					__( 'Leave emoji to the browser', 'smart-media-auditor-optimizer' ),
+					__( 'WordPress adds a script to every page to replace emoji with pictures, for browsers too old to show them. Every current browser shows emoji itself.', 'smart-media-auditor-optimizer' ),
+					__( 'One script fewer on every page', 'smart-media-auditor-optimizer' )
 				);
 				self::switch_row(
 					'delivery',
