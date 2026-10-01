@@ -22,6 +22,20 @@ final class Screen_Speed {
 	 */
 	public static function render( array $input ): void {
 		$settings = Settings::get();
+		$owner    = Environment::conflict( 'assets' );
+		if ( '' === $owner ) {
+			$owner = Environment::conflict( 'cache' );
+		}
+		if ( '' !== $owner ) :
+			?>
+			<div class="notice notice-warning inline">
+				<p>
+					<strong><?php echo esc_html( Environment::label( $owner ) ); ?></strong>
+					<?php esc_html_e( 'is also active. Two speed plugins rewriting the same pages break each other, so this plugin leaves scripts, stylesheets and caching to it and only does what it does not. To use this plugin instead, deactivate the other one, then click Measure again below.', 'smart-media-auditor-optimizer' ); ?>
+				</p>
+			</div>
+			<?php
+		endif;
 		self::right_size();
 		?>
 		<form class="smao-settings" data-settings="speed">

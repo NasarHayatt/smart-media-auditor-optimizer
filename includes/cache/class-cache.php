@@ -403,7 +403,14 @@ final class Cache {
 	public static function install_dropin(): bool {
 		$target = WP_CONTENT_DIR . '/advanced-cache.php';
 		if ( file_exists( $target ) && ! self::owns_dropin( $target ) ) {
-			return false; // Another plugin owns it; leave it alone.
+			if ( ! self::orphaned( $target ) ) {
+				return false; // Another plugin or the host owns it; leave it alone.
+			}
+			// Left behind by a cache plugin that is no longer active: keep a
+			// copy beside it, then take its place.
+			if ( ! @copy( $target, $target . '.smao-backup' ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				return false;
+			}
 		}
 		$template = file_get_contents( __DIR__ . '/advanced-cache-template.php' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
 		if ( false === $template ) {
@@ -438,6 +445,39 @@ final class Cache {
 	 * @param string $file Path.
 	 * @return bool
 	 */
+	/**
+	 * Whether a page cache file was left behind by a plugin that is no longer
+	 * active, such as 10Web Booster or WP Rocket after being switched off.
+	 * Only a file that loads code from a plugin folder counts: a host's own
+	 * cache file never does, and is never replaced.
+	 *
+	 * @param string $file The advanced-cache.php file.
+	 * @return bool
+	 */
+	public static function orphaned( string $file ): bool {
+		if ( '' !== Environment::conflict( 'cache' ) ) {
+			return false;
+		}
+		$code = (string) file_get_contents( $file, false, null, 0, 20000 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
+		if ( ! preg_match_all( '#(?:wp-content|WP_CONTENT_DIR|WP_PLUGIN_DIR)[^;\n]*?/plugins?/([A-Za-z0-9_.-]+)/|WP_PLUGIN_DIR\s*\.\s*[\'"]/([A-Za-z0-9_.-]+)/#', $code, $found ) ) {
+			return false;
+		}
+		$folders = array_filter( array_merge( $found[1], $found[2] ) );
+		if ( ! $folders ) {
+			return false;
+		}
+		$active = array();
+		foreach ( (array) get_option( 'active_plugins', array() ) as $plugin ) {
+			$active[ strtolower( dirname( (string) $plugin ) ) ] = true;
+		}
+		foreach ( $folders as $folder ) {
+			if ( isset( $active[ strtolower( $folder ) ] ) ) {
+				return false; // Its plugin is still on.
+			}
+		}
+		return true;
+	}
+
 	public static function owns_dropin( string $file ): bool {
 		$head = (string) file_get_contents( $file, false, null, 0, 600 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
 		return str_contains( $head, 'Smart Media Auditor page cache drop-in' );

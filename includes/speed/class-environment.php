@@ -119,10 +119,19 @@ final class Environment {
 	 */
 	private static function detect(): array {
 		$active = self::active_plugins();
+		// Match on the plugin's folder: a main file can be renamed between
+		// versions (10Web Booster's was), and the folder is what identifies it.
+		$folders = array();
+		foreach ( $active as $file ) {
+			$folders[ strtolower( dirname( (string) $file ) ) ] = true;
+		}
+		$on = static function ( string $path ) use ( $active, $folders ): bool {
+			return in_array( $path, $active, true ) || isset( $folders[ strtolower( dirname( $path ) ) ] );
+		};
 
 		$builders = array();
 		foreach ( self::BUILDERS as $slug => $path ) {
-			if ( in_array( $path, $active, true ) ) {
+			if ( $on( $path ) ) {
 				$builders[] = $slug;
 			}
 		}
@@ -136,14 +145,14 @@ final class Environment {
 
 		$optimizers = array();
 		foreach ( self::OPTIMIZERS as $slug => $path ) {
-			if ( in_array( $path, $active, true ) ) {
+			if ( $on( $path ) ) {
 				$optimizers[] = $slug;
 			}
 		}
 
 		$private_media = array();
 		foreach ( self::PRIVATE_MEDIA as $slug => $path ) {
-			if ( in_array( $path, $active, true ) ) {
+			if ( $on( $path ) ) {
 				$private_media[] = $slug;
 			}
 		}
@@ -257,7 +266,7 @@ final class Environment {
 		$owners      = array(
 			'assets' => array( 'wp-rocket', 'litespeed', 'w3-total-cache', 'autoptimize', 'perfmatters', 'nitropack', 'tenweb', 'flying-press', 'swift-performance', 'sg-optimizer', 'hummingbird', 'breeze', 'wp-fastest-cache' ),
 			'images' => array( 'ewww', 'shortpixel', 'smush', 'imagify', 'optimole', 'nitropack', 'tenweb' ),
-			'cache'  => array( 'wp-rocket', 'litespeed', 'w3-total-cache', 'wp-super-cache', 'wp-fastest-cache', 'nitropack', 'breeze', 'sg-optimizer', 'swift-performance' ),
+			'cache'  => array( 'wp-rocket', 'litespeed', 'w3-total-cache', 'wp-super-cache', 'wp-fastest-cache', 'nitropack', 'tenweb', 'breeze', 'sg-optimizer', 'swift-performance' ),
 		);
 		foreach ( $environment['optimizers'] as $slug ) {
 			if ( in_array( $slug, $owners[ $area ] ?? array(), true ) ) {

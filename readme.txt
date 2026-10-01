@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.7.0
+Stable tag: 2.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,16 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.7.1 =
+* Fix: other speed plugins are recognised by their folder, not one exact
+  file name. 10Web Booster's renamed main file went unnoticed, so both
+  plugins rewrote the same pages and broke each other's work.
+* New: the Speed screen says at the top when another speed plugin is active
+  and what this plugin leaves to it.
+* New: a page cache file left behind by a cache plugin that is no longer
+  active is replaced (a copy is kept beside it). A host's own cache file,
+  or one belonging to an active plugin, is never touched.
 
 = 2.7.0 =
 * New: the page check now also starts the held page's scripts, as a
@@ -485,6 +495,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.7.1 =
+Recognises 10Web Booster and other speed plugins reliably, and takes over
+the page cache they leave behind when switched off.
 
 = 2.7.0 =
 Checks the moment scripts start, keeps pages fast at every screen width that
