@@ -64,6 +64,7 @@ final class Environment {
 		'smush'              => 'wp-smushit/wp-smush.php',
 		'imagify'            => 'imagify/imagify.php',
 		'optimole'           => 'optimole-wp/optimole-wp.php',
+		'webp-converter'     => 'webp-converter-for-media/webp-converter-for-media.php',
 	);
 
 	/**
@@ -261,11 +262,30 @@ final class Environment {
 	 * @param string $area One of: assets, images, cache.
 	 * @return string Name of the owning plugin, or an empty string.
 	 */
+	/**
+	 * The active plugin file of a detected optimizer, matched by its folder.
+	 *
+	 * @param string $slug Internal slug.
+	 * @return string Empty when it is not active.
+	 */
+	public static function plugin_file( string $slug ): string {
+		$path = self::OPTIMIZERS[ $slug ] ?? '';
+		if ( '' === $path ) {
+			return '';
+		}
+		foreach ( self::active_plugins() as $file ) {
+			if ( strtolower( dirname( (string) $file ) ) === strtolower( dirname( $path ) ) ) {
+				return (string) $file;
+			}
+		}
+		return '';
+	}
+
 	public static function conflict( string $area ): string {
 		$environment = self::get();
 		$owners      = array(
 			'assets' => array( 'wp-rocket', 'litespeed', 'w3-total-cache', 'autoptimize', 'perfmatters', 'nitropack', 'tenweb', 'flying-press', 'swift-performance', 'sg-optimizer', 'hummingbird', 'breeze', 'wp-fastest-cache' ),
-			'images' => array( 'ewww', 'shortpixel', 'smush', 'imagify', 'optimole', 'nitropack', 'tenweb' ),
+			'images' => array( 'ewww', 'shortpixel', 'smush', 'imagify', 'optimole', 'nitropack', 'tenweb', 'webp-converter' ),
 			'cache'  => array( 'wp-rocket', 'litespeed', 'w3-total-cache', 'wp-super-cache', 'wp-fastest-cache', 'nitropack', 'tenweb', 'breeze', 'sg-optimizer', 'swift-performance' ),
 		);
 		foreach ( $environment['optimizers'] as $slug ) {
@@ -304,6 +324,7 @@ final class Environment {
 			'smush'             => 'Smush',
 			'imagify'           => 'Imagify',
 			'optimole'          => 'Optimole',
+			'webp-converter'    => 'WebP Converter for Media',
 			'elementor'         => 'Elementor',
 			'wpbakery'          => 'WPBakery',
 			'divi'              => 'Divi',

@@ -31,8 +31,21 @@ final class Screen_Speed {
 			<div class="notice notice-warning inline">
 				<p>
 					<strong><?php echo esc_html( Environment::label( $owner ) ); ?></strong>
-					<?php esc_html_e( 'is also active. Two speed plugins rewriting the same pages break each other, so this plugin leaves scripts, stylesheets and caching to it and only does what it does not. To use this plugin instead, deactivate the other one, then click Measure again below.', 'smart-media-auditor-optimizer' ); ?>
+					<?php esc_html_e( 'is also active. Two speed plugins rewriting the same pages break each other, so this plugin leaves scripts, stylesheets and caching to it and does none of that work itself. To use this plugin instead, switch the other one off:', 'smart-media-auditor-optimizer' ); ?>
 				</p>
+				<?php if ( current_user_can( 'activate_plugins' ) && '' !== Environment::plugin_file( $owner ) ) : ?>
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:0 0 10px">
+						<?php wp_nonce_field( 'smao_switch_off' ); ?>
+						<input type="hidden" name="action" value="smao_switch_off">
+						<input type="hidden" name="slug" value="<?php echo esc_attr( $owner ); ?>">
+						<button type="submit" class="button button-primary">
+							<?php
+							/* translators: %s: name of the other speed plugin. */
+							printf( esc_html__( 'Switch off %s and use this plugin', 'smart-media-auditor-optimizer' ), esc_html( Environment::label( $owner ) ) );
+							?>
+						</button>
+					</form>
+				<?php endif; ?>
 			</div>
 			<?php
 		endif;
@@ -437,6 +450,16 @@ final class Screen_Speed {
 			// soon as this screen is open, while features that need them are on.
 			$forgot = get_option( Styles::FORGOT );
 			$again  = is_array( $forgot ) && ! Styles::pages() && ( $settings['delay_all'] || $settings['async_css'] );
+			// Just switched another speed plugin off: measure straight away.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only marker set by our own redirect.
+			$switched = isset( $_GET['smao-switched'] ) && '' === Environment::conflict( 'assets' );
+			if ( $switched ) {
+				$again  = true;
+				$forgot = array(
+					'reason' => __( 'the other speed plugin was switched off', 'smart-media-auditor-optimizer' ),
+					'at'     => time(),
+				);
+			}
 			?>
 			<?php if ( $again ) : ?>
 				<p class="smao-inline-note">

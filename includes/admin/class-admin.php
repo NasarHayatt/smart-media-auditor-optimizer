@@ -41,8 +41,36 @@ final class Admin {
 		add_action( 'admin_enqueue_scripts', array( self::class, 'assets' ) );
 		add_action( 'rest_api_init', array( self::class, 'routes' ) );
 		add_action( 'admin_post_smao_export', array( self::class, 'export' ) );
+		add_action( 'admin_post_smao_switch_off', array( self::class, 'switch_off' ) );
 		add_action( 'admin_bar_menu', array( self::class, 'admin_bar' ), 100 );
 		add_action( 'admin_notices', array( self::class, 'remeasure_notice' ) );
+	}
+
+	/**
+	 * Switch off another speed plugin at the owner's request, so this one can
+	 * do the work: deactivate it, take over the page cache it leaves behind,
+	 * and open Speed, which measures the pages again by itself.
+	 *
+	 * @return void
+	 */
+	public static function switch_off(): void {
+		if ( ! current_user_can( 'activate_plugins' ) ) {
+			wp_die( esc_html__( 'You are not allowed to change plugins.', 'smart-media-auditor-optimizer' ) );
+		}
+		check_admin_referer( 'smao_switch_off' );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Checked against detected plugins.
+		$slug = sanitize_key( wp_unslash( $_POST['slug'] ?? '' ) );
+		$file = Environment::plugin_file( $slug );
+		if ( '' !== $file ) {
+			if ( ! function_exists( 'deactivate_plugins' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+			deactivate_plugins( $file );
+			Cache::sync();
+			Purge::everything();
+		}
+		wp_safe_redirect( admin_url( 'admin.php?page=smao-speed&smao-switched=' . rawurlencode( $slug ) ) );
+		exit;
 	}
 
 	/**

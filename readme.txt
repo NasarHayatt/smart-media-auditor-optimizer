@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.7.1
+Stable tag: 2.7.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,14 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.7.2 =
+* New: when another speed plugin is active, the Speed screen offers to switch
+  it off in one click. This plugin then takes over the page cache it leaves
+  behind and measures the pages straight away. An installed but idle speed
+  plugin had left a site with nothing optimised at all.
+* New: WebP Converter for Media is recognised, so two plugins never rewrite
+  the same images.
 
 = 2.7.1 =
 * Fix: other speed plugins are recognised by their folder, not one exact
@@ -495,6 +503,9 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.7.2 =
+One click to switch off another speed plugin and let this one do the work.
 
 = 2.7.1 =
 Recognises 10Web Booster and other speed plugins reliably, and takes over
