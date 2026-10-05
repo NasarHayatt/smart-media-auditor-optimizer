@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.7.3
+Stable tag: 2.7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,17 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.7.4 =
+* Fix: the page cache never switched WordPress's WP_CACHE setting on, so on
+  a site without it (another cache plugin had removed it) stored pages were
+  only sent after every plugin had loaded: 700 ms instead of under 100 ms.
+  It is now added to wp-config.php when the file can be written, and the
+  file is restored at once if anything about the write looks wrong.
+* New: page preloaders (a layer covering the screen until the theme's script
+  removes it) are hidden while scripts wait. The page was otherwise blank
+  for several seconds, and the time until it looked complete halved when
+  the layer was hidden.
 
 = 2.7.3 =
 * Fix: the styles for the first screen left out the rule that hides a
@@ -515,6 +526,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.7.4 =
+Faster page cache on sites missing WP_CACHE, and theme preloaders no longer
+hide the page. Measure again after updating.
 
 = 2.7.3 =
 Pages that failed the checks on many themes now pass them. Measure again

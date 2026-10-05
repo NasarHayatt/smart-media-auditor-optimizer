@@ -523,6 +523,42 @@
 	}
 
 	/**
+	 * Page preloaders: a layer covering the whole screen while the page loads,
+	 * which the theme's script removes once it has. With scripts waiting, that
+	 * script waits too, and the page stayed hidden behind the layer: a blank
+	 * screen for nearly four seconds on a live phone test. A layer that covers
+	 * the held page but is gone from the finished one is hidden while scripts
+	 * wait.
+	 */
+	function loaders(doc, doneView) {
+		var view = doc.defaultView;
+		var doneDoc = doneView.document;
+		var w = view.innerWidth;
+		var h = view.innerHeight;
+		var lines = [];
+		var all = doc.body ? doc.body.getElementsByTagName('*') : [];
+		for (var i = 0; i < all.length && lines.length < 5; i++) {
+			var el = all[i];
+			var cs = view.getComputedStyle(el);
+			if ((cs.position !== 'fixed' && cs.position !== 'absolute') || cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) < 0.5) { continue; }
+			var r = el.getBoundingClientRect();
+			if (r.width < w * 0.8 || r.height < h * 0.8 || r.top > h * 0.1) { continue; }
+			var n = el.getAttribute('data-smao-n');
+			var finished = n ? doneDoc.querySelector('[data-smao-n="' + n + '"]') : null;
+			var gone = !finished;
+			if (finished) {
+				var fs = doneView.getComputedStyle(finished);
+				var fr = finished.getBoundingClientRect();
+				gone = fs.display === 'none' || fs.visibility === 'hidden' || Number(fs.opacity) < 0.05 || fr.width * fr.height < w * h * 0.05;
+			}
+			if (!gone) { continue; }
+			var sel = selector(el, doc);
+			if (sel) { lines.push(sel + '{display:none!important}'); }
+		}
+		return lines;
+	}
+
+	/**
 	 * Large blocks entirely below the first screen, which the browser may skip
 	 * drawing until they come near the screen.
 	 *
@@ -599,7 +635,7 @@
 		built.forEach(function (r) {
 			if (r.region) { placed = placed.concat(place(r, done, heldDoc, doneView, perf)); }
 		});
-		var text = built.map(function (r) { return r.css; }).concat(placed, laterBackgrounds(heldDoc, done, doneView)).join(NL);
+		var text = built.map(function (r) { return r.css; }).concat(placed, laterBackgrounds(heldDoc, done, doneView), loaders(heldDoc, doneView)).join(NL);
 		probe.textContent = text + NL + 'body{overflow-x:clip!important}';
 		var after = boxes(heldDoc);
 		// Inside a rebuilt area only its placed pieces show, so only those

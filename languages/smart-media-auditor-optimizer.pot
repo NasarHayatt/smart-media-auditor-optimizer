@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.7.3\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.7.4\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 

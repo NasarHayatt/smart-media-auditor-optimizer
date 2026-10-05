@@ -350,7 +350,13 @@ final class Cache {
 		if ( self::active() ) {
 			self::prepare_directory();
 			self::write_config();
-			self::install_dropin();
+			// Without WP_CACHE WordPress never loads the drop-in, and stored
+			// pages are only sent after every plugin has loaded: 700 ms instead
+			// of under 100 ms on a live WooCommerce site. Another cache plugin
+			// had removed the line when it was switched off.
+			if ( self::install_dropin() && ! self::wp_cache_defined() ) {
+				self::enable_wp_cache();
+			}
 		} else {
 			self::remove_dropin();
 		}
@@ -516,7 +522,20 @@ final class Cache {
 				1
 			);
 		}
-		return false !== file_put_contents( $config, $contents ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		$original = (string) file_get_contents( $config ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
+		if ( $contents === $original || ! str_contains( $contents, "define( 'WP_CACHE', true );" ) || ! str_starts_with( ltrim( $contents ), '<?php' ) ) {
+			return false;
+		}
+		if ( false === file_put_contents( $config, $contents, LOCK_EX ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			return false;
+		}
+		// The site must never be left with a damaged configuration file.
+		clearstatcache( true, $config );
+		if ( (string) file_get_contents( $config ) !== $contents ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
+			file_put_contents( $config, $original, LOCK_EX ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			return false;
+		}
+		return true;
 	}
 
 	/**
