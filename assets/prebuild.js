@@ -35,11 +35,19 @@
 		var view = doc.defaultView;
 		var width = doc.documentElement.clientWidth;
 		var list = doc.querySelectorAll('[data-smao-n]');
+		// Anything floating over the page, such as a chat bubble, a cookie bar
+		// or a popup, is not part of its layout and is left out. Rebuilding a
+		// chat widget as part of the page failed every page of a live site.
+		var floating = typeof Set === 'function' ? new Set() : null;
 		for (var i = 0; i < list.length; i++) {
 			var el = list[i];
 			var n = el.getAttribute('data-smao-n');
-			var r = el.getBoundingClientRect();
 			var cs = view.getComputedStyle(el);
+			if (floating && (cs.position === 'fixed' || (el.parentElement && floating.has(el.parentElement)))) {
+				floating.add(el);
+				continue;
+			}
+			var r = el.getBoundingClientRect();
 			// Shown: not hidden by the page. A box of no width can still show
 			// its contents, which overflow it; a theme's carousel column did
 			// exactly that on phones. Visible: shown and taking up space.
@@ -198,6 +206,9 @@
 		var picked = [];
 		var seen = {};
 		var area = done[el.getAttribute('data-smao-n')];
+		// Only an area that cuts off its overflow hides what lies outside it;
+		// a logo drawn larger than its link shows in full.
+		var areaClips = area && /hidden|clip|auto|scroll/.test(view.getComputedStyle(el).overflow);
 		function hasText(node) {
 			for (var i = 0; i < node.childNodes.length; i++) {
 				var c = node.childNodes[i];
@@ -213,7 +224,7 @@
 			if (n && b && b.visible) {
 				// Only what shows inside the area: a carousel's cards scrolled
 				// out of view are clipped away in the finished page too.
-				if (area && area.w >= 1 && area.h >= 1 && (b.x + b.w <= area.x + 1 || b.x >= area.x + area.w - 1 || b.y + b.h <= area.y + 1 || b.y >= area.y + area.h - 1)) { return; }
+				if (area && areaClips && area.w >= 1 && area.h >= 1 && (b.x + b.w <= area.x + 1 || b.x >= area.x + area.w - 1 || b.y + b.h <= area.y + 1 || b.y >= area.y + area.h - 1)) { return; }
 				var cs = view.getComputedStyle(node);
 				var tag = node.tagName;
 				var bg = cs.backgroundImage && cs.backgroundImage !== 'none' && cs.backgroundImage.indexOf('url(') !== -1;
@@ -312,12 +323,16 @@
 		// A box with no width or height shows its contents only by letting
 		// them overflow, so it must not clip them. clip rather than hidden,
 		// which would also change how margins behave at the area's edges.
-		var clip = b.w >= 1 && b.h >= 1 ? 'clip' : 'visible';
+		var clip = b.w >= 1 && b.h >= 1 && /hidden|clip|auto|scroll/.test(doneView.getComputedStyle(b.el).overflow) ? 'clip' : 'visible';
 		var decl = ['height:' + height + '!important', 'min-height:0!important', 'max-height:none!important', 'overflow:' + clip + '!important', 'visibility:visible!important', 'opacity:1!important'];
 		if (view.getComputedStyle(el).display === 'none') {
 			decl.push('display:' + (doneView.getComputedStyle(b.el).display || 'block') + '!important');
 		}
 		if (view.getComputedStyle(el).position === 'static') { decl.push('position:relative!important'); }
+		// An inline element ignores a width and height, so it could not keep
+		// its finished size: a logo link stayed zero wide until its image
+		// loaded. As an inline block it can.
+		if (view.getComputedStyle(el).display === 'inline') { decl.push('display:inline-block!important', 'vertical-align:top!important'); }
 		// In the finished page the margin of the area's first or last element
 		// can show outside the area, pushing it and everything after it. While
 		// scripts wait those elements are pinned in place and their margins

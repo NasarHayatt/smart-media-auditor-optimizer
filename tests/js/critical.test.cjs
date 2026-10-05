@@ -151,3 +151,9 @@ test('after the scripts run, a rebuilt area only keeps a minimum height', () => 
   const merged = prebuild.combine({ 412: '#grid{height:1px!important}\n@smao-ran #grid{min-height:1px!important}' });
   assert.match(merged, /html\.smao-ran:not\(\.smao-open\) #grid\{min-height:1px!important\}/);
 });
+
+test('rules for elements a theme moves off screen above the page are kept', () => {
+  const code = require('fs').readFileSync(require('path').join(__dirname, '../../assets/critical.js'), 'utf8');
+  assert.ok(code.includes('return box.top < limit;'), 'an element at top:-144001px still counts as part of the first screen');
+  assert.ok(!code.includes('box.top < limit && box.bottom > -1'));
+});

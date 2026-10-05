@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.7.2
+Stable tag: 2.7.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,18 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.7.3 =
+* Fix: the styles for the first screen left out the rule that hides a
+  "skip to content" link, which almost every theme has and places far off
+  screen. Without it the link showed at the top and pushed the page down, so
+  pages failed the check and kept every stylesheet blocking.
+* Fix: the page check rebuilt floating widgets (chat bubbles, cookie bars,
+  popups) as if they were part of the layout and failed pages for them. They
+  are left out now.
+* Fix: content drawn larger than its container, such as a logo bigger than
+  its link, counted as missing; and an inline area could not keep its size.
+  A live page that failed at every width now passes at all of them.
 
 = 2.7.2 =
 * New: when another speed plugin is active, the Speed screen offers to switch
@@ -503,6 +515,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.7.3 =
+Pages that failed the checks on many themes now pass them. Measure again
+after updating.
 
 = 2.7.2 =
 One click to switch off another speed plugin and let this one do the work.

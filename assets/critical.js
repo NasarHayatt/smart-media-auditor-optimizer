@@ -92,7 +92,12 @@
 		for (var depth = 0; node && node.getBoundingClientRect && depth < 16; depth++) {
 			var box = node.getBoundingClientRect();
 			if (box.width > 0 || box.height > 0) {
-				return box.top < limit && box.bottom > -1;
+				// Anything that starts above the bottom of the first screen,
+				// including what a theme moves off screen on purpose: the
+				// rule moving it away is exactly what the first paint needs.
+				// A "skip to content" link, placed at -144001px by its theme,
+				// was left out, showed at the top and pushed the page down.
+				return box.top < limit;
 			}
 			node = node.parentElement;
 		}
