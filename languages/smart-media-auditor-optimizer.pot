@@ -1,10 +1,16 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.5.1\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.7.2\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid " "
+msgstr ""
+
+msgid "\"%s\", which several pages share, was edited"
+msgstr ""
+
+msgid "#(\"(?:\\\\.|[^\"\\\\])*\"|'(?:\\\\.|[^'\\\\])*')#s"
 msgstr ""
 
 msgid "#(<link\\b[^>]*>)#i"
@@ -68,6 +74,9 @@ msgid "%s page queued for rebuilding."
 msgstr ""
 
 msgid "%s saved"
+msgstr ""
+
+msgid "%s was updated"
 msgstr ""
 
 msgid "%s%% of the content would be missing until scripts run"
@@ -478,6 +487,12 @@ msgstr ""
 msgid "EXIF inspection is unavailable."
 msgstr ""
 
+msgid "Elementor regenerated its styles"
+msgstr ""
+
+msgid "Embeds are often the heaviest part of a page"
+msgstr ""
+
 msgid "Encoded image failed format validation."
 msgstr ""
 
@@ -679,6 +694,9 @@ msgstr ""
 msgid "Inventoried storage"
 msgstr ""
 
+msgid "Its scripts wait, except where %s; those screens load normally."
+msgstr ""
+
 msgid "JPEG support"
 msgstr ""
 
@@ -721,6 +739,12 @@ msgstr ""
 msgid "Layout shift"
 msgstr ""
 
+msgid "Leave emoji to the browser"
+msgstr ""
+
+msgid "Less to download and read before anything appears"
+msgstr ""
+
 msgid "Less to download before the page is usable"
 msgstr ""
 
@@ -731,6 +755,9 @@ msgid "Live scan totals"
 msgstr ""
 
 msgid "Load lower images only when needed"
+msgstr ""
+
+msgid "Load maps and embeds only when needed"
 msgstr ""
 
 msgid "Load the main image first"
@@ -772,6 +799,9 @@ msgstr ""
 msgid "Makes a WebP copy of every JPG and PNG in the background, usually a fraction of the size, and sends it instead. This covers every image in the page, including sliders and page-builder backgrounds. Your original files are never changed, and a browser that does not support WebP gets the originals."
 msgstr ""
 
+msgid "Maps, videos and other embedded frames wait until someone scrolls near them. One that is on screen when the page opens still loads straight away."
+msgstr ""
+
 msgid "Maximum height"
 msgstr ""
 
@@ -797,6 +827,9 @@ msgid "Media Auditor"
 msgstr ""
 
 msgid "Media Auditor speed corrections are active"
+msgstr ""
+
+msgid "Media Auditor: your pages load without the full speed-up because %s, which cleared the page measurements."
 msgstr ""
 
 msgid "Media inventory"
@@ -988,6 +1021,9 @@ msgstr ""
 msgid "One rule per line: id:123, name:logo.png, path:2026/protected/, type:application/pdf"
 msgstr ""
 
+msgid "One script fewer on every page"
+msgstr ""
+
 msgid "One thing we cannot check for you"
 msgstr ""
 
@@ -1004,6 +1040,9 @@ msgid "Only retained quarantine groups can be permanently deleted after the rete
 msgstr ""
 
 msgid "Only reviewed unused candidates can be quarantined."
+msgstr ""
+
+msgid "Open Speed to measure again (a few minutes)"
 msgstr ""
 
 msgid "Optimization"
@@ -1058,6 +1097,9 @@ msgid "Page %1$s of %2$s"
 msgstr ""
 
 msgid "Page cache"
+msgstr ""
+
+msgid "Page measurements were cleared %1$s ago because %2$s. Measuring again now; keep this page open for a few minutes."
 msgstr ""
 
 msgid "Pages checked"
@@ -1183,6 +1225,9 @@ msgstr ""
 msgid "Removed originals are moved here instead of being deleted. It must be a folder that already exists, is writable, and sits outside everything your web server serves publicly."
 msgstr ""
 
+msgid "Removes comments and spare whitespace from each page and the styles written into it. Nothing that changes how the page looks or works is touched."
+msgstr ""
+
 msgid "Removing all of them frees up %s. Keep any you recognise, then remove the rest."
 msgstr ""
 
@@ -1234,7 +1279,7 @@ msgstr ""
 msgid "Run Google check"
 msgstr ""
 
-msgid "Run held-back scripts anyway after (seconds)"
+msgid "Run held-back third-party scripts anyway after (seconds). Pages that hold every script wait for the visitor."
 msgstr ""
 
 msgid "Runs Google's own PageSpeed test on your home page with your current settings, and again with each setting that can go either way, then keeps whichever Google scores highest. It takes a few minutes, and visitors are not affected while it runs."
@@ -1312,10 +1357,19 @@ msgstr ""
 msgid "Scripts run as normal: on a %1$dpx wide screen %2$s."
 msgstr ""
 
-msgid "Scripts run as normal: rebuilding this layout would need too many extra styles."
+msgid "Scripts run as normal: on a real visit the page changed when its scripts started, so it was switched back automatically. Measure again after changing this page."
+msgstr ""
+
+msgid "Scripts run as normal: rebuilding this layout would add %s to the page."
+msgstr ""
+
+msgid "Scripts run as normal: rebuilding this layout would need too many extra styles. Measure again."
 msgstr ""
 
 msgid "Scripts run as normal: the page did not finish loading while it was checked. Measure again."
+msgstr ""
+
+msgid "Scripts run as normal: when a visitor on a %1$dpx wide screen started the scripts, the page length changed by %2$s%% and parts moved (%3$s), so it was switched back automatically. Measure again after changing this page."
 msgstr ""
 
 msgid "Search"
@@ -1346,6 +1400,9 @@ msgid "Send images at the size they are shown"
 msgstr ""
 
 msgid "Send smaller WebP images"
+msgstr ""
+
+msgid "Send smaller pages"
 msgstr ""
 
 msgid "Sent at"
@@ -1451,6 +1508,9 @@ msgid "Stylesheets load in the background on %1$d of %2$d measured pages."
 msgstr ""
 
 msgid "Summary of your media"
+msgstr ""
+
+msgid "Switch off %s and use this plugin"
 msgstr ""
 
 msgid "Switch off:"
@@ -1747,6 +1807,9 @@ msgstr ""
 msgid "WordPress"
 msgstr ""
 
+msgid "WordPress adds a script to every page to replace emoji with pictures, for browsers too old to show them. Every current browser shows emoji itself."
+msgstr ""
+
 msgid "WordPress tells the browser every image fills the whole window. It usually does not, so the browser downloads a much larger file than it draws. We can only know the real size by looking at your pages, so that is what this does."
 msgstr ""
 
@@ -1757,6 +1820,9 @@ msgid "Worth testing first"
 msgstr ""
 
 msgid "Yes"
+msgstr ""
+
+msgid "You are not allowed to change plugins."
 msgstr ""
 
 msgid "You can leave this page. It carries on in the background, and you can come back whenever you like."
@@ -1816,6 +1882,15 @@ msgstr ""
 msgid "[data-scope]"
 msgstr ""
 
+msgid "a menu was changed"
+msgstr ""
+
+msgid "a plugin was activated"
+msgstr ""
+
+msgid "a plugin was deactivated"
+msgstr ""
+
 msgid "action"
 msgstr ""
 
@@ -1838,6 +1913,9 @@ msgid "assets"
 msgstr ""
 
 msgid "audit"
+msgstr ""
+
+msgid "auth"
 msgstr ""
 
 msgid "beforebegin"
@@ -1906,6 +1984,9 @@ msgstr ""
 msgid "input"
 msgstr ""
 
+msgid "is also active. Two speed plugins rewriting the same pages break each other, so this plugin leaves scripts, stylesheets and caching to it and does none of that work itself. To use this plugin instead, switch the other one off:"
+msgstr ""
+
 msgid "it would look different"
 msgstr ""
 
@@ -1943,6 +2024,12 @@ msgid "of"
 msgstr ""
 
 msgid "old records removed."
+msgstr ""
+
+msgid "on %s wide screens a visitor saw it move"
+msgstr ""
+
+msgid "on %s wide screens the check saw it move when scripts start"
 msgstr ""
 
 msgid "optimize"
@@ -2050,7 +2137,22 @@ msgstr ""
 msgid "td"
 msgstr ""
 
+msgid "the Customizer was saved"
+msgstr ""
+
+msgid "the other speed plugin was switched off"
+msgstr ""
+
 msgid "the page length would change by %s%%"
+msgstr ""
+
+msgid "the site changed"
+msgstr ""
+
+msgid "the theme was changed"
+msgstr ""
+
+msgid "the theme was updated"
 msgstr ""
 
 msgid "token"
@@ -2063,6 +2165,9 @@ msgid "tr"
 msgstr ""
 
 msgid "unused candidates"
+msgstr ""
+
+msgid "widgets were changed"
 msgstr ""
 
 msgid "zlib.output_compression"
