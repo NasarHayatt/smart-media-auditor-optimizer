@@ -94,8 +94,12 @@ final class Viewport {
 	 * @return string
 	 */
 	public static function page( string $html ): string {
+		if ( ! str_contains( $html, '</html>' ) ) {
+			return $html;
+		}
+		$html  = self::rehome( $html, (string) wp_parse_url( home_url(), PHP_URL_HOST ), WP_CONTENT_DIR, content_url() );
 		$start = stripos( $html, '<body' );
-		if ( false === $start || ! str_contains( $html, '</html>' ) ) {
+		if ( false === $start ) {
 			return $html;
 		}
 		$body = substr( $html, $start );
@@ -121,6 +125,66 @@ final class Viewport {
 			$last   = $offset + strlen( $tag );
 		}
 		return substr( $html, 0, $start ) . $out . substr( $body, $last );
+	}
+
+	/**
+	 * Serve this site's own copy of images a page still loads from an old
+	 * address.
+	 *
+	 * After a move from a staging or temporary address, page builders keep
+	 * the old address in their saved settings. Those images then come from
+	 * another server: the browser opens a second connection, and no WebP copy
+	 * or right size can be served. A live site's main image, an 829 KB PNG,
+	 * loaded that way. When the same file exists in this site's wp-content,
+	 * this site's copy is used instead, in plain and JSON-escaped addresses.
+	 *
+	 * @param string $html        Page.
+	 * @param string $host        This site's host.
+	 * @param string $content_dir This site's wp-content folder.
+	 * @param string $content_url This site's wp-content address.
+	 * @return string
+	 */
+	public static function rehome( string $html, string $host, string $content_dir, string $content_url ): string {
+		if ( '' === $host || ! str_contains( $html, 'wp-content' ) ) {
+			return $html;
+		}
+		$content_dir = rtrim( str_replace( '\\', '/', $content_dir ), '/' );
+		$content_url = rtrim( $content_url, '/' );
+		$known       = array();
+		$swap        = static function ( string $other, string $path, bool $escaped ) use ( $host, $content_dir, $content_url, &$known ): ?string {
+			if ( strtolower( $other ) === strtolower( $host ) ) {
+				return null;
+			}
+			$relative = rawurldecode( $escaped ? str_replace( '\\/', '/', $path ) : $path );
+			if ( str_contains( $relative, '..' ) || str_contains( $relative, "\0" ) ) {
+				return null;
+			}
+			if ( ! isset( $known[ $relative ] ) ) {
+				$known[ $relative ] = is_file( $content_dir . '/' . $relative );
+			}
+			if ( ! $known[ $relative ] ) {
+				return null;
+			}
+			return $escaped ? str_replace( '/', '\\/', $content_url ) . '\\/' . $path : $content_url . '/' . $path;
+		};
+		$plain = '#https?://([a-z0-9.-]+)(?::\d+)?(?:/[^\s"\'()<>\\\\]*?)?/wp-content/([^\s"\'()<>?\#\\\\]+?\.(?:jpe?g|png|gif|webp|avif|svg))(?=[\s"\'()<>?\#&]|$)#i';
+		$html  = (string) preg_replace_callback(
+			$plain,
+			static function ( array $m ) use ( $swap ): string {
+				$local = $swap( $m[1], $m[2], false );
+				return null === $local ? $m[0] : $local;
+			},
+			$html
+		);
+		$escaped = '#https?:\\\\/\\\\/([a-z0-9.-]+)(?::\d+)?(?:\\\\/[^\s"\'()<>]*?)?\\\\/wp-content\\\\/((?:[^\s"\'()<>?\#\\\\]|\\\\/)+?\.(?:jpe?g|png|gif|webp|avif|svg))(?=[\s"\'()<>?\#&\\\\]|$)#i';
+		return (string) preg_replace_callback(
+			$escaped,
+			static function ( array $m ) use ( $swap ): string {
+				$local = $swap( $m[1], $m[2], true );
+				return null === $local ? $m[0] : $local;
+			},
+			$html
+		);
 	}
 
 	/**

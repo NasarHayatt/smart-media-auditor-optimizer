@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.7.4
+Stable tag: 2.7.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,15 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.7.5 =
+* New: images a page still loads from an old site address, such as a
+  staging or temporary address kept in a page builder's settings, are served
+  from this site when the same file exists here. They then get WebP and the
+  right size, and the browser needs no second connection. A live site's main
+  image, an 829 KB PNG, was loading from its old temporary address.
+* Fix: "Show text while webfonts load" now also corrects Google Fonts links
+  that ask for display=auto or block, as page builders often do.
 
 = 2.7.4 =
 * Fix: the page cache never switched WordPress's WP_CACHE setting on, so on
@@ -526,6 +535,10 @@ builders reference are reported conservatively rather than as unused.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 2.7.5 =
+Serves images that still point at an old site address from this site, and
+shows text straight away with Google Fonts.
 
 = 2.7.4 =
 Faster page cache on sites missing WP_CACHE, and theme preloaders no longer

@@ -234,11 +234,15 @@ final class Styles {
 	 * @return string
 	 */
 	public static function font_display( string $tag, string $handle, string $href, string $media ): string {
-		if ( ! str_contains( $href, 'fonts.googleapis.com' ) || str_contains( $href, 'display=' ) ) {
+		if ( ! str_contains( $href, 'fonts.googleapis.com' ) || str_contains( $href, 'display=swap' ) ) {
 			return $tag;
 		}
-		$updated = add_query_arg( 'display', 'swap', $href );
-		return str_replace( esc_url( $href ), esc_url( $updated ), $tag );
+		// Builders often ask for display=auto or block, which hides the text
+		// until the font arrives; swap shows it straight away in a fallback.
+		$updated = str_contains( $href, 'display=' )
+			? (string) preg_replace( '/([?&])display=[a-z]*/', '$1display=swap', $href )
+			: add_query_arg( 'display', 'swap', $href );
+		return str_replace( array( esc_url( $href ), $href ), esc_url( $updated ), $tag );
 	}
 
 	/**
