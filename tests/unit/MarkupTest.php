@@ -57,4 +57,45 @@ final class MarkupTest extends TestCase {
 		$this->assertStringContainsString( '<iframe src="/hidden" style="display:none">', $out );
 		$this->assertStringContainsString( '<head><iframe src="/head">', $out, 'only the body is changed' );
 	}
+
+	/**
+	 * Google Fonts stylesheets are written into the page once fetched.
+	 *
+	 * @return void
+	 */
+	public function test_google_fonts_are_written_into_the_page(): void {
+		$asked = array();
+		$fetch = static function ( string $url ) use ( &$asked ): string {
+			$asked[] = $url;
+			return str_contains( $url, 'Karla' ) ? '@font-face{font-family:Karla;font-display:swap;src:url(https://fonts.gstatic.com/k.woff2) format("woff2")}' : '';
+		};
+		$html = '<head><link href="https://fonts.googleapis.com/css?family=Karla:500&display=swap" rel="stylesheet" media="all" type="text/css" >'
+			. "<link rel='stylesheet' id='theme-fonts-css' href='//fonts.googleapis.com/css?family=Heebo%3A700&#038;subset=latin' media='all' />"
+			. '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Karla&display=swap" media="print" onload="this.media=\'all\'">'
+			. '<link rel="preconnect" href="https://fonts.googleapis.com"></head>';
+		$out  = Markup::google_fonts( $html, $fetch );
+
+		$this->assertStringContainsString( '<style id="smao-font-', $out );
+		$this->assertStringContainsString( 'font-family:Karla', $out );
+		$this->assertStringNotContainsString( 'family=Karla:500', $out, 'the fetched one is no longer linked' );
+		$this->assertStringContainsString( "id='theme-fonts-css'", $out, 'one not fetched yet stays linked' );
+		$this->assertContains( 'https://fonts.googleapis.com/css?family=Heebo%3A700&subset=latin&display=swap', $asked, 'protocol, entities and swap fixed' );
+		$this->assertStringContainsString( 'media="print" onload=', $out, 'one already loading in the background is left alone' );
+		$this->assertStringContainsString( '<link rel="preconnect"', $out );
+		$this->assertSame( '<p>no fonts</p>', Markup::google_fonts( '<p>no fonts</p>', $fetch ) );
+	}
+
+	/**
+	 * Only plain font stylesheets are ever written into a page.
+	 *
+	 * @return void
+	 */
+	public function test_fetched_font_css_is_checked(): void {
+		$this->assertTrue( Markup::font_css_ok( '@font-face{font-family:A;src:url(https://fonts.gstatic.com/a.woff2)}' ) );
+		$this->assertFalse( Markup::font_css_ok( '' ) );
+		$this->assertFalse( Markup::font_css_ok( '<html>error</html>' ) );
+		$this->assertFalse( Markup::font_css_ok( '@font-face{}</style><script>alert(1)</script>' ) );
+		$this->assertFalse( Markup::font_css_ok( '@import url(x.css);@font-face{}' ) );
+		$this->assertFalse( Markup::font_css_ok( 'body{color:red}' ) );
+	}
 }

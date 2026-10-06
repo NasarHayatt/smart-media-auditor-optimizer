@@ -654,6 +654,7 @@ final class Styles {
 		}
 		update_option( self::OPTION, $pages, false );
 		delete_option( self::FORGOT );
+		delete_option( self::RECHECK );
 		// The stored copy of this page was built before the capture existed.
 		Purge::urls( array( $url ) );
 
@@ -701,6 +702,34 @@ final class Styles {
 	 * Why every capture was last dropped, for the Speed screen.
 	 */
 	public const FORGOT = 'smao_styles_forgot';
+
+	/**
+	 * Set by an update when a measured page is not fully sped up, so the
+	 * Speed screen measures again with the new checks. A page whose layout
+	 * check failed on phones otherwise kept failing after the fix shipped.
+	 */
+	public const RECHECK = 'smao_styles_recheck';
+
+	/**
+	 * Whether any measured page fell short of the full speed-up.
+	 *
+	 * @return bool
+	 */
+	public static function needs_recheck(): bool {
+		foreach ( self::pages() as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+			if ( 'too_large' === ( $entry['status'] ?? '' ) || 'shifted' === ( $entry['status'] ?? '' ) ) {
+				return true;
+			}
+			$prebuild = $entry['prebuild'] ?? null;
+			if ( is_array( $prebuild ) && ( 'ready' !== ( $prebuild['status'] ?? '' ) || ! empty( $prebuild['blocked'] ) ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * Drop captures that may no longer describe their page.

@@ -35,7 +35,7 @@ final class Markup {
 		if ( $settings['disable_emoji'] ) {
 			self::no_emoji();
 		}
-		if ( $settings['lazy_iframes'] || $settings['minify_html'] ) {
+		if ( $settings['lazy_iframes'] || $settings['minify_html'] || $settings['optimize_fonts'] ) {
 			// After every other rewrite and before the page cache stores the
 			// page, so the stored copy is the finished, smaller one.
 			add_action( 'template_redirect', array( self::class, 'start' ), -900 );
@@ -98,6 +98,9 @@ final class Markup {
 			return $html;
 		}
 		$settings = Settings::get();
+		if ( $settings['optimize_fonts'] && ! Environment::conflict( 'assets' ) ) {
+			$html = self::google_fonts( $html, array( self::class, 'font_css' ) );
+		}
 		if ( $settings['lazy_iframes'] ) {
 			$html = self::lazy_iframes( $html );
 		}
@@ -105,6 +108,95 @@ final class Markup {
 			$html = self::minify( $html );
 		}
 		return $html;
+	}
+
+	/**
+	 * Write Google Fonts stylesheets into the page instead of linking them.
+	 *
+	 * Each one is a separate server the browser must connect to before it
+	 * can draw anything; on a live phone test two of them held the first
+	 * paint back by about a second. Their few kilobytes, written into the
+	 * page, cost nothing to wait for. The font files themselves still come
+	 * from Google, and text shows straight away in a fallback font until they
+	 * arrive. A stylesheet not fetched yet stays linked as it was.
+	 *
+	 * @param string   $html  Page.
+	 * @param callable $fetch Stylesheet URL to its CSS, or '' when not at hand.
+	 * @return string
+	 */
+	public static function google_fonts( string $html, callable $fetch ): string {
+		if ( ! str_contains( $html, 'fonts.googleapis.com/css' ) ) {
+			return $html;
+		}
+		return (string) preg_replace_callback(
+			'#<link\b[^>]*>#i',
+			static function ( array $match ) use ( $fetch ): string {
+				$tag = $match[0];
+				if ( ! preg_match( '#\brel\s*=\s*["\']?stylesheet\b#i', $tag ) || preg_match( '#\bmedia\s*=\s*["\']?print#i', $tag )
+					|| ! preg_match( '#\bhref\s*=\s*(["\'])((?:https?:)?//fonts\.googleapis\.com/css2?\?[^"\'<>]+)\1#i', $tag, $href ) ) {
+					return $tag;
+				}
+				$url = html_entity_decode( $href[2], ENT_QUOTES );
+				$url = str_starts_with( $url, '//' ) ? 'https:' . $url : $url;
+				if ( ! str_contains( $url, 'display=' ) ) {
+					$url .= '&display=swap';
+				}
+				$css = (string) $fetch( $url );
+				if ( '' === $css ) {
+					return $tag;
+				}
+				$media = preg_match( '#\bmedia\s*=\s*(["\'])([^"\']*)\1#i', $tag, $m ) && '' !== trim( $m[2] ) && 'all' !== strtolower( trim( $m[2] ) ) ? ' media="' . htmlspecialchars( $m[2], ENT_QUOTES ) . '"' : '';
+				return '<style id="smao-font-' . substr( md5( $url ), 0, 8 ) . '"' . $media . '>' . $css . '</style>';
+			},
+			$html
+		);
+	}
+
+	/**
+	 * A Google Fonts stylesheet from the cache, fetched once in the
+	 * background after the page has been sent when it is not there yet.
+	 *
+	 * @param string $url Stylesheet URL.
+	 * @return string
+	 */
+	public static function font_css( string $url ): string {
+		$key    = 'smao_gfont_' . md5( $url );
+		$cached = get_transient( $key );
+		if ( is_array( $cached ) ) {
+			return (string) ( $cached['css'] ?? '' );
+		}
+		add_action(
+			'shutdown',
+			static function () use ( $url, $key ): void {
+				if ( is_array( get_transient( $key ) ) ) {
+					return;
+				}
+				// A current browser, so the answer lists compact WOFF2 files.
+				$response = wp_remote_get(
+					$url,
+					array(
+						'timeout'    => 5,
+						'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36',
+					)
+				);
+				$css  = is_wp_error( $response ) ? '' : (string) wp_remote_retrieve_body( $response );
+				$good = ! is_wp_error( $response ) && 200 === (int) wp_remote_retrieve_response_code( $response )
+					&& self::font_css_ok( $css );
+				set_transient( $key, array( 'css' => $good ? trim( $css ) : '' ), $good ? WEEK_IN_SECONDS : HOUR_IN_SECONDS );
+			}
+		);
+		return '';
+	}
+
+	/**
+	 * Whether fetched text is a plain font stylesheet, safe to write into a page.
+	 *
+	 * @param string $css Fetched text.
+	 * @return bool
+	 */
+	public static function font_css_ok( string $css ): bool {
+		return '' !== $css && strlen( $css ) < 262144 && str_contains( $css, '@font-face' )
+			&& ! str_contains( $css, '<' ) && ! preg_match( '#@import|expression\(|javascript:#i', $css );
 	}
 
 	/**

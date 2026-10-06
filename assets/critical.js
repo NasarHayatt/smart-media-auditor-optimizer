@@ -54,11 +54,36 @@
 	 * Icon fonts and unused weights are often embedded as large data URIs,
 	 * which would swell the inline block for no visual benefit.
 	 */
-	function usedFonts(fonts, cssText) {
+	function usedFonts(fonts, cssText, marks) {
 		var haystack = cssText.toLowerCase();
+		var sure = !!(marks && marks.has('font!any'));
 		return fonts.filter(function (font) {
-			return font.family !== '' && haystack.indexOf(font.family) !== -1;
+			if (font.family === '' || haystack.indexOf(font.family) === -1) { return false; }
+			// Of a used family, only the faces the browser actually needed at
+			// some measured width. Elementor's local Google Fonts declare every
+			// weight, italic and alphabet: 254 faces, 132 KB, pushed a live
+			// capture over the size limit, so nothing was inlined at all.
+			return !sure || !font.key || !marks.has('font?' + font.key) || marks.has('font!' + font.key);
 		}).map(function (font) { return font.text; });
+	}
+
+	/** Identity of a font face, the same from a CSS rule and from document.fonts. */
+	function faceKey(family, style, weight, stretch, range) {
+		return [familyName(family), style || 'normal', weight || 'normal', stretch || 'normal',
+			String(range || 'U+0-10FFFF').replace(/\s/g, '')].join('|').toLowerCase();
+	}
+
+	/** Record which font faces the page declares and which it loaded. */
+	function noteFonts(doc, marks) {
+		if (!doc.fonts || typeof doc.fonts.forEach !== 'function') { return; }
+		doc.fonts.forEach(function (face) {
+			var key = faceKey(face.family, face.style, face.weight, face.stretch, face.unicodeRange);
+			marks.add('font?' + key);
+			if (face.status !== 'unloaded') {
+				marks.add('font!' + key);
+				marks.add('font!any');
+			}
+		});
 	}
 
 	/** Stylesheets on the page that the plugin could load in the background. */
@@ -170,6 +195,7 @@
 				}
 			});
 		});
+		noteFonts(doc, marks);
 	}
 
 	function emit(rules, prefix, base, marks, out, fonts) {
@@ -177,8 +203,10 @@
 			var rule = rules[i];
 			var key = prefix + '/' + i;
 			if (rule.type === 5) { // @font-face
+				var get = function (name) { return rule.style ? rule.style.getPropertyValue(name) : ''; };
 				fonts.push({
-					family: familyName(rule.style && rule.style.getPropertyValue('font-family')),
+					family: familyName(get('font-family')),
+					key: faceKey(get('font-family'), get('font-style'), get('font-weight'), get('font-stretch'), get('unicode-range')),
 					text: absolutize(rule.cssText, base)
 				});
 				continue;
@@ -213,7 +241,7 @@
 			emit(item.sheet.cssRules, item.handle, item.sheet.href, marks, out, fonts);
 		});
 		var body = out.join(NL);
-		var faces = usedFonts(fonts, body);
+		var faces = usedFonts(fonts, body, marks);
 		return { css: (faces.length ? faces.join(NL) + NL : '') + body, handles: handles };
 	}
 

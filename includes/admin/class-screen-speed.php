@@ -262,7 +262,7 @@ final class Screen_Speed {
 					'async_css',
 					$settings['async_css'],
 					__( 'Stop stylesheets blocking the first paint', 'smart-media-auditor-optimizer' ),
-					__( 'Inlines the styles for the top of each measured page and loads the rest in the background. Pages are only changed if their layout stays exactly the same. On image-heavy pages it can make the PageSpeed score worse, because images then start downloading sooner and compete with everything else, so run PageSpeed before and after switching it on and keep whichever scores higher.', 'smart-media-auditor-optimizer' ),
+					__( 'Writes the styles for the top of each measured page into the page and loads the rest once the page has appeared, so they never compete with its images. A page is only changed if its layout stays exactly the same; otherwise its stylesheets load as before.', 'smart-media-auditor-optimizer' ),
 					__( 'The page paints before the full stylesheet arrives', 'smart-media-auditor-optimizer' )
 				);
 				?>
@@ -460,8 +460,16 @@ final class Screen_Speed {
 					'at'     => time(),
 				);
 			}
+			// After an update, pages that were not fully sped up are checked
+			// again with the new checks.
+			$recheck = ! $again && get_option( Styles::RECHECK ) && Styles::pages() && ( $settings['delay_all'] || $settings['async_css'] );
+			if ( $recheck ) {
+				$again = true;
+			}
 			?>
-			<?php if ( $again ) : ?>
+			<?php if ( $recheck ) : ?>
+				<p class="smao-inline-note"><?php esc_html_e( 'Media Auditor was updated with better page checks. Some pages were not fully sped up before, so they are being measured again now; keep this page open for a few minutes.', 'smart-media-auditor-optimizer' ); ?></p>
+			<?php elseif ( $again ) : ?>
 				<p class="smao-inline-note">
 					<?php
 					printf(

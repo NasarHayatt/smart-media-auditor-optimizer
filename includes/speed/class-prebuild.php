@@ -168,6 +168,91 @@ final class Prebuild {
 	}
 
 	/**
+	 * Show each picture of the pre-built layout from the smallest copy
+	 * WordPress keeps that still fills its box.
+	 *
+	 * A slider's photo was shown from its 2560px original, 393 KB, in a box
+	 * 412px wide on phones. It was the page's largest paint and took seconds
+	 * on a slow connection. Only copies with the original's shape qualify, so
+	 * the crop stays the same, and they must be twice the box for sharp
+	 * screens.
+	 *
+	 * @param string   $css    Pre-built styles.
+	 * @param callable $copies Image URL to its copies, each [url, width, height], original included.
+	 * @return string
+	 */
+	public static function fit_pictures( string $css, callable $copies ): string {
+		if ( ! str_contains( $css, 'content:url(' ) ) {
+			return $css;
+		}
+		return (string) preg_replace_callback(
+			'/\{([^{}]*content:url\("([^"]+)"\)[^{}]*)\}/',
+			static function ( array $m ) use ( $copies ): string {
+				$block = $m[1];
+				$url   = $m[2];
+				if ( ! preg_match( '/(?:^|;)width:([\d.]+)px/', $block, $w ) || ! preg_match( '/(?:^|;)height:([\d.]+)px/', $block, $h ) ) {
+					return $m[0];
+				}
+				$list = array_values(
+					array_filter(
+						(array) $copies( $url ),
+						static function ( $copy ): bool {
+							return is_array( $copy ) && 3 === count( $copy ) && (int) $copy[1] > 0 && (int) $copy[2] > 0;
+						}
+					)
+				);
+				if ( count( $list ) < 2 ) {
+					return $m[0];
+				}
+				usort(
+					$list,
+					static function ( array $a, array $b ): int {
+						return (int) $a[1] <=> (int) $b[1];
+					}
+				);
+				$largest = $list[ count( $list ) - 1 ];
+				$ratio   = $largest[1] / $largest[2];
+				// Covering a box can need more width than the box itself.
+				$wide = str_contains( $block, 'object-fit:cover' ) ? max( (float) $w[1], (float) $h[1] * $ratio ) : (float) $w[1];
+				foreach ( $list as $copy ) {
+					if ( abs( $copy[1] / $copy[2] - $ratio ) > 0.02 * $ratio || $copy[1] < 2 * $wide ) {
+						continue;
+					}
+					return '{' . str_replace( $url, (string) $copy[0], $block ) . '}';
+				}
+				return $m[0];
+			},
+			$css
+		);
+	}
+
+	/**
+	 * Copies WordPress keeps of an uploaded image, the original included.
+	 *
+	 * @param string $url Image URL.
+	 * @return array<int,array{0:string,1:int,2:int}>
+	 */
+	public static function copies( string $url ): array {
+		if ( ! function_exists( 'attachment_url_to_postid' ) ) {
+			return array();
+		}
+		$id   = (int) attachment_url_to_postid( (string) preg_replace( '/-\d+x\d+(\.[a-z0-9]+)$/i', '$1', $url ) );
+		$meta = $id ? wp_get_attachment_metadata( $id ) : null;
+		$full = $id ? wp_get_attachment_url( $id ) : '';
+		if ( ! is_array( $meta ) || empty( $meta['width'] ) || empty( $meta['height'] ) || ! $full ) {
+			return array();
+		}
+		$dir  = trailingslashit( dirname( $full ) );
+		$list = array( array( $full, (int) $meta['width'], (int) $meta['height'] ) );
+		foreach ( (array) ( $meta['sizes'] ?? array() ) as $size ) {
+			if ( is_array( $size ) && ! empty( $size['file'] ) ) {
+				$list[] = array( $dir . $size['file'], (int) ( $size['width'] ?? 0 ), (int) ( $size['height'] ?? 0 ) );
+			}
+		}
+		return $list;
+	}
+
+	/**
 	 * The outcome of pre-building one page, ready to store.
 	 *
 	 * @param array $data Keys: css, shift, height, missing, off (shares).
@@ -177,7 +262,7 @@ final class Prebuild {
 		$number = static function ( string $key ) use ( $data ): float {
 			return isset( $data[ $key ] ) && is_numeric( $data[ $key ] ) ? (float) $data[ $key ] : -1.0;
 		};
-		$css    = wp_strip_all_tags( (string) ( $data['css'] ?? '' ) );
+		$css    = self::fit_pictures( wp_strip_all_tags( (string) ( $data['css'] ?? '' ) ), array( self::class, 'copies' ) );
 		$sent   = self::sent_size( $css );
 		$status = self::verdict( $sent, $number( 'shift' ), $number( 'height' ), $number( 'missing' ), $number( 'off' ), strlen( $css ) );
 		$widths = array();

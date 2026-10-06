@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.7.5\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.7.6\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
@@ -682,9 +682,6 @@ msgstr ""
 msgid "Incomplete backup and original changed. Manual recovery required."
 msgstr ""
 
-msgid "Inlines the styles for the top of each measured page and loads the rest in the background. Pages are only changed if their layout stays exactly the same. On image-heavy pages it can make the PageSpeed score worse, because images then start downloading sooner and compete with everything else, so run PageSpeed before and after switching it on and keep whichever scores higher."
-msgstr ""
-
 msgid "Invalid backup manifest."
 msgstr ""
 
@@ -827,6 +824,9 @@ msgid "Media Auditor"
 msgstr ""
 
 msgid "Media Auditor speed corrections are active"
+msgstr ""
+
+msgid "Media Auditor was updated with better page checks. Some pages were not fully sped up before, so they are being measured again now; keep this page open for a few minutes."
 msgstr ""
 
 msgid "Media Auditor: your pages load without the full speed-up because %s, which cleared the page measurements."
@@ -1819,6 +1819,9 @@ msgstr ""
 msgid "Worth testing first"
 msgstr ""
 
+msgid "Writes the styles for the top of each measured page into the page and loads the rest once the page has appeared, so they never compete with its images. A page is only changed if its layout stays exactly the same; otherwise its stylesheets load as before."
+msgstr ""
+
 msgid "Yes"
 msgstr ""
 
@@ -1958,6 +1961,18 @@ msgid "files"
 msgstr ""
 
 msgid "files checked"
+msgstr ""
+
+msgid "font-family"
+msgstr ""
+
+msgid "font-stretch"
+msgstr ""
+
+msgid "font-style"
+msgstr ""
+
+msgid "font-weight"
 msgstr ""
 
 msgid "form"
@@ -2162,6 +2177,9 @@ msgid "tone"
 msgstr ""
 
 msgid "tr"
+msgstr ""
+
+msgid "unicode-range"
 msgstr ""
 
 msgid "unused candidates"

@@ -51,6 +51,9 @@ final class Plugin {
 	public static function boot(): void {
 		if ( get_option( 'smao_schema' ) !== SMAO_VERSION ) {
 			Database::install();
+			if ( Styles::needs_recheck() ) {
+				update_option( Styles::RECHECK, time(), false );
+			}
 			// The cache drop-in reads its settings from a file. Refresh it now,
 			// not at the next admin visit, so an update takes effect at once.
 			add_action(

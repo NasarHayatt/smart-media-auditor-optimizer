@@ -227,4 +227,34 @@ final class PrebuildTest extends TestCase {
 		$this->assertStringContainsString( 'self::LAYOUT_PLUGINS', $watch );
 		$this->assertStringNotContainsString( "'upgrader_process_complete', 'wp_update_nav_menu'", $watch );
 	}
+
+	/**
+	 * Pictures in the pre-built layout come from the smallest copy that
+	 * still fills their box at twice its size, with the original's shape.
+	 *
+	 * @return void
+	 */
+	public function test_pictures_use_the_smallest_copy_that_fills_them(): void {
+		$full   = 'https://example.com/wp-content/uploads/2023/12/photo-scaled.webp';
+		$copies = static function ( string $url ) use ( $full ): array {
+			return $url === $full ? array(
+				array( $full, 2560, 1920 ),
+				array( 'https://example.com/wp-content/uploads/2023/12/photo-150x150.webp', 150, 150 ),
+				array( 'https://example.com/wp-content/uploads/2023/12/photo-768x576.webp', 768, 576 ),
+				array( 'https://example.com/wp-content/uploads/2023/12/photo-1024x768.webp', 1024, 768 ),
+				array( 'https://example.com/wp-content/uploads/2023/12/photo-1536x1152.webp', 1536, 1152 ),
+			) : array();
+		};
+		$phone   = '@media (max-width: 600px){' . "\n" . 'a img{left:0px!important;top:0px!important;width:412px!important;height:300px!important;content:url("' . $full . '")!important;object-fit:cover!important}' . "\n" . '}';
+		$desktop = '@media (min-width: 1601px){' . "\n" . 'a img{left:0px!important;top:0px!important;width:1920px!important;height:800px!important;content:url("' . $full . '")!important;object-fit:cover!important}' . "\n" . '}';
+		$swap    = 'b img{width:300px!important;height:225px!important;max-width:100%!important;content:url("' . $full . '")!important;background-image:url("' . $full . '")!important}';
+		$other   = 'c img{width:300px!important;height:200px!important;content:url("https://cdn.example.org/x.png")!important}';
+
+		$this->assertStringContainsString( 'photo-1024x768.webp', Prebuild::fit_pictures( $phone, $copies ), '412 wide covering 300 high needs 2 x 412 = 824px' );
+		$this->assertStringNotContainsString( '150x150', Prebuild::fit_pictures( $phone, $copies ), 'a square crop is never used' );
+		$this->assertSame( $desktop, Prebuild::fit_pictures( $desktop, $copies ), 'no copy is wide enough: the original stays' );
+		$this->assertSame( 2, substr_count( Prebuild::fit_pictures( $swap, $copies ), 'photo-768x576.webp' ), 'both the picture and its background' );
+		$this->assertSame( $other, Prebuild::fit_pictures( $other, $copies ) );
+		$this->assertSame( 'a{color:red}', Prebuild::fit_pictures( 'a{color:red}', $copies ) );
+	}
 }

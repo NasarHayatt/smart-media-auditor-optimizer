@@ -27,6 +27,21 @@ test('only font faces that the captured rules use are kept', () => {
   assert.deepEqual(critical.usedFonts(fonts, 'body{color:red}'), []);
 });
 
+test('of a used family, only faces the browser loaded are kept', () => {
+  const fonts = [
+    { family: 'roboto', key: 'roboto|normal|400|normal|u+0-ff', text: 'latin 400' },
+    { family: 'roboto', key: 'roboto|italic|100|normal|u+0-ff', text: 'latin 100 italic' },
+    { family: 'roboto', key: 'roboto|normal|400|normal|u+400-45f', text: 'cyrillic 400' },
+    { family: 'roboto', key: 'roboto|normal|900|normal|u+0-ff', text: 'not reported by the browser' }
+  ];
+  const css = 'body{font-family:Roboto}';
+  const marks = new Set(['font?roboto|normal|400|normal|u+0-ff', 'font!roboto|normal|400|normal|u+0-ff', 'font!any',
+    'font?roboto|italic|100|normal|u+0-ff', 'font?roboto|normal|400|normal|u+400-45f']);
+  assert.deepEqual(critical.usedFonts(fonts, css, marks), ['latin 400', 'not reported by the browser']);
+  assert.equal(critical.usedFonts(fonts, css, new Set(['font?roboto|normal|400|normal|u+0-ff'])).length, 4, 'nothing loaded anywhere: keep all');
+  assert.equal(critical.usedFonts(fonts, css).length, 4);
+});
+
 test('group headers keep the condition and drop the body', () => {
   assert.equal(critical.groupHeader({ cssText: '@media (max-width: 767px) { .a { color: red; } }' }), '@media (max-width: 767px)');
   assert.equal(critical.groupHeader({ cssText: '@layer base { .a { color: red; } }' }), '@layer base');

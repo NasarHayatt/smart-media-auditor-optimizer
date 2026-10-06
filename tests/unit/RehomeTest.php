@@ -66,6 +66,40 @@ final class RehomeTest extends TestCase {
 	}
 
 	/**
+	 * Protocol-relative addresses, as Slider Revolution saves them.
+	 *
+	 * @return void
+	 */
+	public function test_protocol_relative_addresses_are_rewritten(): void {
+		$html = '<img data-lazyload="//784.861.myftpupload.com/wp-content/uploads/2023/08/header.png">'
+			. '<div data-x="{&quot;u&quot;:&quot;\/\/784.861.myftpupload.com\/wp-content\/uploads\/2023\/08\/header.png&quot;}"></div>';
+		$out  = Viewport::rehome( $html, 'saifenergy.com', $this->dir, 'https://saifenergy.com/wp-content' );
+
+		$this->assertStringContainsString( 'data-lazyload="https://saifenergy.com/wp-content/uploads/2023/08/header.png"', $out );
+		$this->assertStringContainsString( 'https:\/\/saifenergy.com\/wp-content\/uploads\/2023\/08\/header.png&quot;', $out );
+		$this->assertStringNotContainsString( 'myftpupload', $out );
+	}
+
+	/**
+	 * An image CDN copy of this site keeps its resizing; one of an old
+	 * address is pointed at this site through the same CDN.
+	 *
+	 * @return void
+	 */
+	public function test_image_cdn_addresses(): void {
+		$self = 'https://i0.wp.com/saifenergy.com/wp-content/uploads/2023/08/header.png?fit=32%2C32&#038;ssl=1';
+		$html = '<img src="' . $self . '">'
+			. '<img src="https://i0.wp.com/wab.hak.mybluehost.me/website_d48ba495/wp-content/uploads/2023/08/header.png?w=847&#038;ssl=1">'
+			. '<div data-x="{&quot;u&quot;:&quot;https:\/\/i1.wp.com\/wab.hak.mybluehost.me\/website_d48ba495\/wp-content\/uploads\/2023\/08\/header.png?w=847&quot;}"></div>';
+		$out  = Viewport::rehome( $html, 'saifenergy.com', $this->dir, 'https://saifenergy.com/wp-content' );
+
+		$this->assertStringContainsString( $self, $out, 'this site through its CDN is left alone' );
+		$this->assertStringContainsString( 'https://i0.wp.com/saifenergy.com/wp-content/uploads/2023/08/header.png?w=847&#038;ssl=1', $out );
+		$this->assertStringContainsString( 'https:\/\/i1.wp.com\/saifenergy.com\/wp-content\/uploads\/2023\/08\/header.png?w=847&quot;', $out );
+		$this->assertStringNotContainsString( 'mybluehost', $out );
+	}
+
+	/**
 	 * Paths that try to leave wp-content are never followed.
 	 *
 	 * @return void

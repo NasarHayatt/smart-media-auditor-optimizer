@@ -185,6 +185,18 @@ final class Database {
 				update_option( 'smao_settings', $stored );
 			}
 		}
+		// 2.7.6: stylesheets wait behind each page's verified first-screen
+		// styles by default. Switched off in 2.3.5 over a slow first paint
+		// that 2.3.6 traced to something else; on a live page it now scored
+		// 97 on a phone against 81 without. Pages whose styles did not pass
+		// the look-the-same check keep their stylesheets as they are.
+		if ( version_compare( (string) get_option( 'smao_schema', '0' ), '2.7.6', '<' ) ) {
+			$stored = get_option( 'smao_settings' );
+			if ( is_array( $stored ) && empty( $stored['async_css'] ) ) {
+				$stored['async_css'] = true;
+				update_option( 'smao_settings', $stored );
+			}
+		}
 		update_option( 'smao_schema', SMAO_VERSION, false );
 	}
 

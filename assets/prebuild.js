@@ -306,6 +306,19 @@
 		return largest;
 	}
 
+	/**
+	 * The margin an element shows at one edge once its children's margins
+	 * collapse through it, as a declaration, or '' when that is its own.
+	 * Collapsing adds the largest positive margin to the most negative one:
+	 * a section pulled up by -340px over the one before it has to keep that
+	 * pull, not be set to its children's 0.
+	 */
+	function carried(el, view, edge) {
+		var own = parseFloat(view.getComputedStyle(el)['margin-' + edge]) || 0;
+		var shown = Math.max(own, collapsed(el, view, edge), 0) + Math.min(own, 0);
+		return Math.abs(shown - own) > 0.5 ? 'margin-' + edge + ':' + round(shown) + 'px!important' : '';
+	}
+
 	/** Styles that make one area of the held page look finished. */
 	function rules(el, held, done, doc, doneView) {
 		var sel = selector(el, doc);
@@ -314,9 +327,13 @@
 		var a = held[n];
 		var b = done[n];
 		var view = doc.defaultView;
-		if (!b.shown) {
+		if (!b.shown && b.w < 1 && b.h < 1) {
 			return { selector: sel, css: sel + '{display:none!important}', pieces: [] };
 		}
+		// Invisible in the finished page yet taking up room, as a block that
+		// waits to fade in does: it keeps that room and stays invisible.
+		// Removed instead, a 310px block took the whole page below it up.
+		var invisible = !b.shown;
 		// An area as tall as the screen follows the screen, not this frame.
 		var screenHeight = doneView.innerHeight;
 		var height = Math.abs(b.h - screenHeight) <= TOLERANCE ? '100vh' : round(b.h) + 'px';
@@ -324,7 +341,10 @@
 		// them overflow, so it must not clip them. clip rather than hidden,
 		// which would also change how margins behave at the area's edges.
 		var clip = b.w >= 1 && b.h >= 1 && /hidden|clip|auto|scroll/.test(doneView.getComputedStyle(b.el).overflow) ? 'clip' : 'visible';
-		var decl = ['height:' + height + '!important', 'min-height:0!important', 'max-height:none!important', 'overflow:' + clip + '!important', 'visibility:visible!important', 'opacity:1!important'];
+		// Layout containment keeps what the area holds inside it: floated
+		// carousel slides spilling out of the fixed height made the widget
+		// around it 398px taller. Margins at its edges are carried below.
+		var decl = ['height:' + height + '!important', 'min-height:0!important', 'max-height:none!important', 'overflow:' + clip + '!important', 'contain:layout!important'].concat(invisible ? ['visibility:hidden!important'] : ['visibility:visible!important', 'opacity:1!important']);
 		if (view.getComputedStyle(el).display === 'none') {
 			decl.push('display:' + (doneView.getComputedStyle(b.el).display || 'block') + '!important');
 		}
@@ -339,9 +359,8 @@
 		// no longer count, so the area carries them itself. A heading's margin
 		// moved every such area, and the rest of the page, by 20px.
 		['top', 'bottom'].forEach(function (edge) {
-			var extra = collapsed(b.el, doneView, edge);
-			var own = parseFloat(doneView.getComputedStyle(b.el)['margin-' + edge]) || 0;
-			if (extra > own + 0.5) { decl.push('margin-' + edge + ':' + round(extra) + 'px!important'); }
+			var carry = carried(b.el, doneView, edge);
+			if (carry) { decl.push(carry); }
 		});
 		if (Math.abs(a.w - b.w) > TOLERANCE || Math.abs(a.x - b.x) > TOLERANCE) {
 			var docWidth = doc.documentElement.clientWidth;
@@ -361,7 +380,7 @@
 		// area would fall back to empty until then and the page below it
 		// would move twice, up now and down again in front of the visitor.
 		lines.push(RAN + sel + '{min-height:' + height + '!important}');
-		return { selector: sel, css: lines.join(NL), region: el, done: b, pieces: pieces(b.el, done, doneView) };
+		return { selector: sel, css: lines.join(NL), region: el, done: b, pieces: invisible ? [] : pieces(b.el, done, doneView) };
 	}
 
 	/**
@@ -438,6 +457,16 @@
 			}
 			lines.push(sel + '{' + decl.join(';') + '}');
 		});
+		painted(area, regionBox, doc, doneView, perf).forEach(function (item) {
+			var sel = scoped(area, inside(area.region, area.selector, item.img, doc), item.img, doc);
+			if (!sel || placedSelectors.indexOf(sel) !== -1) { return; }
+			for (var up = item.img.parentElement; up && up !== area.region; up = up.parentElement) {
+				if (between.indexOf(up) === -1) { between.push(up); }
+			}
+			placedSelectors.push(sel);
+			var real = 'url("' + item.src.replace(/"/g, '%22') + '")';
+			lines.push(sel + '{left:' + round(item.x) + 'px!important;top:' + round(item.y) + 'px!important;width:' + round(item.w) + 'px!important;height:' + round(item.h) + 'px!important;display:block!important;max-width:none!important;max-height:none!important;border:0!important;content:' + real + '!important;object-fit:cover!important;object-position:center!important}');
+		});
 		if (placedSelectors.length) {
 			lines.unshift(
 				placedSelectors.join(',') + '{' + PIECE + '}',
@@ -454,6 +483,52 @@
 			if (gone.length) { lines.unshift(gone.join(',') + '{display:block!important}'); }
 		}
 		return lines;
+	}
+
+	/** Attributes lazy loaders keep an image's real file in. */
+	var LAZY = ['data-lazyload', 'data-lazy-src', 'data-src'];
+
+	/**
+	 * Pictures a script paints onto a canvas in the first screen.
+	 *
+	 * Slider Revolution draws each slide's photo on a canvas it creates; the
+	 * page itself only holds a placeholder image with the real file in a data
+	 * attribute. With no piece for the canvas, a live home page showed a grey
+	 * block where its photo belongs while scripts waited. For each large
+	 * canvas, the biggest lazy image of the element it belongs to is shown in
+	 * its place, filling it as the slider does.
+	 */
+	function painted(area, regionBox, doc, doneView, perf) {
+		var found = [];
+		var region = area.done && area.done.el;
+		if (!region || !regionBox) { return found; }
+		var canvases = region.getElementsByTagName('canvas');
+		for (var i = 0; i < canvases.length && found.length < 3; i++) {
+			var canvas = canvases[i];
+			var r = canvas.getBoundingClientRect();
+			var cs = doneView.getComputedStyle(canvas);
+			var top = r.top + doneView.scrollY;
+			if (r.width * r.height < regionBox.w * regionBox.h * 0.3 || cs.visibility === 'hidden' || Number(cs.opacity) < 0.5 || top >= doneView.innerHeight * 1.1) { continue; }
+			var owner = canvas.parentElement;
+			while (owner && owner !== region && !owner.hasAttribute('data-smao-n')) { owner = owner.parentElement; }
+			var held = owner && doc.querySelector('[data-smao-n="' + owner.getAttribute('data-smao-n') + '"]');
+			if (!held) { continue; }
+			var best = null;
+			var bestSize = -1;
+			var images = held.getElementsByTagName('img');
+			for (var j = 0; j < images.length; j++) {
+				var src = '';
+				for (var k = 0; k < LAZY.length && !src; k++) { src = images[j].getAttribute(LAZY[k]) || ''; }
+				if (!src || src.indexOf('data:') === 0) { continue; }
+				var size = (parseFloat(images[j].getAttribute('width')) || 1) * (parseFloat(images[j].getAttribute('height')) || 1);
+				if (size > bestSize) { best = { img: images[j], src: src }; bestSize = size; }
+			}
+			if (!best) { continue; }
+			try { best.src = new URL(best.src, doc.baseURI).href; } catch (error) { continue; }
+			if (perf && !perf(best.src)) { continue; }
+			found.push({ img: best.img, src: best.src, x: r.left + doneView.scrollX - regionBox.x, y: top - regionBox.y, w: r.width, h: r.height });
+		}
+		return found;
 	}
 
 	/**
@@ -595,9 +670,8 @@
 					if (!sel) { continue; }
 					var decl = ['content-visibility:auto!important', 'contain-intrinsic-size:auto ' + round(box.h) + 'px!important'];
 					['top', 'bottom'].forEach(function (edge) {
-						var extra = collapsed(box.el, doneView, edge);
-						var own = parseFloat(doneView.getComputedStyle(box.el)['margin-' + edge]) || 0;
-						if (extra > own + 0.5) { decl.push('margin-' + edge + ':' + round(extra) + 'px!important'); }
+						var carry = carried(box.el, doneView, edge);
+						if (carry) { decl.push(carry); }
 					});
 					lines.push(sel + '{' + decl.join(';') + '}');
 				} else if (box.y + box.h > fold && depth < 14) {

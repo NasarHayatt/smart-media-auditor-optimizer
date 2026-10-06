@@ -110,7 +110,7 @@ final class Settings {
 			'delay_extra'       => '',
 			'script_exclusions' => '',
 			'style_exclusions'  => '',
-			'async_css'         => false,
+			'async_css'         => true,
 			'optimize_fonts'    => true,
 			'disable_emoji'     => true,
 			'lazy_iframes'      => true,

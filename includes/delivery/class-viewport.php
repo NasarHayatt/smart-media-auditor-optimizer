@@ -136,7 +136,13 @@ final class Viewport {
 	 * another server: the browser opens a second connection, and no WebP copy
 	 * or right size can be served. A live site's main image, an 829 KB PNG,
 	 * loaded that way. When the same file exists in this site's wp-content,
-	 * this site's copy is used instead, in plain and JSON-escaped addresses.
+	 * this site's copy is used instead, in plain, protocol-relative and
+	 * JSON-escaped addresses.
+	 *
+	 * An image CDN that carries a site's address in its path, such as
+	 * Jetpack's i0.wp.com/example.com/wp-content/..., is left alone when it
+	 * already points at this site, so its resizing keeps working. When
+	 * Jetpack's CDN points at an old address, it is pointed at this site.
 	 *
 	 * @param string $html        Page.
 	 * @param string $host        This site's host.
@@ -148,40 +154,46 @@ final class Viewport {
 		if ( '' === $host || ! str_contains( $html, 'wp-content' ) ) {
 			return $html;
 		}
+		$host        = strtolower( $host );
 		$content_dir = rtrim( str_replace( '\\', '/', $content_dir ), '/' );
 		$content_url = rtrim( $content_url, '/' );
 		$known       = array();
-		$swap        = static function ( string $other, string $path, bool $escaped ) use ( $host, $content_dir, $content_url, &$known ): ?string {
-			if ( strtolower( $other ) === strtolower( $host ) ) {
-				return null;
-			}
+		$swap        = static function ( array $m, bool $escaped ) use ( $host, $content_dir, $content_url, &$known ): string {
+			$other    = strtolower( $m[2] );
+			$slash    = $escaped ? '\\/' : '/';
+			$prefix   = array_filter( explode( '/', str_replace( '\\/', '/', $m[3] ) ) );
+			$path     = $m[4];
 			$relative = rawurldecode( $escaped ? str_replace( '\\/', '/', $path ) : $path );
+			if ( $other === $host || in_array( $host, array_map( 'strtolower', $prefix ), true ) ) {
+				return $m[0];
+			}
 			if ( str_contains( $relative, '..' ) || str_contains( $relative, "\0" ) ) {
-				return null;
+				return $m[0];
 			}
 			if ( ! isset( $known[ $relative ] ) ) {
 				$known[ $relative ] = is_file( $content_dir . '/' . $relative );
 			}
 			if ( ! $known[ $relative ] ) {
-				return null;
+				return $m[0];
 			}
-			return $escaped ? str_replace( '/', '\\/', $content_url ) . '\\/' . $path : $content_url . '/' . $path;
+			$local = preg_match( '#^i[0-3]\.wp\.com$#', $other ) && $prefix
+				? str_replace( '\\/', '/', $m[1] ) . $other . '/' . preg_replace( '#^https?://#i', '', $content_url )
+				: $content_url;
+			return ( $escaped ? str_replace( '/', '\\/', $local ) : $local ) . $slash . $path;
 		};
-		$plain = '#https?://([a-z0-9.-]+)(?::\d+)?(?:/[^\s"\'()<>\\\\]*?)?/wp-content/([^\s"\'()<>?\#\\\\]+?\.(?:jpe?g|png|gif|webp|avif|svg))(?=[\s"\'()<>?\#&]|$)#i';
+		$plain = '#((?:https?:)?//)([a-z0-9.-]+)(?::\d+)?((?:/[^\s"\'()<>\\\\]*?)?)/wp-content/([^\s"\'()<>?\#\\\\]+?\.(?:jpe?g|png|gif|webp|avif|svg))(?=[\s"\'()<>?\#&]|$)#i';
 		$html  = (string) preg_replace_callback(
 			$plain,
 			static function ( array $m ) use ( $swap ): string {
-				$local = $swap( $m[1], $m[2], false );
-				return null === $local ? $m[0] : $local;
+				return $swap( $m, false );
 			},
 			$html
 		);
-		$escaped = '#https?:\\\\/\\\\/([a-z0-9.-]+)(?::\d+)?(?:\\\\/[^\s"\'()<>]*?)?\\\\/wp-content\\\\/((?:[^\s"\'()<>?\#\\\\]|\\\\/)+?\.(?:jpe?g|png|gif|webp|avif|svg))(?=[\s"\'()<>?\#&\\\\]|$)#i';
+		$escaped = '#((?:https?:)?\\\\/\\\\/)([a-z0-9.-]+)(?::\d+)?((?:\\\\/[^\s"\'()<>]*?)?)\\\\/wp-content\\\\/((?:[^\s"\'()<>?\#\\\\]|\\\\/)+?\.(?:jpe?g|png|gif|webp|avif|svg))(?=[\s"\'()<>?\#&\\\\]|$)#i';
 		return (string) preg_replace_callback(
 			$escaped,
 			static function ( array $m ) use ( $swap ): string {
-				$local = $swap( $m[1], $m[2], true );
-				return null === $local ? $m[0] : $local;
+				return $swap( $m, true );
 			},
 			$html
 		);

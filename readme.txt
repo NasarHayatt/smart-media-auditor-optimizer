@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.7.5
+Stable tag: 2.7.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,33 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.7.6 =
+* Fix: the look-the-same check failed on phones and tablets on themes whose
+  carousels float their slides, whose sections overlap with a negative
+  margin, or that hide blocks until they fade in. Those pages then held no
+  scripts on phones at all. All three are now rebuilt correctly; a live
+  Elementor home page went from passing at 1 of 4 widths to all 4.
+* Fix: the first-screen styles of pages using Elementor's local Google Fonts
+  were too large to use (254 font faces), so every stylesheet kept blocking
+  the first paint. Only the font faces the page actually loads are kept now:
+  177 KB became 44 KB.
+* New: Google Fonts stylesheets are written into the page instead of being
+  linked, fetched once in the background and kept for a week. Two of them
+  held a live page's first paint back by about a second on phones.
+* New: Slider Revolution slides, which the slider paints on a canvas, show
+  their photo while scripts wait instead of a grey block, from the smallest
+  copy WordPress keeps that still fills the slide (110 KB instead of 393 KB
+  on phones).
+* Changed: "Stop stylesheets blocking the first paint" is on by default again,
+  also on existing sites. It only changes pages whose first-screen styles
+  passed the look-the-same check. A live home page scored 97 on a phone with
+  it and 81 without.
+* New: after an update, pages that were not fully sped up are measured again
+  automatically the next time the Speed screen is open.
+* Fix: the old-address image fix now also handles addresses that start with
+  "//", as Slider Revolution saves them, and leaves Jetpack's image CDN
+  copies of this site alone so their resizing keeps working.
 
 = 2.7.5 =
 * New: images a page still loads from an old site address, such as a
