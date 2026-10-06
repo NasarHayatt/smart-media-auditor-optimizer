@@ -305,7 +305,7 @@ final class Measure {
 				'drawn'    => $drawn,
 				'needed'   => $after,
 				'bytes'    => $bytes,
-				'wasted'   => max( 0, self::weigh( $bytes, $before, $full ) - self::weigh( $bytes, $after, $full ) ),
+				'wasted'   => max( 0, self::file_bytes( $id, $before, $bytes, $full ) - self::file_bytes( $id, $after, $bytes, $full ) ),
 			);
 		}
 		usort(
@@ -343,6 +343,40 @@ final class Measure {
 			}
 		}
 		return (int) end( $widths );
+	}
+
+	/**
+	 * Size of the copy of an image at a given width, read from the file.
+	 *
+	 * The scan records what an image takes up on disk, every copy together,
+	 * so scaling that total as if it were one file claimed 10 MB saved on a
+	 * 2.5 MB photo. Each copy's own file size is exact; the estimate is only
+	 * used when the file cannot be read.
+	 *
+	 * @param int $id    Attachment ID.
+	 * @param int $width Copy width.
+	 * @param int $total Bytes of all copies together.
+	 * @param int $full  Full-size width.
+	 * @return int
+	 */
+	private static function file_bytes( int $id, int $width, int $total, int $full ): int {
+		$meta = wp_get_attachment_metadata( $id );
+		$main = get_attached_file( $id );
+		if ( is_array( $meta ) && $main ) {
+			$file = (int) ( $meta['width'] ?? 0 ) === $width ? $main : '';
+			foreach ( (array) ( $meta['sizes'] ?? array() ) as $size ) {
+				if ( '' === $file && is_array( $size ) && (int) ( $size['width'] ?? 0 ) === $width && ! empty( $size['file'] ) ) {
+					$file = trailingslashit( dirname( $main ) ) . $size['file'];
+				}
+			}
+			if ( '' !== $file && is_readable( $file ) ) {
+				return (int) filesize( $file );
+			}
+			if ( is_readable( $main ) ) {
+				return self::weigh( (int) filesize( $main ), $width, $full );
+			}
+		}
+		return self::weigh( $total, $width, $full );
 	}
 
 	/**
