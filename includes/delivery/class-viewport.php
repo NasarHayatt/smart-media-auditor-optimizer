@@ -372,7 +372,8 @@ final class Viewport {
 		 * and would otherwise be given high priority.
 		 */
 		$is_lcp = ( $id && $id === $lcp )
-			|| ( ! $lcp && ! self::$measured && 1 === self::$seen && self::plausible_lcp( $html ) );
+			|| ( ! $lcp && ! self::$measured && 1 === self::$seen && self::plausible_lcp( $html ) )
+			|| self::measured_main( $html );
 		if ( $is_lcp ) {
 			$html = preg_replace( '/\sloading\s*=\s*(["\'])lazy\1/i', '', $html );
 			if ( ! preg_match( '/\sfetchpriority\s*=/i', $html ) ) {
@@ -391,6 +392,31 @@ final class Viewport {
 		}
 		// Never let a non-LCP image claim high priority.
 		return preg_replace( '/\sfetchpriority\s*=\s*(["\'])high\1/i', '', $html );
+	}
+
+	/**
+	 * Whether this is the image measured as a screen's largest one.
+	 *
+	 * An image without WordPress's attachment class has no ID to match, so
+	 * it is found by its file name; only its first appearance gets priority.
+	 *
+	 * @param string $html Image tag.
+	 * @return bool
+	 */
+	private static function measured_main( string $html ): bool {
+		static $done = false;
+		$heroes = Styles::heroes();
+		if ( $done || null === $heroes ) {
+			return false;
+		}
+		$name = strtolower( wp_basename( (string) wp_parse_url( self::attribute( $html, 'src' ), PHP_URL_PATH ) ) );
+		foreach ( $heroes as $hero ) {
+			if ( '' !== $name && 'img' === ( $hero['kind'] ?? '' ) && strtolower( wp_basename( (string) wp_parse_url( (string) ( $hero['url'] ?? '' ), PHP_URL_PATH ) ) ) === $name ) {
+				$done = true;
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

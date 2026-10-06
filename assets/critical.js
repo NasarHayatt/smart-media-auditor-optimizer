@@ -379,7 +379,12 @@
 			if (el.tagName === 'IMG') {
 				// Sliders and lazy loaders stretch a tiny placeholder over the
 				// real image; the file itself gives it away.
-				if (el.naturalWidth <= 8 || el.naturalHeight <= 8) { continue; }
+				// An image the page lazy-loads has not loaded in the hidden
+				// measuring frame, yet a visitor sees it straight away; it
+				// counts by its size. Left out, a phone page's main image kept
+				// its lazy loading and started late.
+				var waiting = !el.naturalWidth && (el.getAttribute('loading') || '').toLowerCase() === 'lazy' && !/^data:/i.test(el.getAttribute('src') || '');
+				if (!waiting && (el.naturalWidth <= 8 || el.naturalHeight <= 8)) { continue; }
 				url = el.currentSrc || el.src || '';
 				kind = 'img';
 				var match = /wp-image-(\d+)/.exec(el.className || '');

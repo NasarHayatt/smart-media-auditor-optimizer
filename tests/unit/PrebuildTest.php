@@ -160,7 +160,7 @@ final class PrebuildTest extends TestCase {
 		$this->assertStringContainsString( 'setProperty("--smao-sb"', $gate );
 		$this->assertStringContainsString( '[412,1350].some(function(x){return Math.abs(w-x)<=4})', $gate, 'only checked widths hold their scripts' );
 		$this->assertStringContainsString( 'd.classList.add("smao-open")', $gate );
-		$this->assertStringContainsString( 'if(screen.width&&w>screen.width)w=screen.width;', $gate, 'a phone before its viewport tag is not 980px wide' );
+		$this->assertStringContainsString( 'if(navigator.maxTouchPoints>0&&screen.width&&w>screen.width&&!document.querySelector("meta[name=viewport]"))w=screen.width;', $gate, 'a phone before its viewport tag is not 980px wide; a desktop test window is not its 800px screen' );
 		$this->assertStringContainsString( "str_contains( \$attributes, 'smao-prebuild' )", (string) file_get_contents( $root . '/includes/speed/class-scripts.php' ) );
 		$this->assertStringContainsString( 'calc(100vw - var(--smao-sb,0px))', (string) file_get_contents( $root . '/assets/prebuild.js' ) );
 	}

@@ -86,6 +86,26 @@ final class MarkupTest extends TestCase {
 	}
 
 	/**
+	 * A YouTube frame shows its picture until someone presses play.
+	 *
+	 * @return void
+	 */
+	public function test_youtube_frames_wait_for_a_click(): void {
+		$html = '<html><head></head><body><iframe title="Introducing D. I. Khan New City" width="1080" height="608" src="https://www.youtube.com/embed/djMzNxNOs2E?feature=oembed" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>'
+			. '<iframe src="https://player.vimeo.com/video/1"></iframe></body></html>';
+		$out  = Markup::lazy_iframes( $html );
+
+		$this->assertStringContainsString( 'src="https://www.youtube.com/embed/djMzNxNOs2E?feature=oembed"', $out, 'the real address stays' );
+		$this->assertStringContainsString( ' srcdoc="', $out );
+		$this->assertStringContainsString( 'i.ytimg.com/vi/djMzNxNOs2E/hqdefault.jpg', $out );
+		$this->assertStringContainsString( 'embed/djMzNxNOs2E?feature=oembed&amp;amp;autoplay=1', $out, 'pressing play starts the video' );
+		$this->assertStringContainsString( 'allow="autoplay; encrypted-media" allowfullscreen', $out );
+		$this->assertSame( 1, substr_count( $out, 'srcdoc=' ), 'other players are left alone' );
+		$this->assertSame( 2, substr_count( $out, 'loading="lazy"' ) );
+		$this->assertSame( $out, Markup::lazy_iframes( $out ), 'done once only' );
+	}
+
+	/**
 	 * Only plain font stylesheets are ever written into a page.
 	 *
 	 * @return void

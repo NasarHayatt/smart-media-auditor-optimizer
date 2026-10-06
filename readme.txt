@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.7.9
+Stable tag: 2.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,30 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.8.0 =
+Built and verified against a full audit of a WPBakery + Movedo site whose
+phone score had dropped to 10, with its page jumping (layout shift 1.0).
+A simulation of the live page with these changes scored 98 on phones and 97
+on desktop.
+* Fix: stylesheets only wait while the page's scripts wait too, and held
+  scripts start only once every stylesheet is on. A theme script that sizes
+  sections measured a half-styled page and the whole page jumped.
+* Fix: Google's desktop test reports an 800px screen for a 1350px window, and
+  2.7.9 took that as the width, so desktop tests never held their scripts.
+  The screen width is now only used on touch screens, before the page's
+  viewport tag.
+* New: released scripts all start downloading at once and still run in page
+  order. One by one, a visitor's first touch took 8 to 16 seconds to bring a
+  page to life; now about 1.5.
+* New: YouTube videos show their picture until someone presses play, instead
+  of loading about 850 KB of player scripts on every visit.
+* New: stylesheets on open public hosts (such as code.jquery.com) are read,
+  measured and loaded in the background like the site's own.
+* Fix: Google Fonts were never written into the page; the fetch now runs as
+  a background task and refreshes stored pages afterwards.
+* Fix: an image the page lazy-loads was missed as the first screen's main
+  image, so it kept its lazy loading and started late. It now loads first.
 
 = 2.7.9 =
 * Fix: on themes that print their viewport tag after this plugin's styles,

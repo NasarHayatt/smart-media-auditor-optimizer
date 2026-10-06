@@ -78,16 +78,19 @@ final class Prebuild {
 	 * loads without this feature, and nobody sees it move.
 	 *
 	 * A phone reports the browser's default 980px until the page's viewport
-	 * tag has been read, and themes often print it after this script, so no
-	 * window is taken as wider than the screen. Every phone visit of a live
-	 * site was treated as unchecked and ran its scripts straight away.
+	 * tag has been read, and themes often print it after this script: every
+	 * phone visit of a live site was treated as unchecked and ran its scripts
+	 * straight away. So on a touch screen, before that tag, the screen's own
+	 * width is used. Only there: Google's desktop test reports an 800px
+	 * screen for its 1350px window, and taking that as the width stopped
+	 * every desktop test from holding.
 	 *
 	 * @param array<int,int> $widths Widths the page passed at.
 	 * @return string
 	 */
 	public static function gate( array $widths ): string {
 		$list = implode( ',', array_map( 'intval', $widths ) );
-		return '(function(){var d=document.documentElement,p=document.createElement("div");p.style.cssText="position:absolute;top:-999px;left:0;width:100px;height:100px;overflow:scroll";d.appendChild(p);var s=p.offsetWidth-p.clientWidth;d.removeChild(p);d.style.setProperty("--smao-sb",s+"px");var w=window.innerWidth;if(screen.width&&w>screen.width)w=screen.width;if(![' . $list . '].some(function(x){return Math.abs(w-x)<=' . self::WIDTH_MATCH . '}))d.classList.add("smao-open")})()';
+		return '(function(){var d=document.documentElement,p=document.createElement("div");p.style.cssText="position:absolute;top:-999px;left:0;width:100px;height:100px;overflow:scroll";d.appendChild(p);var s=p.offsetWidth-p.clientWidth;d.removeChild(p);d.style.setProperty("--smao-sb",s+"px");var w=window.innerWidth;if(navigator.maxTouchPoints>0&&screen.width&&w>screen.width&&!document.querySelector("meta[name=viewport]"))w=screen.width;if(![' . $list . '].some(function(x){return Math.abs(w-x)<=' . self::WIDTH_MATCH . '}))d.classList.add("smao-open")})()';
 	}
 
 	/**

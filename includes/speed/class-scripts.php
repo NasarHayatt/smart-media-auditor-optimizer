@@ -498,6 +498,14 @@ final class Scripts {
 		 * replaying them to the whole page re-ran every theme and builder
 		 * handler and moved the layout.
 		 */
+		// Held scripts run one after another, in page order, but all start
+		// downloading the moment they are released: fetched one by one from
+		// a server 0.2s away, 34 scripts took 8 to 16 seconds after a
+		// visitor's first touch; together, 1.5 seconds.
+		// Held scripts start only once every stylesheet is on, or after four
+		// seconds if one never arrives: a theme script that sizes sections
+		// as it starts measured a half-styled page, and the page jumped when
+		// the rest of its styles arrived.
 		// A page that holds every script already looks finished, so it waits
 		// for the visitor. Starting them on a timer rebuilt the slider six
 		// seconds in, and a test that never interacts recorded that as the
@@ -515,13 +523,15 @@ if(K&&window.PerformanceObserver){try{O=new PerformanceObserver(function(l){l.ge
 var L=[],W=["DOMContentLoaded","load","readystatechange"],D=document.addEventListener,X=window.addEventListener;
 function trap(t,o){return function(e,h,p){if(W.indexOf(e)>-1){L.push([t,e,h]);return}return o.call(this,e,h,p)}}
 document.addEventListener=trap(document,D);window.addEventListener=trap(window,X);
+for(var k=0;k<s.length;k++){var u=s[k].getAttribute("src");if(!u)continue;var l=document.createElement("link");l.rel="preload";l.as="script";l.href=u;var co=s[k].getAttribute("crossorigin");if(co!==null)l.crossOrigin=co;var ig=s[k].getAttribute("integrity");if(ig)l.integrity=ig;document.head.appendChild(l)}
 function next(){if(i>=s.length){done();return}var o=s[i++],n=document.createElement("script");
 for(var a=0;a<o.attributes.length;a++){var at=o.attributes[a];if("type"===at.name)continue;n.setAttribute(at.name,at.value)}
 if(o.src){n.onload=n.onerror=next;n.src=o.src;o.parentNode.replaceChild(n,o)}else{n.text=o.text;o.parentNode.replaceChild(n,o);next()}}
 function done(){document.addEventListener=D;window.addEventListener=X;document.documentElement.classList.add("smao-ran");
 if(K&&U){window.setTimeout(function(){var g=Math.abs(document.documentElement.scrollHeight-H)/Math.max(H,1);if(O)O.disconnect();if(((Q&&g>0.03)||C>0.05)&&navigator.sendBeacon){var c=K.split("|");navigator.sendBeacon(c[0],new URLSearchParams({k:c[1],t:c[2],w:window.innerWidth,g:g.toFixed(3),c:C.toFixed(3)}))}},3000)}
 ["readystatechange","DOMContentLoaded","load"].forEach(function(e){L.forEach(function(l){if(l[1]!==e)return;try{var v=new Event(e);typeof l[2]==="function"?l[2].call(l[0],v):l[2]&&l[2].handleEvent&&l[2].handleEvent(v)}catch(x){}})})}
-next()}
+function css(go){var a=document.querySelectorAll("link[data-smao-href]"),k;for(k=0;k<a.length;k++){a[k].href=a[k].getAttribute("data-smao-href");a[k].removeAttribute("data-smao-href")}var b=document.querySelectorAll("link[data-smao-media]"),w=0;(function c(){var ok=!0;for(k=0;k<b.length;k++){if(b[k].hasAttribute("data-smao-media")&&!b[k].hasAttribute("data-smao-l"))ok=!1}if(ok||w>=4000){for(k=0;k<b.length;k++){if(b[k].hasAttribute("data-smao-media")){b[k].media=b[k].getAttribute("data-smao-media");b[k].removeAttribute("data-smao-media")}}go()}else{w+=50;setTimeout(c,50)}})()}
+css(function(){if(!Q){H=document.documentElement.scrollHeight;C=0;Q=!0}next()})}
 <?php if ( $manual ) : ?>window.smaoRelease=function(){run({type:"mousemove"})};
 <?php else : ?>E.forEach(function(e){window.addEventListener(e,run,{passive:!0})});
 document.addEventListener("DOMContentLoaded",function(){document.documentElement.classList.contains("smao-open")&&run()});

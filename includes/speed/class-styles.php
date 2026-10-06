@@ -43,6 +43,16 @@ final class Styles {
 	private const MAX_CRITICAL = 153600;
 
 	/**
+	 * Public stylesheet hosts that let any page read their files.
+	 *
+	 * A stylesheet from another site can only be read, and so captured and
+	 * loaded in the background, when it is requested that way; otherwise it
+	 * must keep holding up the first paint. jQuery UI's, from code.jquery.com,
+	 * held a live phone page's first paint back by about a second.
+	 */
+	private const OPEN_HOSTS = array( 'code.jquery.com', 'cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'unpkg.com', 'fonts.googleapis.com', 'use.fontawesome.com', 'maxcdn.bootstrapcdn.com', 'stackpath.bootstrapcdn.com', 'ajax.googleapis.com' );
+
+	/**
 	 * Option holding verified above-the-fold styles, keyed by page.
 	 */
 	private const OPTION = 'smao_critical_pages';
@@ -134,6 +144,7 @@ final class Styles {
 		if ( is_admin() ) {
 			return;
 		}
+		add_filter( 'style_loader_tag', array( self::class, 'readable' ), 5, 4 );
 		if ( Rightsize::measuring() ) {
 			// The measurement frame must see the page exactly as it is today,
 			// and learn which stylesheets could be loaded in the background.
@@ -298,6 +309,23 @@ final class Styles {
 	}
 
 	/**
+	 * Request a stylesheet from an open public host so it can be read.
+	 *
+	 * @param string $tag    Link tag.
+	 * @param string $handle Handle.
+	 * @param string $href   URL.
+	 * @param string $media  Media attribute.
+	 * @return string
+	 */
+	public static function readable( string $tag, string $handle, string $href, string $media ): string {
+		$host = strtolower( (string) wp_parse_url( $href, PHP_URL_HOST ) );
+		if ( ! in_array( $host, self::OPEN_HOSTS, true ) || false !== stripos( $tag, 'crossorigin' ) ) {
+			return $tag;
+		}
+		return (string) preg_replace( '/<link/i', '<link crossorigin="anonymous"', $tag, 1 );
+	}
+
+	/**
 	 * During measurement, note each stylesheet that could load asynchronously.
 	 *
 	 * @param string $tag    Link tag.
@@ -352,6 +380,11 @@ final class Styles {
 	 * switched every stylesheet to asynchronous, so the page painted with no
 	 * styles at all.
 	 *
+	 * Only where the page's scripts wait too. A theme script that sizes
+	 * sections as the page loads measured them half-styled, and when the full
+	 * styles arrived the page jumped (layout shift 1.0 on a live site, against
+	 * 0.17 with nothing changed). Held scripts start once every stylesheet is on.
+	 *
 	 * @return array|null
 	 */
 	private static function entry(): ?array {
@@ -362,7 +395,7 @@ final class Styles {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Only hashed.
 		$path  = (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ), PHP_URL_PATH );
 		$entry = self::pages()[ self::key( $path ) ] ?? null;
-		$cache = self::usable( $entry ) && self::worthwhile( $entry ) ? $entry : null;
+		$cache = self::usable( $entry ) && self::worthwhile( $entry ) && Scripts::holding_all() ? $entry : null;
 		return $cache;
 	}
 

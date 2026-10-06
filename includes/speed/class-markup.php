@@ -25,6 +25,7 @@ final class Markup {
 	 * @return void
 	 */
 	public static function boot(): void {
+		add_action( self::FONT_TASK, array( self::class, 'fetch_font' ) );
 		if ( is_admin() || Rightsize::measuring() ) {
 			return;
 		}
@@ -154,38 +155,66 @@ final class Markup {
 
 	/**
 	 * A Google Fonts stylesheet from the cache, fetched once in the
-	 * background after the page has been sent when it is not there yet.
+	 * background when it is not there yet.
+	 *
+	 * The fetch used to wait for the end of the request, but it was asked
+	 * for while the page itself was being sent, too late to ever run: a live
+	 * site never got its fonts written in. A WordPress background task does
+	 * it now.
 	 *
 	 * @param string $url Stylesheet URL.
 	 * @return string
 	 */
 	public static function font_css( string $url ): string {
-		$key    = 'smao_gfont_' . md5( $url );
-		$cached = get_transient( $key );
+		$cached = get_transient( self::font_key( $url ) );
 		if ( is_array( $cached ) ) {
 			return (string) ( $cached['css'] ?? '' );
 		}
-		add_action(
-			'shutdown',
-			static function () use ( $url, $key ): void {
-				if ( is_array( get_transient( $key ) ) ) {
-					return;
-				}
-				// A current browser, so the answer lists compact WOFF2 files.
-				$response = wp_remote_get(
-					$url,
-					array(
-						'timeout'    => 5,
-						'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36',
-					)
-				);
-				$css  = is_wp_error( $response ) ? '' : (string) wp_remote_retrieve_body( $response );
-				$good = ! is_wp_error( $response ) && 200 === (int) wp_remote_retrieve_response_code( $response )
-					&& self::font_css_ok( $css );
-				set_transient( $key, array( 'css' => $good ? trim( $css ) : '' ), $good ? WEEK_IN_SECONDS : HOUR_IN_SECONDS );
-			}
-		);
+		if ( function_exists( 'wp_schedule_single_event' ) && ! wp_next_scheduled( self::FONT_TASK, array( $url ) ) ) {
+			wp_schedule_single_event( time(), self::FONT_TASK, array( $url ) );
+		}
 		return '';
+	}
+
+	/** Background task that fetches one Google Fonts stylesheet. */
+	public const FONT_TASK = 'smao_google_font';
+
+	/**
+	 * Cache key for a Google Fonts stylesheet.
+	 *
+	 * @param string $url Stylesheet URL.
+	 * @return string
+	 */
+	private static function font_key( string $url ): string {
+		return 'smao_gfont_' . md5( $url );
+	}
+
+	/**
+	 * Fetch one Google Fonts stylesheet, then refresh stored pages so
+	 * visitors get it written in.
+	 *
+	 * @param string $url Stylesheet URL.
+	 * @return void
+	 */
+	public static function fetch_font( string $url ): void {
+		$key = self::font_key( $url );
+		if ( is_array( get_transient( $key ) ) || ! preg_match( '#^https://fonts\.googleapis\.com/css2?\?#', $url ) ) {
+			return;
+		}
+		// A current browser, so the answer lists compact WOFF2 files.
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout'    => 8,
+				'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36',
+			)
+		);
+		$css  = is_wp_error( $response ) ? '' : (string) wp_remote_retrieve_body( $response );
+		$good = ! is_wp_error( $response ) && 200 === (int) wp_remote_retrieve_response_code( $response ) && self::font_css_ok( $css );
+		set_transient( $key, array( 'css' => $good ? trim( $css ) : '' ), $good ? WEEK_IN_SECONDS : HOUR_IN_SECONDS );
+		if ( $good && Cache::active() ) {
+			Cache::flush();
+		}
 	}
 
 	/**
@@ -213,6 +242,8 @@ final class Markup {
 		if ( false === $start ) {
 			return $html;
 		}
+		$body = self::youtube( substr( $html, $start ) );
+		$html = substr( $html, 0, $start ) . $body;
 		$body = (string) preg_replace_callback(
 			'#<iframe\b(?![^>]*\sloading\s*=)([^>]*)>#i',
 			static function ( array $match ): string {
@@ -225,6 +256,40 @@ final class Markup {
 			substr( $html, $start )
 		);
 		return substr( $html, 0, $start ) . $body;
+	}
+
+	/**
+	 * Show a YouTube video's picture until someone presses play.
+	 *
+	 * An embedded player loads about 850 KB of YouTube's scripts the moment
+	 * it nears the screen, whether or not anyone watches: on a live home
+	 * page that was the largest download, ahead of every image. The frame
+	 * stays exactly where it is, so the layout is untouched; it first shows
+	 * the video's thumbnail and a play button, and pressing play loads the
+	 * real player in its place and starts the video.
+	 *
+	 * @param string $html Page body.
+	 * @return string
+	 */
+	public static function youtube( string $html ): string {
+		if ( ! str_contains( $html, 'youtube' ) ) {
+			return $html;
+		}
+		return (string) preg_replace_callback(
+			'#<iframe\b(?![^>]*\ssrcdoc\s*=)([^>]*)\ssrc\s*=\s*(["\'])(https?://(?:www\.)?youtube(?:-nocookie)?\.com/embed/([A-Za-z0-9_-]{6,20})([^"\']*))\2([^>]*)>#i',
+			static function ( array $m ): string {
+				$url    = html_entity_decode( $m[3], ENT_QUOTES );
+				$params = (string) wp_parse_url( $url, PHP_URL_QUERY );
+				$play   = strtok( $url, '?' ) . '?' . ( '' !== $params ? $params . '&' : '' ) . 'autoplay=1';
+				$title  = preg_match( '#\stitle\s*=\s*(["\'])(.*?)\1#i', $m[1] . ' ' . $m[6], $t ) ? $t[2] : 'Video';
+				$page   = '<style>*{margin:0;padding:0;overflow:hidden}html,body{height:100%;background:#000}a,img{position:absolute;inset:0;width:100%;height:100%}img{object-fit:cover}'
+					. 'span{position:absolute;top:50%;left:50%;width:68px;height:48px;margin:-24px 0 0 -34px;border-radius:12px;background:#f00;opacity:.85}'
+					. 'span:after{content:"";position:absolute;left:27px;top:14px;border-style:solid;border-width:10px 0 10px 17px;border-color:transparent transparent transparent #fff}a:hover span{opacity:1}</style>'
+					. '<a href="' . htmlspecialchars( $play, ENT_QUOTES ) . '"><img src="https://i.ytimg.com/vi/' . $m[4] . '/hqdefault.jpg" alt="' . $title . '"><span></span></a>';
+				return '<iframe' . $m[1] . ' src=' . $m[2] . $m[3] . $m[2] . ' srcdoc="' . htmlspecialchars( $page, ENT_QUOTES ) . '"' . $m[6] . '>';
+			},
+			$html
+		);
 	}
 
 	/**
