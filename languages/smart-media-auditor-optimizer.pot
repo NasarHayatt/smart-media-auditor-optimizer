@@ -1,10 +1,13 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.7.8\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.7.9\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid " "
+msgstr ""
+
+msgid " + [top, right, bottom, left].map(function (v) { return round(Math.max(0, v)) + "
 msgstr ""
 
 msgid "\"%s\", which several pages share, was edited"

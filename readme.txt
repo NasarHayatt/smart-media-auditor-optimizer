@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.7.8
+Stable tag: 2.7.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,16 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.7.9 =
+* Fix: on themes that print their viewport tag after this plugin's styles,
+  every phone was taken as an unchecked screen width, so phones and
+  Google's mobile test never held their scripts. A phone reports the
+  browser's default 980px until that tag is read; no window is taken as
+  wider than the screen now.
+* Fix: a slider layer taller than its slider, cropped in the finished page,
+  showed as a grey band below the slider while scripts waited. Pieces keep
+  the crop of the containers around them.
 
 = 2.7.8 =
 * Fix: pages built with WPBakery and the Movedo theme failed the look-the-same

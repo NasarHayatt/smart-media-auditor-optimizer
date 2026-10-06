@@ -269,6 +269,26 @@
 		try { return doc.querySelectorAll(sel).length === 1 ? sel : ''; } catch (error) { return ''; }
 	}
 
+	/**
+	 * The part of a piece its clipping containers hide in the finished page,
+	 * as an inset, or '' when nothing is hidden.
+	 */
+	function cropped(el, region, box, view) {
+		var top = 0, right = 0, bottom = 0, left = 0;
+		for (var up = el.parentElement; up && up !== region.parentElement; up = up.parentElement) {
+			if (!/hidden|clip|auto|scroll/.test(view.getComputedStyle(up).overflow)) { continue; }
+			var r = up.getBoundingClientRect();
+			var x = r.left + view.scrollX;
+			var y = r.top + view.scrollY;
+			top = Math.max(top, y - box.y);
+			left = Math.max(left, x - box.x);
+			bottom = Math.max(bottom, box.y + box.h - (y + r.height));
+			right = Math.max(right, box.x + box.w - (x + r.width));
+		}
+		if (top < 1 && right < 1 && bottom < 1 && left < 1) { return ''; }
+		return 'inset(' + [top, right, bottom, left].map(function (v) { return round(Math.max(0, v)) + 'px'; }).join(' ') + ')';
+	}
+
 	/** Whether an element holds only text, or a single thing and its text. */
 	function simple(el, view) {
 		var things = 0;
@@ -468,6 +488,11 @@
 			// a 9px line height for 32px letters, and a logo a theme shifts up
 			// inside its link, were both cut off.
 			if (finished.tagName !== 'IMG' && cs.overflow === 'visible' && simple(finished, doneView)) { decl.push('overflow:visible!important'); }
+			// A container that crops the piece in the finished page, like a
+			// slider cropping a tint layer taller than itself, still crops it:
+			// placed on its own, the tint showed as a grey band under the slider.
+			var crop = cropped(finished, area.done.el, fb, doneView);
+			if (crop) { decl.push('clip-path:' + crop + '!important'); }
 			if (hs.display === 'none' || hs.display === 'inline' || hs.display === 'contents') { decl.push('display:block!important'); }
 			// Below the first screen nobody sees a piece before interacting,
 			// and scrolling is interacting, which starts the real scripts. So
