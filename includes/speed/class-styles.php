@@ -322,7 +322,7 @@ final class Styles {
 		if ( ! in_array( $host, self::OPEN_HOSTS, true ) || false !== stripos( $tag, 'crossorigin' ) ) {
 			return $tag;
 		}
-		return (string) preg_replace( '/<link/i', '<link crossorigin="anonymous"', $tag, 1 );
+		return (string) preg_replace( '/<link\b/i', '<link crossorigin="anonymous"', $tag, 1 );
 	}
 
 	/**

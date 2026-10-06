@@ -211,7 +211,19 @@ final class Screen_Speed {
 					__( 'Stops the browser hiding your text until a font arrives, and opens the connection to the font host early.', 'smart-media-auditor-optimizer' ),
 					__( 'Text appears immediately instead of after the font', 'smart-media-auditor-optimizer' )
 				);
+				$font_error = get_option( Markup::FONT_ERROR );
 				?>
+				<?php if ( is_string( $font_error ) && '' !== $font_error ) : ?>
+					<p class="smao-muted">
+						<?php
+						printf(
+							/* translators: %s: error message. */
+							esc_html__( 'Google Fonts could not be fetched from this server, so they still hold up the first paint: %s. Your host may block outgoing connections; it is tried again every hour.', 'smart-media-auditor-optimizer' ),
+							esc_html( rtrim( $font_error, '. ' ) )
+						);
+						?>
+					</p>
+				<?php endif; ?>
 			</section>
 
 			<section class="smao-panel">

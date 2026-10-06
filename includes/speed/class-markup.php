@@ -170,11 +170,20 @@ final class Markup {
 		if ( is_array( $cached ) ) {
 			return (string) ( $cached['css'] ?? '' );
 		}
-		if ( function_exists( 'wp_schedule_single_event' ) && ! wp_next_scheduled( self::FONT_TASK, array( $url ) ) ) {
-			wp_schedule_single_event( time(), self::FONT_TASK, array( $url ) );
+		// Fetched straight away, at most once an hour and for three seconds:
+		// the page is stored by the page cache, so visitors never wait for it.
+		// A background task alone never ran on a live host.
+		if ( function_exists( 'wp_remote_get' ) && ! get_transient( self::font_key( $url ) . '_try' ) ) {
+			set_transient( self::font_key( $url ) . '_try', 1, HOUR_IN_SECONDS );
+			self::fetch_font( $url, 3, false );
+			$cached = get_transient( self::font_key( $url ) );
+			return is_array( $cached ) ? (string) ( $cached['css'] ?? '' ) : '';
 		}
 		return '';
 	}
+
+	/** Why the last Google Fonts fetch failed, shown on the Speed screen. */
+	public const FONT_ERROR = 'smao_gfont_error';
 
 	/** Background task that fetches one Google Fonts stylesheet. */
 	public const FONT_TASK = 'smao_google_font';
@@ -193,10 +202,12 @@ final class Markup {
 	 * Fetch one Google Fonts stylesheet, then refresh stored pages so
 	 * visitors get it written in.
 	 *
-	 * @param string $url Stylesheet URL.
+	 * @param string $url     Stylesheet URL.
+	 * @param int    $timeout Seconds to wait for Google.
+	 * @param bool   $refresh Whether to refresh stored pages afterwards.
 	 * @return void
 	 */
-	public static function fetch_font( string $url ): void {
+	public static function fetch_font( string $url, int $timeout = 8, bool $refresh = true ): void {
 		$key = self::font_key( $url );
 		if ( is_array( get_transient( $key ) ) || ! preg_match( '#^https://fonts\.googleapis\.com/css2?\?#', $url ) ) {
 			return;
@@ -205,14 +216,19 @@ final class Markup {
 		$response = wp_remote_get(
 			$url,
 			array(
-				'timeout'    => 8,
+				'timeout'    => $timeout,
 				'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36',
 			)
 		);
 		$css  = is_wp_error( $response ) ? '' : (string) wp_remote_retrieve_body( $response );
 		$good = ! is_wp_error( $response ) && 200 === (int) wp_remote_retrieve_response_code( $response ) && self::font_css_ok( $css );
 		set_transient( $key, array( 'css' => $good ? trim( $css ) : '' ), $good ? WEEK_IN_SECONDS : HOUR_IN_SECONDS );
-		if ( $good && Cache::active() ) {
+		if ( $good ) {
+			delete_option( self::FONT_ERROR );
+		} else {
+			update_option( self::FONT_ERROR, is_wp_error( $response ) ? $response->get_error_message() : 'HTTP ' . (int) wp_remote_retrieve_response_code( $response ), false );
+		}
+		if ( $good && $refresh && Cache::active() ) {
 			Cache::flush();
 		}
 	}

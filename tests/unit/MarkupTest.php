@@ -106,6 +106,20 @@ final class MarkupTest extends TestCase {
 	}
 
 	/**
+	 * Stylesheets on open public hosts are requested so they can be read.
+	 *
+	 * @return void
+	 */
+	public function test_open_host_stylesheets_are_readable(): void {
+		$cdn  = "<link rel='stylesheet' id='jquery-ui-css-css' href='https://code.jquery.com/ui/1.13.2/themes/smoothness/jquery-ui.css?ver=6.6.9' media='all' />";
+		$out  = \SMAO\Styles::readable( $cdn, 'jquery-ui-css', 'https://code.jquery.com/ui/1.13.2/themes/smoothness/jquery-ui.css?ver=6.6.9', 'all' );
+		$this->assertStringStartsWith( '<link crossorigin="anonymous" rel=', $out );
+		$own  = "<link rel='stylesheet' id='a-css' href='https://example.com/a.css' media='all' />";
+		$this->assertSame( $own, \SMAO\Styles::readable( $own, 'a', 'https://example.com/a.css', 'all' ) );
+		$this->assertSame( $out, \SMAO\Styles::readable( $out, 'jquery-ui-css', 'https://code.jquery.com/ui/1.13.2/themes/smoothness/jquery-ui.css', 'all' ), 'never twice' );
+	}
+
+	/**
 	 * Only plain font stylesheets are ever written into a page.
 	 *
 	 * @return void

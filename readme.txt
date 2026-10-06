@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.8.0
+Stable tag: 2.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,23 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.8.1 =
+* Fix: 2.8.0's "stylesheets on open public hosts" never took effect: a stray
+  character in the code stopped it matching. jQuery UI and Google Fonts
+  stylesheets kept holding up the first paint.
+* Fix: sections below the first screen were almost never left unrendered
+  while scripts wait: the stand-in height included the section's padding,
+  the page grew and the check rejected it. Pages now skip drawing them, and
+  the pictures inside them no longer compete with the main image.
+* New: the main picture of the pre-built first screen, such as a slider's
+  photo, is fetched as soon as the page starts arriving.
+* Fix: Google Fonts are fetched when a page is first built instead of by a
+  background task that never ran on a live host; if the host blocks the
+  fetch, the Speed screen says so.
+Measured on a copy of a live WPBakery home page with the live server's
+delays: phone 76-79 to 83-84 and desktop 86-87 to 91 from the section and
+picture changes alone, before the stylesheet fixes.
 
 = 2.8.0 =
 Built and verified against a full audit of a WPBakery + Movedo site whose

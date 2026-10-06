@@ -235,6 +235,61 @@ final class Prebuild {
 	}
 
 	/**
+	 * The largest picture the pre-built layout shows in the first screen, per
+	 * screen size, to fetch as soon as the page starts arriving.
+	 *
+	 * Written into the layout's styles, a slider's photo was only found once
+	 * the browser had read the whole page: on a live phone test it waited
+	 * 0.7 to 0.9s before starting, behind the page's other images, and was
+	 * the page's largest paint.
+	 *
+	 * @param string $css     Pre-built styles, grouped in @media blocks.
+	 * @param array  $allowed Widths the page holds its scripts at.
+	 * @return array<int,array{url:string,media:string}>
+	 */
+	public static function pictures( string $css, array $allowed ): array {
+		$ranges = array(
+			412  => '(max-width: 600px)',
+			768  => '(min-width: 601px) and (max-width: 1024px)',
+			1350 => '(min-width: 1025px) and (max-width: 1600px)',
+			1920 => '(min-width: 1601px)',
+		);
+		$open   = array();
+		foreach ( $allowed as $width ) {
+			foreach ( $ranges as $measured => $query ) {
+				if ( abs( (int) $width - $measured ) <= self::WIDTH_MATCH ) {
+					$open[] = $query;
+				}
+			}
+		}
+		$found = array();
+		if ( ! $open || ! preg_match_all( '/@media ([^{]+)\{(.*?)\n\}/s', $css, $blocks, PREG_SET_ORDER ) ) {
+			return $found;
+		}
+		foreach ( $blocks as $block ) {
+			$media = array_values( array_intersect( array_map( 'trim', explode( ',', $block[1] ) ), $open ) );
+			if ( ! $media || ! preg_match_all( '/\{([^{}]*content:url\("([^"]+)"\)[^{}]*)\}/', $block[2], $rules, PREG_SET_ORDER ) ) {
+				continue;
+			}
+			$best = null;
+			$area = 0.0;
+			foreach ( $rules as $rule ) {
+				if ( preg_match( '/(?:^|;)width:([\d.]+)px/', $rule[1], $w ) && preg_match( '/(?:^|;)height:([\d.]+)px/', $rule[1], $h ) && (float) $w[1] * (float) $h[1] > $area ) {
+					$area = (float) $w[1] * (float) $h[1];
+					$best = $rule[2];
+				}
+			}
+			if ( null !== $best && $area >= 40000 ) {
+				$found[] = array(
+					'url'   => $best,
+					'media' => implode( ', ', $media ),
+				);
+			}
+		}
+		return $found;
+	}
+
+	/**
 	 * Copies WordPress keeps of an uploaded image, the original included.
 	 *
 	 * @param string $url Image URL.
@@ -599,6 +654,9 @@ final class Prebuild {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Only hashed.
 		$key   = Styles::key( (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ), PHP_URL_PATH ) );
 		$check = rest_url( 'smao/v1/prebuild-report' ) . '|' . $key . '|' . self::token( $key );
+		foreach ( self::pictures( $entry['css'], self::allowed_widths( $entry ) ) as $picture ) {
+			printf( '<link rel="preload" as="image" href="%s" fetchpriority="high" media="%s">' . "\n", esc_url( $picture['url'] ), esc_attr( $picture['media'] ) );
+		}
 		echo '<style id="smao-prebuild" data-smao-check="' . esc_attr( $check ) . '">' . wp_strip_all_tags( $entry['css'] ) . '</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS, tags stripped.
 		echo '<script id="smao-prebuild-gate">' . self::gate( self::allowed_widths( $entry ) ) . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built from integers.
 	}

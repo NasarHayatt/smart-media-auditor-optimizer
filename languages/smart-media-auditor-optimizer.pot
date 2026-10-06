@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Media Auditor & Optimizer 2.8.0\n"
+"Project-Id-Version: Smart Media Auditor & Optimizer 2.8.1\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
@@ -611,6 +611,9 @@ msgid "Getting started"
 msgstr ""
 
 msgid "Google API key"
+msgstr ""
+
+msgid "Google Fonts could not be fetched from this server, so they still hold up the first paint: %s. Your host may block outgoing connections; it is tried again every hour."
 msgstr ""
 
 msgid "Google could not test your page:"

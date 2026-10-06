@@ -230,6 +230,34 @@ final class PrebuildTest extends TestCase {
 	}
 
 	/**
+	 * The largest first-screen picture is fetched early, only at widths
+	 * where the page holds its scripts.
+	 *
+	 * @return void
+	 */
+	public function test_first_screen_pictures_are_fetched_early(): void {
+		$css = "@media (max-width: 600px){\nhtml:not(.smao-ran) a img{left:0px!important;width:412px!important;height:300px!important;content:url(\"https://e.com/big-1024x768.webp\")!important}\n"
+			. "html:not(.smao-ran) b img{width:174px!important;height:8.6px!important;content:url(\"https://e.com/strip.png\")!important}\n}\n"
+			. "@media (min-width: 601px) and (max-width: 1024px), (min-width: 1025px) and (max-width: 1600px){\nhtml:not(.smao-ran) a img{width:900px!important;height:500px!important;content:url(\"https://e.com/big.webp\")!important}\n}\n"
+			. "@media (min-width: 1601px){\nhtml:not(.smao-ran) c{height:20px!important}\n}";
+		$this->assertSame(
+			array(
+				array(
+					'url'   => 'https://e.com/big-1024x768.webp',
+					'media' => '(max-width: 600px)',
+				),
+				array(
+					'url'   => 'https://e.com/big.webp',
+					'media' => '(min-width: 601px) and (max-width: 1024px), (min-width: 1025px) and (max-width: 1600px)',
+				),
+			),
+			Prebuild::pictures( $css, array( 412, 768, 1350, 1920 ) )
+		);
+		$this->assertSame( '(min-width: 1025px) and (max-width: 1600px)', Prebuild::pictures( $css, array( 1350 ) )[0]['media'], 'blocked widths are left out' );
+		$this->assertSame( array(), Prebuild::pictures( $css, array() ) );
+	}
+
+	/**
 	 * Pictures in the pre-built layout come from the smallest copy that
 	 * still fills their box at twice its size, with the original's shape.
 	 *

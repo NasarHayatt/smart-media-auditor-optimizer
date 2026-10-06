@@ -754,7 +754,11 @@
 					if (cs.display === 'contents' || cs.display.indexOf('inline') === 0 || cs.position === 'fixed' || cs.position === 'sticky' || pinned(child)) { continue; }
 					var sel = selector(child, doc);
 					if (!sel) { continue; }
-					var decl = ['content-visibility:auto!important', 'contain-intrinsic-size:auto ' + round(box.h) + 'px!important'];
+					// The stand-in size is for the content alone; given the whole
+					// height, sections with padding grew and the page moved.
+					var fs = doneView.getComputedStyle(box.el);
+					var inner = box.h - ['padding-top', 'padding-bottom', 'border-top-width', 'border-bottom-width'].reduce(function (sum, prop) { return sum + (parseFloat(fs.getPropertyValue(prop)) || 0); }, 0);
+					var decl = ['content-visibility:auto!important', 'contain-intrinsic-size:auto ' + round(Math.max(0, inner)) + 'px!important'];
 					['top', 'bottom'].forEach(function (edge) {
 						var carry = carried(box.el, doneView, edge);
 						if (carry) { decl.push(carry); }
