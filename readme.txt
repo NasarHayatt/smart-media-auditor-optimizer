@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.7.6
+Stable tag: 2.7.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,13 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.7.7 =
+* New: on measured pages, image preloads added by a theme, a snippet or
+  another plugin are dropped when the page never shows that file. A live
+  site preloaded an older copy of a photo from another folder, fetched
+  ahead of the page's main image for nothing; without it the phone score
+  stayed at 96 to 97 instead of dropping as low as 82.
 
 = 2.7.6 =
 * Fix: the look-the-same check failed on phones and tablets on themes whose

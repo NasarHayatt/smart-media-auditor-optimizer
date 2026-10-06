@@ -35,6 +35,19 @@ if ( ! function_exists( 'wp_normalize_path' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_parse_url' ) ) {
+	/**
+	 * Stub URL parsing.
+	 *
+	 * @param string $url       URL.
+	 * @param int    $component Component.
+	 * @return mixed
+	 */
+	function wp_parse_url( $url, $component = -1 ) {
+		return parse_url( $url, $component ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- The stub itself.
+	}
+}
+
 if ( ! function_exists( 'wp_upload_dir' ) ) {
 	/**
 	 * Stub uploads directory.

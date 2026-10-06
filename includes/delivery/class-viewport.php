@@ -97,7 +97,11 @@ final class Viewport {
 		if ( ! str_contains( $html, '</html>' ) ) {
 			return $html;
 		}
-		$html  = self::rehome( $html, (string) wp_parse_url( home_url(), PHP_URL_HOST ), WP_CONTENT_DIR, content_url() );
+		$html   = self::rehome( $html, (string) wp_parse_url( home_url(), PHP_URL_HOST ), WP_CONTENT_DIR, content_url() );
+		$heroes = Styles::heroes();
+		if ( null !== $heroes ) {
+			$html = self::unused_preloads( $html, $heroes );
+		}
 		$start = stripos( $html, '<body' );
 		if ( false === $start ) {
 			return $html;
@@ -125,6 +129,51 @@ final class Viewport {
 			$last   = $offset + strlen( $tag );
 		}
 		return substr( $html, 0, $start ) . $out . substr( $body, $last );
+	}
+
+	/**
+	 * Drop image preloads, added by a theme, a snippet or another plugin, for
+	 * a file the page does not show.
+	 *
+	 * A preload is fetched first, ahead of everything the page really draws.
+	 * A live site preloaded an older copy of a photo from another folder,
+	 * while the page showed the current one through Jetpack's CDN: 50 KB
+	 * fetched for nothing, ahead of the page's main image, cost its phone
+	 * score up to 14 points. Only measured pages are touched, and a file
+	 * is kept when its path appears anywhere else in the page or it is the
+	 * measured main background, which lives in a stylesheet.
+	 *
+	 * @param string $html   Page.
+	 * @param array  $heroes Measured first-screen images, per device.
+	 * @return string
+	 */
+	public static function unused_preloads( string $html, array $heroes ): string {
+		$end = stripos( $html, '</head>' );
+		if ( false === $end || ! preg_match_all( '#<link\b[^>]*\brel\s*=\s*["\']?preload\b[^>]*>#i', substr( $html, 0, $end ), $links ) ) {
+			return $html;
+		}
+		$keep = array();
+		foreach ( $heroes as $hero ) {
+			if ( is_array( $hero ) && ! empty( $hero['url'] ) ) {
+				$keep[] = (string) wp_parse_url( (string) $hero['url'], PHP_URL_PATH );
+			}
+		}
+		foreach ( array_unique( $links[0] ) as $tag ) {
+			if ( ! preg_match( '#\bas\s*=\s*["\']?image\b#i', $tag ) || str_contains( $tag, 'data-smao' ) || stripos( $tag, 'imagesrcset' ) !== false
+				|| ! preg_match( '#\bhref\s*=\s*(["\'])([^"\']+)\1#i', $tag, $href ) ) {
+				continue;
+			}
+			$path = (string) wp_parse_url( html_entity_decode( $href[2], ENT_QUOTES ), PHP_URL_PATH );
+			if ( strlen( $path ) < 8 || in_array( $path, $keep, true ) ) {
+				continue;
+			}
+			$rest = str_replace( $tag, '', $html );
+			if ( str_contains( $rest, $path ) || str_contains( $rest, str_replace( '/', '\/', $path ) ) || str_contains( $rest, rawurldecode( $path ) ) ) {
+				continue;
+			}
+			$html = str_replace( $tag, '', $html );
+		}
+		return $html;
 	}
 
 	/**
@@ -517,7 +566,7 @@ final class Viewport {
 		foreach ( $backgrounds as $device => $hero ) {
 			// A background is fetched by the exact URL in the stylesheet.
 			printf(
-				'<link rel="preload" as="image" href="%s" fetchpriority="high"%s>%s',
+				'<link rel="preload" as="image" data-smao="1" href="%s" fetchpriority="high"%s>%s',
 				esc_url( $hero['url'] ),
 				'' !== ( $media[ $device ] ?? '' ) ? ' media="' . esc_attr( $media[ $device ] ) . '"' : '',
 				"\n"
@@ -565,7 +614,7 @@ final class Viewport {
 		}
 
 		printf(
-			'<link rel="preload" as="image" href="%s"%s%s fetchpriority="high"%s>%s',
+			'<link rel="preload" as="image" data-smao="1" href="%s"%s%s fetchpriority="high"%s>%s',
 			esc_url( $url ),
 			$srcset && $sizes
 				? ' imagesrcset="' . esc_attr( $srcset ) . '" imagesizes="' . esc_attr( $sizes ) . '"'

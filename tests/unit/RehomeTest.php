@@ -100,6 +100,38 @@ final class RehomeTest extends TestCase {
 	}
 
 	/**
+	 * Image preloads for files the page does not show are dropped; every
+	 * other preload stays.
+	 *
+	 * @return void
+	 */
+	public function test_preloads_of_images_the_page_does_not_show_are_dropped(): void {
+		$stray  = '<link rel="preload" as="image" href="https://saifenergy.com/wp-content/uploads/2023/12/Leading-home.webp" type="image/webp">';
+		$used   = '<link rel="preload" as="image" href="https://saifenergy.com/wp-content/uploads/2023/11/logo.png">';
+		$bg     = '<link rel="preload" as="image" href="https://saifenergy.com/wp-content/uploads/2023/11/hero-bg.jpg">';
+		$ours   = '<link rel="preload" as="image" data-smao="1" href="https://saifenergy.com/wp-content/uploads/2022/01/elsewhere.webp" fetchpriority="high">';
+		$font   = '<link rel="preload" as="font" href="https://saifenergy.com/wp-content/fonts/x.woff2" crossorigin>';
+		$srcset = '<link rel="preload" as="image" href="https://saifenergy.com/wp-content/uploads/2021/01/r.webp" imagesrcset="https://saifenergy.com/wp-content/uploads/2021/01/r-768.webp 768w">';
+		$html   = '<html><head>' . $stray . $used . $bg . $ours . $font . $srcset . '</head><body>'
+			. '<img src="https://i0.wp.com/saifenergy.com/wp-content/uploads/2025/04/Leading-home.webp?fit=537%2C539&amp;ssl=1">'
+			. '<img src="https://i0.wp.com/saifenergy.com/wp-content/uploads/2023/11/logo.png?ssl=1"></body></html>';
+		$heroes = array(
+			'mobile'  => array( 'above' => array( array( 'id' => 0, 'name' => 'leading-home.webp' ) ) ),
+			'desktop' => array(
+				'kind' => 'bg',
+				'url'  => 'https://saifenergy.com/wp-content/uploads/2023/11/hero-bg.jpg',
+			),
+		);
+		$out    = Viewport::unused_preloads( $html, $heroes );
+
+		$this->assertStringNotContainsString( '2023/12/Leading-home.webp', $out, 'an older copy from another folder is never shown' );
+		foreach ( array( $used, $bg, $ours, $font, $srcset ) as $kept ) {
+			$this->assertStringContainsString( $kept, $out );
+		}
+		$this->assertSame( '<p>no head</p>', Viewport::unused_preloads( '<p>no head</p>', $heroes ) );
+	}
+
+	/**
 	 * Paths that try to leave wp-content are never followed.
 	 *
 	 * @return void
