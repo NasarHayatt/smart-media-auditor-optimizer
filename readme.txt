@@ -4,7 +4,7 @@ Tags: media, images, performance, optimization, cleanup
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.7.7
+Stable tag: 2.7.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,23 @@ builders reference are reported conservatively rather than as unused.
 4. Advanced: the scan detail, compression queue, activity log and system status.
 
 == Changelog ==
+
+= 2.7.8 =
+* Fix: pages built with WPBakery and the Movedo theme failed the look-the-same
+  check at every width, so their scripts never waited. A live home page now
+  passes at all four widths. What was wrong, and is fixed for every theme:
+  * two sections with the same id made everything inside them impossible to
+    target;
+  * a piece whose own selector started at its area was silently dropped,
+    taking a whole paragraph with it;
+  * a header bar pinned to the top was treated like a chat bubble and never
+    compared, so a theme's header that stays invisible until its script runs
+    was missing while scripts waited. It now shows, with its background;
+  * text a theme draws past its own box, such as a slider title, and a logo
+    shifted up inside its link, were cut off.
+* Fix: the Speed screen's "saved on every page load" used each image's
+  total size on disk, all copies together, as if it were one file (85 MB
+  shown for one page). It now reads each copy's real size.
 
 = 2.7.7 =
 * New: on measured pages, image preloads added by a theme, a snippet or

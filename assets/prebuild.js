@@ -43,11 +43,19 @@
 			var el = list[i];
 			var n = el.getAttribute('data-smao-n');
 			var cs = view.getComputedStyle(el);
-			if (floating && (cs.position === 'fixed' || (el.parentElement && floating.has(el.parentElement)))) {
+			if (floating && el.parentElement && floating.has(el.parentElement)) {
 				floating.add(el);
 				continue;
 			}
 			var r = el.getBoundingClientRect();
+			// A bar pinned across the top of the screen is the page's header,
+			// not something floating over it. Left out, a theme's header that
+			// stays invisible until its script runs was never compared, and
+			// pages showed no header or menu while scripts waited.
+			if (floating && cs.position === 'fixed' && !(r.top <= TOLERANCE && r.width >= width * 0.6 && r.height > 0 && r.height <= view.innerHeight * 0.3)) {
+				floating.add(el);
+				continue;
+			}
 			// Shown: not hidden by the page. A box of no width can still show
 			// its contents, which overflow it; a theme's carousel column did
 			// exactly that on phones. Visible: shown and taking up space.
@@ -138,7 +146,9 @@
 			}
 		}
 		function part(node) {
-			if (node.id && /^[A-Za-z][\w-]*$/.test(node.id)) { return '#' + node.id; }
+			// Only an id the page uses once: a live home page had two sections
+			// with the same id, and nothing inside either could be targeted.
+			if (node.id && /^[A-Za-z][\w-]*$/.test(node.id) && doc.querySelectorAll('[id="' + node.id + '"]').length === 1) { return '#' + node.id; }
 			var classes = (typeof node.className === 'string' ? node.className : '').trim().split(/\s+/).filter(function (c) {
 				return c && /^[A-Za-z_][\w-]*$/.test(c) && !/^(smao|is-|has-|active|current|hover|focus|lazy|loaded|animated|elementor-invisible)/.test(c);
 			});
@@ -257,6 +267,18 @@
 		}
 		var sel = regionSel + ' > ' + steps.join(' > ');
 		try { return doc.querySelectorAll(sel).length === 1 ? sel : ''; } catch (error) { return ''; }
+	}
+
+	/** Whether an element holds only text, or a single thing and its text. */
+	function simple(el, view) {
+		var things = 0;
+		var all = el.querySelectorAll('*');
+		for (var i = 0; i < all.length; i++) {
+			var cs = view.getComputedStyle(all[i]);
+			if (cs.display === 'none' || cs.visibility === 'hidden' || cs.display === 'inline' || all[i].tagName === 'BR') { continue; }
+			if (all[i].children.length === 0 && ++things > 1) { return false; }
+		}
+		return true;
 	}
 
 	/** Declarations every placed piece shares. */
@@ -388,15 +410,28 @@
 	 * outrank the area's rule that hides everything else inside it.
 	 */
 	function scoped(area, sel, el, doc) {
-		if (!sel) { return ''; }
-		if (sel.indexOf(area.selector + ' ') === 0) { return sel; }
-		var candidate = area.selector + ' ' + sel;
-		try {
-			var hits = doc.querySelectorAll(candidate);
-			return hits.length === 1 && hits[0] === el ? candidate : '';
-		} catch (error) {
-			return '';
+		var only = function (candidate) {
+			try {
+				var hits = doc.querySelectorAll(candidate);
+				return hits.length === 1 && hits[0] === el;
+			} catch (error) {
+				return false;
+			}
+		};
+		if (sel && sel.indexOf(area.selector + ' ') === 0) { return sel; }
+		if (sel && only(area.selector + ' ' + sel)) { return area.selector + ' ' + sel; }
+		// The piece's own selector can start at the area itself, which then
+		// appears twice and matches nothing; a live page lost its main
+		// paragraph that way. Its exact place below the area always works.
+		var steps = [];
+		for (var node = el; node && node !== area.region; node = node.parentElement) {
+			var index = 1;
+			for (var sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) { index++; }
+			steps.unshift(node.tagName.toLowerCase() + ':nth-child(' + index + ')');
+			if (!node.parentElement) { return ''; }
 		}
+		var path = area.selector + ' > ' + steps.join(' > ');
+		return steps.length && only(path) ? path : '';
 	}
 
 	/**
@@ -428,6 +463,11 @@
 			// What every piece shares is written once for the area, below.
 			placedSelectors.push(sel);
 			var decl = ['left:' + round(fb.x - regionBox.x) + 'px!important', 'top:' + round(fb.y - regionBox.y) + 'px!important', 'width:' + round(fb.w) + 'px!important', 'height:' + round(fb.h) + 'px!important'];
+			// What the finished page draws past a piece's own box stays whole
+			// when the piece holds only text or one thing: a slider title with
+			// a 9px line height for 32px letters, and a logo a theme shifts up
+			// inside its link, were both cut off.
+			if (finished.tagName !== 'IMG' && cs.overflow === 'visible' && simple(finished, doneView)) { decl.push('overflow:visible!important'); }
 			if (hs.display === 'none' || hs.display === 'inline' || hs.display === 'contents') { decl.push('display:block!important'); }
 			// Below the first screen nobody sees a piece before interacting,
 			// and scrolling is interacting, which starts the real scripts. So
@@ -481,6 +521,27 @@
 			var gone = between.filter(function (el) { return view.getComputedStyle(el).display === 'none'; })
 				.map(function (el) { return inside(area.region, area.selector, el, doc); }).filter(Boolean);
 			if (gone.length) { lines.unshift(gone.join(',') + '{display:block!important}'); }
+			// A container that paints a solid backdrop, like a header bar's
+			// white, keeps showing it; only what it holds stays hidden. Its
+			// place is checked with the pieces.
+			area.backdrops = [];
+			between.forEach(function (el) {
+				var n = el.getAttribute('data-smao-n');
+				var box = n && done[n];
+				if (!box || !box.visible || box.w * box.h < 10000 || box.x < -2 || box.x + box.w > doc.documentElement.clientWidth + 2) { return; }
+				// Only where it already stands: a carousel's cards, stacked
+				// while scripts wait, would paint their backdrops elsewhere.
+				var now = el.getBoundingClientRect();
+				if (Math.abs(now.left + view.scrollX - box.x) > 4 || Math.abs(now.top + view.scrollY - box.y) > 4 || Math.abs(now.width - box.w) > 4) { return; }
+				var color = doneView.getComputedStyle(box.el).backgroundColor;
+				var alpha = /rgba\([^)]*,\s*([\d.]+)\s*\)/.exec(color || '');
+				if (!color || color === 'transparent' || (alpha && Number(alpha[1]) < 0.5)) { return; }
+				var sel = scoped(area, inside(area.region, area.selector, el, doc), el, doc);
+				if (!sel) { return; }
+				// Its contents are placed on their own, so it keeps its finished size.
+				lines.push(sel + '{visibility:visible!important;background-color:' + color + '!important;box-sizing:border-box!important;width:' + round(box.w) + 'px!important;height:' + round(box.h) + 'px!important;min-height:0!important;max-width:none!important}');
+				area.backdrops.push(n);
+			});
 		}
 		return lines;
 	}
@@ -721,6 +782,7 @@
 			var all = r.region.querySelectorAll('[data-smao-n]');
 			for (var i = 0; i < all.length; i++) { inner[all[i].getAttribute('data-smao-n')] = true; }
 			r.pieces.forEach(function (piece) { pieceKeys.push(piece.getAttribute('data-smao-n')); });
+			(r.backdrops || []).forEach(function (key) { pieceKeys.push(key); });
 		});
 		var considered = {};
 		Object.keys(done).forEach(function (key) { if (!inner[key]) { considered[key] = done[key]; } });
