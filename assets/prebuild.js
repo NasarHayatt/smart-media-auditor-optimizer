@@ -595,6 +595,15 @@
 			var cs = doneView.getComputedStyle(canvas);
 			var top = r.top + doneView.scrollY;
 			if (r.width * r.height < regionBox.w * regionBox.h * 0.3 || cs.visibility === 'hidden' || Number(cs.opacity) < 0.5 || top >= doneView.innerHeight * 1.1) { continue; }
+			// A slider keeps every slide's canvas in place and fades the
+			// slides themselves; only the slide showing counts. The other
+			// slides' photos, 685 KB on a live page, competed with it.
+			var faded = false;
+			for (var up = canvas.parentElement; up && up !== region; up = up.parentElement) {
+				var ucs = doneView.getComputedStyle(up);
+				if (Number(ucs.opacity) < 0.5 || ucs.display === 'none') { faded = true; break; }
+			}
+			if (faded) { continue; }
 			var owner = canvas.parentElement;
 			while (owner && owner !== region && !owner.hasAttribute('data-smao-n')) { owner = owner.parentElement; }
 			var held = owner && doc.querySelector('[data-smao-n="' + owner.getAttribute('data-smao-n') + '"]');
